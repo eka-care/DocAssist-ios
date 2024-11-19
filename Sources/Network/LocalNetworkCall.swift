@@ -7,7 +7,7 @@
 
 import Foundation
 
-class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
+final class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
   
 //    private let baseUrl: String = "https://lucid-ws.eka.care/doc_chat/v1/stream_chat"
 //  
@@ -43,7 +43,7 @@ class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
 //      dataTask.resume()
 //    }
 
-  func startStreamingPostRequest(networkConfig: NetworkConfiguration, query: String, completion: @escaping (Result<String, Error>) -> Void) {
+  func startStreamingPostRequest(networkConfig: NetworkConfiguration, query: String, completion: @Sendable @escaping (Result<String, Error>) -> Void) {
       let streamDelegate = StreamDelegate(completion: completion)
     
     guard var urlComponents = URLComponents(string: networkConfig.baseUrl) else {
@@ -51,7 +51,7 @@ class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
     }
     let queryItems = networkConfig.queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
     urlComponents.queryItems = queryItems
-    guard var url = urlComponents.url else {
+    guard let url = urlComponents.url else {
       fatalError("Invalid URL")
     }
 
@@ -77,16 +77,20 @@ class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
   
   let dataTask = session.dataTask(with: request)
   
-  dataTask.delegate = self
+    if #available(iOS 15.0, *) {
+      dataTask.delegate = self
+    } else {
+      // Fallback on earlier versions
+    }
   dataTask.resume()
 }
 
 }
 
-class StreamDelegate: NSObject, URLSessionDataDelegate {
+final class StreamDelegate: NSObject, @preconcurrency URLSessionDataDelegate {
   
-  private let completion: (Result<String, Error>) -> Void
-  init(completion: @escaping (Result<String, Error>) -> Void) {
+  private let completion: @Sendable (Result<String, Error>) -> Void
+  init(completion: @escaping  @Sendable (Result<String, Error>) -> Void) {
       self.completion = completion
   }
   
