@@ -8,6 +8,7 @@
 import Foundation
 import SwiftData
 
+@MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   @Published var isLoading: Bool = false
@@ -22,12 +23,12 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   private let chatNetworkingService = ChatNetworkingService()
   
-  @MainActor func sendMessage(newMessage: String) {
+  func sendMessage(newMessage: String) {
     addUserMessage(newMessage)
     startStreamingPostRequest(query: newMessage)
   }
   
-  @MainActor private func addUserMessage(_ query: String) {
+  private func addUserMessage(_ query: String) {
     let msgIddup = (QueueConfigRepo.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
@@ -54,7 +55,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  @MainActor func startStreamingPostRequest(query: String) {
+  func startStreamingPostRequest(query: String) {
     netWorkConfig.queryParams["session_id"] = vmssid
 //    chatNetworkingService.startStreamingPostRequest(sessionId: vmssid, query: query) { [weak self] result in
 //      switch result {
@@ -69,7 +70,9 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
                                                      , query: query) { [weak self] result in
           switch result {
           case .success(let responseString):
-            self?.handleStreamResponse(responseString)
+            Task {
+              await self?.handleStreamResponse(responseString)
+            }
           case .failure(let error):
             print("Error streaming: \(error)")
           }
@@ -77,7 +80,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
 
   }
   
-  @MainActor func handleStreamResponse(_ responseString: String) {
+  func handleStreamResponse(_ responseString: String) {
     let splitLines = responseString.split(separator: "\n")
     
     for line in splitLines {
@@ -98,7 +101,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  @MainActor private func updateMessage(with message: Message) {
+  private func updateMessage(with message: Message) {
     let descriptor = FetchDescriptor<ChatMessageModel>()
     let allMessage = try? QueueConfigRepo.shared.modelContext.fetch(descriptor)
     
@@ -115,7 +118,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   
-  @MainActor private func createNewChatMessage(from message: Message) {
+  private func createNewChatMessage(from message: Message) {
     do {
       if let fetchedSeesion = try fetchSession(bySessionId: vmssid) {
         let chat = ChatMessageModel(
@@ -135,7 +138,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  @MainActor private func saveData() {
+  private func saveData() {
     do {
       try QueueConfigRepo.shared.modelContext.save()
     } catch {
@@ -143,7 +146,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  @MainActor func fetchSession(bySessionId sessionId: String) throws -> SessionDataModel? {
+  func fetchSession(bySessionId sessionId: String) throws -> SessionDataModel? {
     let descriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate<SessionDataModel> { session in
         session.sessionId == sessionId
@@ -152,7 +155,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try QueueConfigRepo.shared.modelContext.fetch(descriptor).first
   }
   
-  @MainActor func createSession() {
+  func createSession() {
     let currentDate = Date()
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "new Session")
@@ -166,7 +169,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     vmssid = id
   }
   
-  @MainActor func setThreadTitle(with query: String) {
+  func setThreadTitle(with query: String) {
     QueueConfigRepo.shared.SaveTitle(sessionId: self.vmssid, title: query)
     updateThreadTitle = false
   }

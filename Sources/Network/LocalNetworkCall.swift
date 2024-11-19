@@ -43,7 +43,7 @@ final class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
 //      dataTask.resume()
 //    }
 
-  func startStreamingPostRequest(networkConfig: NetworkConfiguration, query: String, completion: @Sendable @escaping (Result<String, Error>) -> Void) {
+  func startStreamingPostRequest(networkConfig: NetworkConfiguration, query: String, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
       let streamDelegate = StreamDelegate(completion: completion)
     
     guard var urlComponents = URLComponents(string: networkConfig.baseUrl) else {
@@ -87,14 +87,14 @@ final class ChatNetworkingService: NSObject, URLSessionTaskDelegate {
 
 }
 
-final class StreamDelegate: NSObject, @preconcurrency URLSessionDataDelegate {
+final class StreamDelegate: NSObject, URLSessionDataDelegate {
   
   private let completion: @Sendable (Result<String, Error>) -> Void
   init(completion: @escaping  @Sendable (Result<String, Error>) -> Void) {
       self.completion = completion
   }
   
-  @MainActor func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     let receivedString = String(data: data, encoding: .utf8) ?? ""
     completion(.success(receivedString))
 
