@@ -9,7 +9,7 @@
 import SwiftUI
 import SwiftData
 
-struct MainView: View {
+public struct MainView: View {
     @Query(sort: \SessionDataModel.createdAt, order: .reverse) var thread: [SessionDataModel]
   var queryParams: [String: String] = [
         "d_oid": "161467756044203",
@@ -19,7 +19,7 @@ struct MainView: View {
   @StateObject var viewModel = ChatViewModel(networkConfig: NetworkConfiguration(baseUrl: "https://lucid-ws.eka.care/doc_chat/v1/stream_chat", queryParams: [:], httpMethod: "POST"))
 
   @Environment(\.modelContext) var modelContext
-    var body: some View {
+  public var body: some View {
         NavigationView {
             VStack {
                 // Header
