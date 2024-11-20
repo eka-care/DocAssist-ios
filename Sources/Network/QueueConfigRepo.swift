@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 final class QueueConfigRepo: SwiftDataRepoContext {
   static let shared = QueueConfigRepo()

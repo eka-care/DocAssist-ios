@@ -6,7 +6,9 @@
 //
 
 import Foundation
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {

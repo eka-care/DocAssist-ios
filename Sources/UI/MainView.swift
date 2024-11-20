@@ -7,7 +7,9 @@
 
 
 import SwiftUI
+#if canImport(SwiftData)
 import SwiftData
+#endif
 
 public struct MainView: View {
   
