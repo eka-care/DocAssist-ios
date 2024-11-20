@@ -6,9 +6,7 @@
 //
 
 import Foundation
-#if canImport(SwiftData)
 import SwiftData
-#endif
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
@@ -17,7 +15,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var vmssid: String = ""
   private var dataStorage: String = ""
   private var updateThreadTitle: Bool = true
-   var netWorkConfig: NetworkConfiguration
+  var netWorkConfig: NetworkConfiguration
   
   init(networkConfig: NetworkConfiguration) {
     self.netWorkConfig = networkConfig

@@ -90,4 +90,13 @@ final class QueueConfigRepo: SwiftDataRepoContext {
       return []
     }
   }
+  
+  func getAllSessions() -> [SessionDataModel] {
+    do {
+      return try modelContext.fetch(FetchDescriptor<SessionDataModel>())
+    } catch {
+      print("Encountered error in fetching the data \(error.localizedDescription)")
+      return []
+    }
+  }
 }
