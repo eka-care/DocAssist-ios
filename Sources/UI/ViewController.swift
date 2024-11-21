@@ -8,11 +8,11 @@
 import UIKit
 import SwiftUI
 
-class ViewController: UIViewController {
+public class ViewController: UIViewController {
   
   var ChatBotView = SomeMainView()
   
-  override func viewDidLoad() {
+  public override func viewDidLoad() {
     super.viewDidLoad()
     
     let uiHostingViewController = UIHostingController(rootView: ChatBotView)
