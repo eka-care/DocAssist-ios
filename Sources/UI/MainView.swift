@@ -7,9 +7,7 @@
 
 
 import SwiftUI
-#if canImport(SwiftData)
 import SwiftData
-#endif
 
 public struct MainView: View {
   
@@ -24,6 +22,7 @@ public struct MainView: View {
   ]
   @StateObject var viewModel = ChatViewModel(networkConfig: NetworkConfiguration(baseUrl: "https://lucid-ws.eka.care/doc_chat/v1/stream_chat", queryParams: [:], httpMethod: "POST"))
   @State private var newSessionId: String? = nil
+  @State private var isNavigatingToNewSession: Bool = false
   @Environment(\.modelContext) var modelContext
   
   public var body: some View {
