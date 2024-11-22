@@ -10,12 +10,25 @@ import SwiftUI
 
 public class ViewController: UIViewController {
   
-  var ChatBotView = SomeMainView()
+  var chatBotView: SomeMainView!
+  
+  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = nil, editButtonColor: Color? = nil) {
+    super.init(nibName: nil, bundle: nil)
+    
+    chatBotView = SomeMainView(backgroundImage: backgroundImage,emptymessageColor: emptyMessageColor, editButtonColor: editButtonColor)
+  }
+  
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
   
   public override func viewDidLoad() {
     super.viewDidLoad()
     
-    let uiHostingViewController = UIHostingController(rootView: ChatBotView)
+    self.navigationController?.setNavigationBarHidden(true, animated: false)
+    
+    let uiHostingViewController = UIHostingController(rootView: chatBotView)
+    
     addChild(uiHostingViewController)
     view.addSubview(uiHostingViewController.view)
     
@@ -27,5 +40,4 @@ public class ViewController: UIViewController {
       uiHostingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
     ])
   }
-  
 }

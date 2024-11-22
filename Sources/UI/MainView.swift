@@ -5,97 +5,132 @@
 //  Created by Brunda B on 15/11/24.
 //
 
-
 import SwiftUI
 import SwiftData
 
 public struct MainView: View {
   
-  public init() {
-  }
-  
   @Query(sort: \SessionDataModel.createdAt, order: .reverse) var thread: [SessionDataModel]
-  var queryParams: [String: String] = [
-    "d_oid": "161467756044203",
-    "d_hash": "6d36c3ca25abe7d9f34b81727f03d719",
-    "pt_oid": "161857870651607"
-  ]
-  @StateObject var viewModel = ChatViewModel(networkConfig: NetworkConfiguration(baseUrl: "https://lucid-ws.eka.care/doc_chat/v1/stream_chat", queryParams: [:], httpMethod: "POST"))
+//  var queryParams: [String: String] = [
+//    "d_oid": "161467756044203",
+//    "d_hash": "6d36c3ca25abe7d9f34b81727f03d719",
+//    "pt_oid": "161857870651607"
+//  ]
+//  @StateObject var viewModel = ChatViewModel(networkConfig: NetworkConfiguration(baseUrl: "https://lucid-ws.eka.care/doc_chat/v1/stream_chat", queryParams: [:], httpMethod: "POST"))
+  @StateObject var viewModel = ChatViewModel()
   @State private var newSessionId: String? = nil
   @State private var isNavigatingToNewSession: Bool = false
   @Environment(\.modelContext) var modelContext
+  @Environment(\.dismiss) var dismiss
   
+  var backgroundImage: UIImage?
+  var emptyMessageColor: Color?
+  var editButtonColor: Color?
+  
+  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue) {
+     self.backgroundImage = backgroundImage
+     self.emptyMessageColor = emptyMessageColor
+     self.editButtonColor = editButtonColor
+   }
+
   public var body: some View {
     NavigationView {
       ZStack {
-        VStack {
-          if thread.isEmpty {
-            Text("No messages yet")
-              .font(.title2)
-              .fontWeight(.medium)
-              .foregroundColor(.gray)
-              .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-              .padding()
-          } else {
-            List {
-              ForEach(thread) { thread in
-                NavigationLink {
-                  NewSessionView(session: thread.sessionId, viewModel: viewModel)
-                    .modelContext(modelContext)
-                } label: {
-                  MessageSubView(thread.title)
+        if let backgroundImage = backgroundImage {
+             Image(uiImage: backgroundImage)
+               .resizable()
+               .scaledToFill()
+               .edgesIgnoringSafeArea(.all)
+           } else {
+             Color.white
+               .edgesIgnoringSafeArea(.all)
+           }
+        
+        ZStack {
+          VStack {
+            HStack {
+              Button(action: {
+                dismiss()
+              }) {
+                HStack {
+                  Image(systemName: "chevron.left")
+                    .font(.title3)
+                    .foregroundColor(.blue)
+                  Text("Back")
+                    .foregroundColor(.blue)
+                    .font(.body)
                 }
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                  Button(role: .destructive) {
-                    QueueConfigRepo.shared.deleteSession(sessionId: thread.sessionId)
+              }
+              .padding(.leading, 16)
+              
+              Spacer()
+            }
+            
+            if thread.isEmpty {
+              Text("No messages yet")
+                .font(.title2)
+                .fontWeight(.medium)
+                .foregroundColor(emptyMessageColor)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+                .padding()
+            } else {
+              List {
+                ForEach(thread) { thread in
+                  NavigationLink {
+                    NewSessionView(session: thread.sessionId, viewModel: viewModel, backgroundImage: backgroundImage)
+                      .modelContext(modelContext)
                   } label: {
-                    Label("Delete", systemImage: "trash")
+                    MessageSubView(thread.title)
+                  }
+                  .listRowSeparator(.hidden)
+                  .listRowBackground(Color.clear)
+                  .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                  .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    Button(role: .destructive) {
+                      QueueConfigRepo.shared.deleteSession(sessionId: thread.sessionId)
+                    } label: {
+                      Label("Delete", systemImage: "trash")
+                    }
                   }
                 }
               }
+              .listStyle(.plain)
             }
-            .listStyle(.plain)
+            
+            Spacer()
           }
           
-          Spacer()
-        }
-        
-        VStack {
-          Spacer()
-          
-          HStack {
+          VStack {
             Spacer()
             
-            Button(action: {
-              viewModel.createSession()
-              newSessionId = viewModel.vmssid
-              isNavigatingToNewSession = true
-            }) {
-              Image(systemName: "square.and.pencil")
-                .font(.title2)
-                .foregroundColor(.white)
-                .padding()
-                .background(Color.blue)
-                .clipShape(Circle())
-                .shadow(radius: 10)
+            HStack {
+              Spacer()
+              
+              Button(action: {
+                viewModel.createSession()
+                newSessionId = viewModel.vmssid
+                isNavigatingToNewSession = true
+              }) {
+                Image(systemName: "square.and.pencil")
+                  .font(.title2)
+                  .foregroundColor(.white)
+                  .padding()
+                  .background(editButtonColor)
+                  .clipShape(Circle())
+                  .shadow(radius: 10)
+              }
+              .padding(.bottom, 16)
+              .padding(.trailing, 16)
             }
-            .padding(.bottom, 16)
-            .padding(.trailing, 16)
           }
         }
       }
-      .navigationBarTitle("")
-      .navigationBarHidden(true)
       .onAppear() {
-        viewModel.netWorkConfig.queryParams = queryParams
+    //    viewModel.netWorkConfig.queryParams = queryParams
       }
-      
       .background(
         NavigationLink(
-          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel)
+          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel,backgroundImage: backgroundImage)
             .modelContext(modelContext),
           isActive: $isNavigatingToNewSession
         ) {
@@ -123,9 +158,20 @@ public struct MainView: View {
 }
 
 public struct SomeMainView: View {
-  public init() { }
+  
+  var backgroundImage: UIImage?
+  var empytyMessageColor: Color?
+  var editButtonColor: Color?
+  
+  public init(backgroundImage: UIImage? = nil, emptymessageColor: Color?, editButtonColor: Color?) {
+    self.backgroundImage = backgroundImage
+    self.empytyMessageColor = emptymessageColor
+    self.editButtonColor = editButtonColor
+  }
+  
   public var body: some View {
-    MainView()
+    MainView(backgroundImage: backgroundImage, emptyMessageColor: empytyMessageColor, editButtonColor: editButtonColor)
       .modelContext(QueueConfigRepo.shared.modelContext)
+      .navigationBarHidden(true)
   }
 }

@@ -15,13 +15,14 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var vmssid: String = ""
   private var dataStorage: String = ""
   private var updateThreadTitle: Bool = true
-  var netWorkConfig: NetworkConfiguration
+//  var netWorkConfig: NetworkConfiguration
   
-  init(networkConfig: NetworkConfiguration) {
-    self.netWorkConfig = networkConfig
-  }
-  
-  private let chatNetworkingService = ChatNetworkingService()
+//  init(networkConfig: NetworkConfiguration) {
+//    self.netWorkConfig = networkConfig
+//  }
+//
+//  private let chatNetworkingService = ChatNetworkingService()
+  private let networkCall = NetworkCall()
   
   func sendMessage(newMessage: String) {
     addUserMessage(newMessage)
@@ -56,7 +57,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   func startStreamingPostRequest(query: String) {
-    netWorkConfig.queryParams["session_id"] = vmssid
+//    netWorkConfig.queryParams["session_id"] = vmssid
 //    chatNetworkingService.startStreamingPostRequest(sessionId: vmssid, query: query) { [weak self] result in
 //      switch result {
 //      case .success(let responseString):
@@ -66,8 +67,20 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
 //      }
 //    }
     
-    chatNetworkingService.startStreamingPostRequest(networkConfig: netWorkConfig
-                                                     , query: query) { [weak self] result in
+//    chatNetworkingService.startStreamingPostRequest(networkConfig: netWorkConfig
+//                                                     , query: query) { [weak self] result in
+//          switch result {
+//          case .success(let responseString):
+//            Task {
+//              await self?.handleStreamResponse(responseString)
+//            }
+//          case .failure(let error):
+//            print("Error streaming: \(error)")
+//          }
+//        }
+    
+    NwConfig.shared.queryParams["session_id"] = vmssid
+    networkCall.startStreamingPostRequest(query: query) { [weak self] result in
           switch result {
           case .success(let responseString):
             Task {
@@ -174,4 +187,3 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     updateThreadTitle = false
   }
 }
-
