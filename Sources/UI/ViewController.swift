@@ -12,10 +12,10 @@ public class ViewController: UIViewController {
   
   var chatBotView: SomeMainView!
   
-  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = nil, editButtonColor: Color? = nil) {
+  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = nil, editButtonColor: Color? = nil, backButtonColor: Color? = nil) {
     super.init(nibName: nil, bundle: nil)
     
-    chatBotView = SomeMainView(backgroundImage: backgroundImage,emptymessageColor: emptyMessageColor, editButtonColor: editButtonColor)
+    chatBotView = SomeMainView(backgroundImage: backgroundImage,emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, backButtonColor: backButtonColor)
   }
   
   required init?(coder: NSCoder) {
