@@ -20,10 +20,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var isLoading: Bool = false
   @Published var vmssid: String = ""
   private var dataStorage: String = ""
-<<<<<<< HEAD
-  private var updateThreadTitle: Bool = true
-=======
->>>>>>> 0c4f791 (Fixed Bugs and working code)
   private let networkCall = NetworkCall()
   
   func sendMessage(newMessage: String) {

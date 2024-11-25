@@ -7,11 +7,6 @@
 
 import SwiftUI
 import SwiftData
-<<<<<<< HEAD
-
-struct NewSessionView: View {
-  var session: String
-=======
 
 @MainActor
 public class SetUIComponents {
@@ -133,16 +128,12 @@ public class SetUIComponents {
 
 struct NewSessionView: View {
   @State var session: String
->>>>>>> 0c4f791 (Fixed Bugs and working code)
   @State var newMessage: String = ""
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundImage: UIImage?
   @FocusState private var isTextFieldFocused: Bool
-<<<<<<< HEAD
-=======
   @State private var scrollToBottom = false
->>>>>>> 0c4f791 (Fixed Bugs and working code)
   
   init(session: String, viewModel: ChatViewModel, backgroundImage: UIImage?) {
     self.session = session
@@ -182,15 +173,7 @@ struct NewSessionView: View {
                 MessageBubble(message: message, m: message.messageText ?? "")
                   .padding(.horizontal)
                   .padding(.top, message == messages.first ? 20 : 0)
-<<<<<<< HEAD
-              }
-            }
-            .padding(.top, 10)
-          }
-        }
 
-        textfieldView()
-=======
                   .id(message.id)
               }
               Color.clear
@@ -227,7 +210,6 @@ struct NewSessionView: View {
         }
         
         textfieldView
->>>>>>> 0c4f791 (Fixed Bugs and working code)
           .padding(.bottom, 5)
       }
       .navigationTitle("Chat")
@@ -235,44 +217,6 @@ struct NewSessionView: View {
     }
   }
   
-<<<<<<< HEAD
-  private func textfieldView() -> some View {
-      HStack {
-          Image(systemName: "magnifyingglass")
-              .foregroundColor(.gray)
-              .padding(.leading, 10)
-
-          TextField("Start typing here...", text: $newMessage)
-              .padding(12)
-              .background(Color.white)
-              .cornerRadius(30)
-              .font(.body)
-              .frame(height: 48)
-              .padding(.horizontal, 8)
-              .focused($isTextFieldFocused)
-              .onTapGesture {
-                  isTextFieldFocused = true
-              }
-
-          Button(action: {
-              guard !newMessage.isEmpty else { return }
-              sendMessage(newMessage)
-              isTextFieldFocused = false // Dismiss keyboard after sending
-          }) {
-              Image(systemName: "paperplane.fill")
-                  .foregroundColor(.white)
-                  .padding(12)
-                  .background(newMessage.isEmpty ? Color.gray : Color.blue)
-                  .clipShape(Circle())
-                  .shadow(radius: 5)
-          }
-          .disabled(newMessage.isEmpty)
-      }
-      .padding(.horizontal, 16)
-      .padding(.bottom, 16)
-  }
-
-=======
   var textfieldView : some View {
     HStack {
       Image(systemName: "magnifyingglass")
@@ -308,8 +252,6 @@ struct NewSessionView: View {
     .padding(.horizontal, 16)
     .padding(.bottom, 16)
   }
-  
->>>>>>> 0c4f791 (Fixed Bugs and working code)
   private func sendMessage(_ message: String) {
     viewModel.vmssid = session
     viewModel.sendMessage(newMessage: message)
@@ -330,21 +272,6 @@ struct MessageBubble: View {
       VStack(
         alignment: message.role == .user ? .trailing : .leading
       ) {
-<<<<<<< HEAD
-        Text(m)
-          .padding(12)
-          .background(
-            message.role == .user ? Color.blue : Color.gray.opacity(0.2)
-          )
-          .foregroundColor(
-            message.role == .user ? .white : .primary
-          )
-          .cornerRadius(16)
-          .animation(
-            .easeInOut,
-            value: message.messageText
-          )
-=======
         HStack {
           if message.role == .Bot {
             if let image = SetUIComponents.shared.chatIcon {
@@ -380,23 +307,13 @@ struct MessageBubble: View {
             }
           }
         }
->>>>>>> 0c4f791 (Fixed Bugs and working code)
       }
       
       if message.role == .Bot {
         Spacer()
       }
     }
-<<<<<<< HEAD
-    .padding(.horizontal)
-    .padding(.top, 4)
-  }
-}
-=======
     .padding(.top, 4)
   }
 }
 
-
-
->>>>>>> 0c4f791 (Fixed Bugs and working code)

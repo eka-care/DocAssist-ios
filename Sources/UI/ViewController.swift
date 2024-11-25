@@ -51,19 +51,6 @@ import SwiftData
 public class ViewController: UIViewController {
   
   var chatBotView: SomeMainView!
-<<<<<<< HEAD
-  
-  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = nil, editButtonColor: Color? = nil, backButtonColor: Color? = nil) {
-    super.init(nibName: nil, bundle: nil)
-    
-    chatBotView = SomeMainView(backgroundImage: backgroundImage,emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, backButtonColor: backButtonColor)
-  }
-  
-  required init?(coder: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-=======
->>>>>>> 0c4f791 (Fixed Bugs and working code)
   
   // Custom initializer to accept the optional UIImage for background
   public init(
@@ -75,16 +62,6 @@ public class ViewController: UIViewController {
   ) {
     super.init(nibName: nil, bundle: nil)
     
-<<<<<<< HEAD
-    self.navigationController?.setNavigationBarHidden(true, animated: false)
-    
-    let uiHostingViewController = UIHostingController(rootView: chatBotView)
-    
-    addChild(uiHostingViewController)
-    view.addSubview(uiHostingViewController.view)
-=======
->>>>>>> 0c4f791 (Fixed Bugs and working code)
-    
     // Pass the background image to SomeMainView
     chatBotView = SomeMainView(
       backgroundImage: backgroundImage,
@@ -94,8 +71,6 @@ public class ViewController: UIViewController {
       ctx: ctx
     )
   }
-<<<<<<< HEAD
-=======
 
     // Required initializer for ViewController without storyboard
     required init?(coder: NSCoder) {
@@ -124,5 +99,4 @@ public class ViewController: UIViewController {
             uiHostingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
     }
->>>>>>> 0c4f791 (Fixed Bugs and working code)
 }
