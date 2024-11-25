@@ -12,12 +12,12 @@ import SwiftData
 
 @available(iOS 17, *)
 @Model
-class SessionDataModel {
-  var userId = UUID()
-  @Attribute(.unique) var sessionId: String
-  var createdAt: Date
-  var lastUpdatedAt: Date
-  var title: String
+public class SessionDataModel {
+  public var userId = UUID()
+  @Attribute(.unique) public var sessionId: String
+  public var createdAt: Date
+  public var lastUpdatedAt: Date
+  public var title: String
   @Relationship(deleteRule: .cascade) var chatMessages: [ChatMessageModel]
   
   init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", chatMessages: [ChatMessageModel] = []) {

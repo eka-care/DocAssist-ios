@@ -7,14 +7,23 @@
 
 import Foundation
 import SwiftData
+import SwiftUI
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
+  private var context: ModelContext
+  
+  init(context: ModelContext) {
+    self.context = context
+  }
   
   @Published var isLoading: Bool = false
   @Published var vmssid: String = ""
   private var dataStorage: String = ""
+<<<<<<< HEAD
   private var updateThreadTitle: Bool = true
+=======
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
   private let networkCall = NetworkCall()
   
   func sendMessage(newMessage: String) {
@@ -23,7 +32,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   private func addUserMessage(_ query: String) {
-    let msgIddup = (QueueConfigRepo.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
+    let msgIddup = (QueueConfigRepo1.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
       if let fetchedSeesion = try fetchSession(bySessionId: vmssid) {
@@ -43,10 +52,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
     
     saveData()
-    
-    if updateThreadTitle  {
-      setThreadTitle(with: query)
-    }
+    setThreadTitle(with: query)
   }
   
   func startStreamingPostRequest(query: String) {
@@ -87,15 +93,15 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   private func updateMessage(with message: Message) {
     let descriptor = FetchDescriptor<ChatMessageModel>()
-    let allMessage = try? QueueConfigRepo.shared.modelContext.fetch(descriptor)
+    let allMessage = try? QueueConfigRepo1.shared.modelContext.fetch(descriptor)
     
     if let existingItem = allMessage?.first(where: {
       $0.sessionData?.sessionId == vmssid &&
       $0.msgId == message.msgId
     }) {
       existingItem.messageText = message.text
-
       saveData()
+      print("SESSION DATA SAVED")
     } else { /// Else we create a new entry in db
       createNewChatMessage(from: message)
     }
@@ -124,7 +130,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   private func saveData() {
     do {
-      try QueueConfigRepo.shared.modelContext.save()
+      try context.save()
     } catch {
       print("Error saving data: \(error)")
     }
@@ -136,14 +142,14 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
         session.sessionId == sessionId
       }
     )
-    return try QueueConfigRepo.shared.modelContext.fetch(descriptor).first
+    return try QueueConfigRepo1.shared.modelContext.fetch(descriptor).first
   }
   
   func createSession() {
     let currentDate = Date()
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "new Session")
-    QueueConfigRepo.shared.modelContext.insert(createSessionModel)
+    context.insert(createSessionModel)
     
     saveData()
     switchToSession(ssid)
@@ -154,7 +160,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   func setThreadTitle(with query: String) {
-    QueueConfigRepo.shared.SaveTitle(sessionId: self.vmssid, title: query)
-    updateThreadTitle = false
+    QueueConfigRepo1.shared.SaveTitle(sessionId: self.vmssid, title: query)
   }
 }

@@ -11,15 +11,14 @@ import SwiftData
 #endif
 
 @Model
-class ChatMessageModel: Identifiable {
-//  @Attribute(.unique) var id: UUID
-  var msgId: Int
-  var role: MessageRole
-  var messageFiles: [Int]?
-  var messageText: String?
-  var htmlString: String?
-  var createdAt: Int
-  var sessionData: SessionDataModel?
+public class ChatMessageModel: Identifiable {
+  public var msgId: Int
+  public var role: MessageRole
+  public var messageFiles: [Int]?
+  public var messageText: String?
+  public var htmlString: String?
+  public var createdAt: Int
+  public var sessionData: SessionDataModel?
   
   init(
     msgId: Int,
@@ -31,7 +30,6 @@ class ChatMessageModel: Identifiable {
     sessionData: SessionDataModel
     
   ) {
-//    self.id = UUID()
     self.msgId = msgId
     self.role = role
     self.messageFiles = messageFiles
@@ -42,7 +40,7 @@ class ChatMessageModel: Identifiable {
   }
 }
 
-enum MessageRole: String, Codable {
+public enum MessageRole: String, Codable {
   case user
   case Bot
   case custom

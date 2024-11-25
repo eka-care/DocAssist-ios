@@ -50,7 +50,10 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
     }
     
     let session = URLSession(configuration: .default, delegate: streamDelegate, delegateQueue: nil)
+<<<<<<< HEAD
     print("#BB request \(request)")
+=======
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
     let dataTask = session.dataTask(with: request)
     
     if #available(iOS 15.0, *) {
@@ -84,3 +87,9 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
     }
   }
 }
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> 0c4f791 (Fixed Bugs and working code)

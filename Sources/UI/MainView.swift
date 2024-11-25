@@ -11,7 +11,11 @@ import SwiftData
 public struct MainView: View {
   
   @Query(sort: \SessionDataModel.createdAt, order: .reverse) var thread: [SessionDataModel]
+<<<<<<< HEAD
   @StateObject var viewModel = ChatViewModel()
+=======
+  @ObservedObject var viewModel: ChatViewModel
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
   @State private var newSessionId: String? = nil
   @State private var isNavigatingToNewSession: Bool = false
   @Environment(\.modelContext) var modelContext
@@ -22,11 +26,20 @@ public struct MainView: View {
   var editButtonColor: Color?
   var backButtonColor: Color?
   
+<<<<<<< HEAD
   public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, backButtonColor: Color?) {
+=======
+  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, backButtonColor: Color?, ctx: ModelContext) {
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.backButtonColor = backButtonColor
+<<<<<<< HEAD
+=======
+    
+    self.viewModel = ChatViewModel(context: ctx)
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
   }
 
   public var body: some View {
@@ -106,7 +119,11 @@ public struct MainView: View {
             .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
             .swipeActions(edge: .trailing, allowsFullSwipe: true) {
               Button(role: .destructive) {
+<<<<<<< HEAD
                 QueueConfigRepo.shared.deleteSession(sessionId: thread.sessionId)
+=======
+                QueueConfigRepo1.shared.deleteSession(sessionId: thread.sessionId)
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
               } label: {
                 Label("Delete", systemImage: "trash")
               }
@@ -137,7 +154,11 @@ public struct MainView: View {
           .clipShape(Circle())
           .shadow(radius: 10)
       }
+<<<<<<< HEAD
       .padding(.bottom, 35)
+=======
+      .padding(.bottom, 40)
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
       .padding(.trailing, 16)
     }
   }
@@ -166,17 +187,41 @@ public struct SomeMainView: View {
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var backButtonColor: Color?
+<<<<<<< HEAD
   
   public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, backButtonColor: Color?) {
+=======
+  var ctx: ModelContext
+  
+  public init(
+    backgroundImage: UIImage? = nil,
+    emptyMessageColor: Color? = .white,
+    editButtonColor: Color? = .blue,
+    backButtonColor: Color?,
+    ctx: ModelContext
+  ) {
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.backButtonColor = backButtonColor
+<<<<<<< HEAD
   }
   
   public var body: some View {
     MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, backButtonColor: backButtonColor)
       .modelContext(QueueConfigRepo.shared.modelContext)
+=======
+    self.ctx = ctx
+    
+    QueueConfigRepo1.shared.modelContext = ctx
+  }
+  
+  public var body: some View {
+    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, backButtonColor: backButtonColor, ctx: ctx)
+  //    .modelContext(QueueConfigRepo.shared.modelContext)
+      .modelContext(ctx)
+>>>>>>> 0c4f791 (Fixed Bugs and working code)
       .navigationBarHidden(true)
   }
 }

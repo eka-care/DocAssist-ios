@@ -10,9 +10,12 @@ import Foundation
 import SwiftData
 #endif
 
-final class QueueConfigRepo: SwiftDataRepoContext {
-  static let shared = QueueConfigRepo()
-  private override init() { }
+@MainActor
+final class QueueConfigRepo1 {
+  var modelContext: ModelContext!
+  
+  static let shared = QueueConfigRepo1()
+  private init() { }
   
   func getLastMessageIdUsingSessionId(sessionId: String) -> Int? {
     
