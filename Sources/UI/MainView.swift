@@ -133,10 +133,9 @@ public struct MainView: View {
         isNavigatingToNewSession = true
       }) {
         
-        //MARK: - Todo Support image
-//        if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
-//          Image(newChatButtonImage)
-//        } else {
+        if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
+          Image(uiImage: newChatButtonImage)
+        } else {
           Image(systemName: "square.and.pencil")
             .font(.title2)
             .foregroundColor(.white)
@@ -144,7 +143,7 @@ public struct MainView: View {
             .background(editButtonColor)
             .clipShape(Circle())
             .shadow(radius: 10)
-//        }
+        }
         
         if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
           Text(newChatButtonText)
@@ -152,7 +151,7 @@ public struct MainView: View {
             .font(.title2)
         }
       }
-      .padding(.bottom, 40)
+      .padding(.bottom, 30)
       .padding(.trailing, 16)
     }
   }
