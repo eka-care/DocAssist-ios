@@ -37,69 +37,85 @@ struct NewSessionView: View {
   }
   
   var newView: some View {
-    ZStack {
-      if let backgroundImage = backgroundImage {
-        Image(uiImage: backgroundImage)
-          .resizable()
-          .scaledToFill()
-          .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .ignoresSafeArea()
-      }
-      
-      VStack {
-        ScrollViewReader { proxy in
-          ScrollView {
-            LazyVStack {
-              ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "")
-                  .padding(.horizontal)
-                  .padding(.top, message == messages.first ? 20 : 0)
+      ZStack {
+          if let backgroundImage = backgroundImage {
+              Image(uiImage: backgroundImage)
+                  .resizable()
+                  .scaledToFill()
+                  .frame(maxWidth: .infinity, maxHeight: .infinity)
+                  .ignoresSafeArea()
+          }
 
-                  .id(message.id)
+          VStack {
+              if messages.isEmpty {
+                VStack {
+                  Spacer()
+                  if let image = SetUIComponents.shared.emptyChatImage {
+                    Image(uiImage: image)
+                      .resizable()
+                      .scaledToFit()
+                      .frame(width: 100)
+                  }
+                  Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
+                    .foregroundColor(.black)
+                    .font(.title3)
+                    .padding()
+                  Spacer()
+                  textfieldView
+                      .padding(.bottom, 5)
+                }
+              } else {
+                  ScrollViewReader { proxy in
+                      ScrollView {
+                          LazyVStack {
+                              ForEach(messages) { message in
+                                  MessageBubble(message: message, m: message.messageText ?? "")
+                                      .padding(.horizontal)
+                                      .padding(.top, message == messages.first ? 20 : 0)
+                                      .id(message.id)
+                              }
+                              Color.clear
+                                  .frame(height: 1)
+                                  .id("bottomID")
+                          }
+                          .padding(.top, 10)
+                      }
+                      .onChange(of: messages.count) { _, _ in
+                          withAnimation(.easeOut(duration: 0.3)) {
+                              proxy.scrollTo("bottomID", anchor: .bottom)
+                          }
+                      }
+                      .onChange(of: isTextFieldFocused) { focused, _ in
+                          if focused {
+                              withAnimation(.easeOut(duration: 0.3)) {
+                                  proxy.scrollTo("bottomID", anchor: .bottom)
+                              }
+                          }
+                      }
+                      .simultaneousGesture(
+                          DragGesture().onChanged { _ in
+                              if isTextFieldFocused {
+                                  isTextFieldFocused = false
+                              }
+                          }
+                      )
+                      .onAppear {
+                          proxy.scrollTo("bottomID", anchor: .bottom)
+                      }
+                  }
+                textfieldView
+                    .padding(.bottom, 5)
               }
-              Color.clear
-                .frame(height: 1)
-                .id("bottomID")
-            }
-            .padding(.top, 10)
           }
-          .onChange(of: messages.count) { _,_ in
-            withAnimation(.easeOut(duration: 0.3)) {
-              proxy.scrollTo("bottomID", anchor: .bottom)
-            }
-          }
-          .onChange(of: isTextFieldFocused) { focused, _ in
-            // Scroll to bottom when keyboard appears
-            if focused {
-              withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo("bottomID", anchor: .bottom)
-              }
-            }
-          }
-          // Add gesture to dismiss keyboard when scrolling
-          .simultaneousGesture(
-            DragGesture().onChanged { _ in
-              if isTextFieldFocused {
-                isTextFieldFocused = false
-              }
-            }
-          )
-          .onAppear {
-            proxy.scrollTo("bottomID", anchor: .bottom)
-          }
-        }
-        
-        textfieldView
-          .padding(.bottom, 5)
+          .navigationTitle(SetUIComponents.shared.chatTitle ?? "Chats")
+          .navigationBarTitleDisplayMode(.inline)
       }
-      .navigationTitle(SetUIComponents.shared.chatTitle ?? "Chats")
-      .navigationBarTitleDisplayMode(.inline)
-    }
   }
+
   
   var textfieldView : some View {
     ZStack {
-    //  HStack {
+      HStack {
         TextField("Start typing here...", text: $newMessage)
           .padding(12)
           .background(Color.white)
@@ -111,45 +127,24 @@ struct NewSessionView: View {
           .onTapGesture {
             isTextFieldFocused = true
           }
-  //    }
-//      HStack {
-//        Spacer()
-//        Button(action: {
-//          newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-//          guard !newMessage.isEmpty else { return }
-//          sendMessage(newMessage)
-//          isTextFieldFocused = false
-//        }) {
-//          Image(systemName: "paperplane.fill")
-//            .padding(10)
-//            .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
-//            .clipShape(Circle())
-//            .shadow(radius: 5)
-//        }
-//        .disabled(newMessage.isEmpty)
-//        
-//      }
-      VStack {
-          Spacer()
-          HStack {
-              Spacer()
-              Button(action: {
-                  newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-                  guard !newMessage.isEmpty else { return }
-                  sendMessage(newMessage)
-                  isTextFieldFocused = false
-              }) {
-                  Image(systemName: "paperplane.fill")
-                      .padding(12)
-                      .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
-                      .background(Circle().fill(Color.white))
-                      .shadow(radius: 5)
-              }
-              .disabled(newMessage.isEmpty)
-          }
-          .padding(.trailing, 24) // Adjust to place the button on the right
-          .padding(.bottom, 16)   // Adjust vertical position
       }
+      HStack {
+        Spacer()
+        Button(action: {
+          newMessage = viewModel.trimLeadingSpaces(from: newMessage)
+          guard !newMessage.isEmpty else { return }
+          sendMessage(newMessage)
+          isTextFieldFocused = false
+        }) {
+          Image(systemName: "paperplane.fill")
+            .padding(10)
+            .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
+            .clipShape(Circle())
+        }
+        .disabled(newMessage.isEmpty)
+        
+      }
+      .padding()
     }
     .padding(.horizontal, 16)
     .padding(.bottom, 16)
@@ -219,4 +214,3 @@ struct MessageBubble: View {
     .padding(.top, 4)
   }
 }
-

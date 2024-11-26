@@ -40,9 +40,11 @@ public struct MainView: View {
         }
         VStack {
           headerView
-          mainContentView
-          Spacer()
-          editButtonView
+          ZStack {
+            mainContentView
+            editButtonView
+          }
+          
         }
         .navigationBarHidden(true)
       }
@@ -59,30 +61,35 @@ public struct MainView: View {
   }
   
   // MARK: - Header View
-   private var headerView: some View {
-     VStack(alignment: .leading) {
-       HStack {
-         Button(action: {
-           dismiss()
-         }) {
-           HStack {
-             Image(systemName: "chevron.left")
-               .font(.title3)
-               .foregroundColor(Color.blue)
-             Text("Back")
-               .foregroundStyle(Color.blue)
-           }
-           .padding(.leading, 5)
-         }
-       }
-       Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-         .foregroundColor(Color.black)
-         .font(.title)
-         .padding(.leading, 5)
-       Spacer()
-     }
-     .frame(maxWidth: .infinity, alignment: .leading)
+  
+  private var headerView: some View {
+    VStack {
+      HStack {
+        Button(action: {
+          dismiss()
+        }) {
+          HStack {
+            Image(systemName: "chevron.left")
+              .font(.title3)
+              .foregroundColor(Color.blue)
+            Text("Back")
+              .foregroundStyle(Color.blue)
+          }
+          .padding(.leading, 5)
+        }
+        Spacer()
+      }
+      HStack {
+        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
+          .foregroundColor(Color.black)
+          .font(.largeTitle)
+          .fontWeight(.medium)
+          .padding(.leading, 10)
+        Spacer()
+      }
+    }
   }
+ 
 
   private var mainContentView: some View {
     Group {
@@ -96,22 +103,27 @@ public struct MainView: View {
       } else {
         List {
           ForEach(thread) { thread in
-            NavigationLink {
-              NewSessionView(session: thread.sessionId, viewModel: viewModel, backgroundImage: backgroundImage)
-                .modelContext(modelContext)
-            } label: {
-              MessageSubView(thread.title)
-            }
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-              Button(role: .destructive) {
-                QueueConfigRepo1.shared.deleteSession(sessionId: thread.sessionId)
-              } label: {
-                Label("Delete", systemImage: "trash")
+            MessageSubView(thread.title)
+              .background(
+                NavigationLink(
+                  destination: NewSessionView(session: thread.sessionId, viewModel: viewModel, backgroundImage: backgroundImage)
+                    .modelContext(modelContext),
+                  label: {
+                    EmptyView()
+                  }
+                )
+                .opacity(0)
+              )
+              .listRowSeparator(.hidden)
+              .listRowBackground(Color.clear)
+              .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+              .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                Button(role: .destructive) {
+                  QueueConfigRepo1.shared.deleteSession(sessionId: thread.sessionId)
+                } label: {
+                  Label("Delete", systemImage: "trash")
+                }
               }
-            }
           }
         }
       }
@@ -120,42 +132,42 @@ public struct MainView: View {
 
   // MARK: - Floating Edit Button
   private var editButtonView: some View {
-    HStack {
+    VStack {
       Spacer()
-      
-      Button(action: {
-        viewModel.createSession()
-        newSessionId = viewModel.vmssid
-        isNavigatingToNewSession = true
-      }) {
-        if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
-          Image(uiImage: newChatButtonImage)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 24, height: 24)
-        } else {
-          Image(systemName: "square.and.pencil")
-            .font(.title2)
-            .foregroundColor(.white)
-            .padding()
-            .background(editButtonColor)
-            .clipShape(Circle())
-            .shadow(radius: 10)
+      HStack {
+        Spacer()
+        Button(action: {
+          viewModel.createSession()
+          newSessionId = viewModel.vmssid
+          isNavigatingToNewSession = true
+        }) {
+          if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
+            Image(uiImage: newChatButtonImage)
+              .resizable()
+              .frame(width: 35, height: 35)
+          } else {
+            Image(systemName: "square.and.pencil")
+              .font(.title2)
+              .foregroundColor(.white)
+              .padding()
+              .background(editButtonColor)
+              .clipShape(Circle())
+              .shadow(radius: 10)
+          }
+          
+          if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
+            Text(newChatButtonText)
+              .foregroundColor(.black)
+              .padding(.trailing, 5)
+          }
         }
-        
-        if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
-          Text(newChatButtonText)
-            .foregroundColor(.black)
-            .padding(.leading, 8)
-        }
+        .frame(width: 200, height: 60)
+        .background(Color.white)
+        .cornerRadius(25)
+        .shadow(radius: 10)
       }
-      .padding(.bottom, 20)
-      .padding(.trailing, 16)
-      .frame(width: 150, height: 60)
-      .background(Color.white)
-      .cornerRadius(30)
-      .shadow(radius: 10)
     }
+    .padding(.trailing, 10)
   }
 
   // MARK: - Message SubView
@@ -203,4 +215,3 @@ public struct SomeMainView: View {
       .navigationBarHidden(true)
   }
 }
-

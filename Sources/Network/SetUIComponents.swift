@@ -22,6 +22,8 @@ public class SetUIComponents {
   public var chatTitle: String?
   public var newChatButtonText: String?
   public var newChatButtonImage: UIImage?
+  public var emptyChatImage: UIImage?
+  public var emptyChatTitle: String?
   public static let shared = SetUIComponents()
 
   private init() {}
