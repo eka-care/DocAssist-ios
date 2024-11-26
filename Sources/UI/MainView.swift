@@ -78,8 +78,10 @@ public struct MainView: View {
        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
          .foregroundColor(Color.black)
          .font(.title)
+         .padding(.leading, 5)
        Spacer()
      }
+     .frame(maxWidth: .infinity, alignment: .leading)
   }
 
   private var mainContentView: some View {

@@ -99,7 +99,7 @@ struct NewSessionView: View {
   
   var textfieldView : some View {
     ZStack {
-      HStack {
+    //  HStack {
         TextField("Start typing here...", text: $newMessage)
           .padding(12)
           .background(Color.white)
@@ -111,23 +111,44 @@ struct NewSessionView: View {
           .onTapGesture {
             isTextFieldFocused = true
           }
-      }
-      HStack {
-        Spacer()
-        Button(action: {
-          newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-          guard !newMessage.isEmpty else { return }
-          sendMessage(newMessage)
-          isTextFieldFocused = false
-        }) {
-          Image(systemName: "paperplane.fill")
-            .padding(10)
-            .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
-            .clipShape(Circle())
-            .shadow(radius: 5)
-        }
-        .disabled(newMessage.isEmpty)
-        
+  //    }
+//      HStack {
+//        Spacer()
+//        Button(action: {
+//          newMessage = viewModel.trimLeadingSpaces(from: newMessage)
+//          guard !newMessage.isEmpty else { return }
+//          sendMessage(newMessage)
+//          isTextFieldFocused = false
+//        }) {
+//          Image(systemName: "paperplane.fill")
+//            .padding(10)
+//            .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
+//            .clipShape(Circle())
+//            .shadow(radius: 5)
+//        }
+//        .disabled(newMessage.isEmpty)
+//        
+//      }
+      VStack {
+          Spacer()
+          HStack {
+              Spacer()
+              Button(action: {
+                  newMessage = viewModel.trimLeadingSpaces(from: newMessage)
+                  guard !newMessage.isEmpty else { return }
+                  sendMessage(newMessage)
+                  isTextFieldFocused = false
+              }) {
+                  Image(systemName: "paperplane.fill")
+                      .padding(12)
+                      .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
+                      .background(Circle().fill(Color.white))
+                      .shadow(radius: 5)
+              }
+              .disabled(newMessage.isEmpty)
+          }
+          .padding(.trailing, 24) // Adjust to place the button on the right
+          .padding(.bottom, 16)   // Adjust vertical position
       }
     }
     .padding(.horizontal, 16)
