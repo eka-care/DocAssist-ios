@@ -44,9 +44,7 @@ public struct MainView: View {
           Spacer()
           editButtonView
         }
-   //.padding(.top, 25)
         .navigationBarHidden(true)
-        .navigationTitle("Hello world")
       }
       .background(
         NavigationLink(
@@ -62,7 +60,7 @@ public struct MainView: View {
   
   // MARK: - Header View
    private var headerView: some View {
-     VStack {
+     VStack(alignment: .leading) {
        HStack {
          Button(action: {
            dismiss()
