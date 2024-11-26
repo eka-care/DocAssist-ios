@@ -17,114 +17,15 @@ public class SetUIComponents {
   public var botTextColor: Color?
   public var chatIcon: UIImage?
   public var userIcon: String?
+  public var chatHistoryTitle: String?
+  public var chatTitle: String?
+  public var newChatButtonText: String?
+  public var newChatButtonImage: UIImage?
   public static let shared = SetUIComponents()
-  
+
   private init() {}
   
 }
-
-//struct NewSessionView: View {
-//  @State var session: String
-//  @State var newMessage: String = ""
-//  @Query private var messages: [ChatMessageModel]
-//  @ObservedObject private var viewModel: ChatViewModel
-//  var backgroundImage: UIImage?
-//  @FocusState private var isTextFieldFocused: Bool
-//  
-//  init(session: String, viewModel: ChatViewModel, backgroundImage: UIImage?) {
-//    self.session = session
-//    _messages = Query(
-//      filter: #Predicate<ChatMessageModel> { message in
-//        message.sessionData?.sessionId == session
-//      },
-//      sort: \.msgId,
-//      order: .forward
-//    )
-//    self.viewModel = viewModel
-//    self.backgroundImage = backgroundImage
-//  }
-//  
-//  var body: some View {
-//    VStack(alignment: .leading, spacing: 0) {
-//      newView
-//    }
-//  }
-//  
-//  var newView: some View {
-//    ZStack {
-//      if let backgroundImage = backgroundImage {
-//        Image(uiImage: backgroundImage)
-//          .resizable()
-//          .scaledToFit()
-//          .frame(maxWidth: .infinity, maxHeight: .infinity)
-//          .clipped()
-//          .ignoresSafeArea()
-//      }
-//      
-//      VStack {
-//        ScrollViewReader { proxy in
-//          ScrollView {
-//            LazyVStack {
-//              ForEach(messages) { message in
-//                MessageBubble(message: message, m: message.messageText ?? "")
-//                  .padding(.horizontal)
-//                  .padding(.top, message == messages.first ? 20 : 0)
-//              }
-//            }
-//            .padding(.top, 10)
-//          }
-//        }
-//        
-//        textfieldView
-//          .padding(.bottom, 5)
-//      }
-//      .navigationTitle("Chat")
-//      .navigationBarTitleDisplayMode(.inline)
-//    }
-//  }
-//  
-//  var textfieldView : some View {
-//    HStack {
-//      Image(systemName: "magnifyingglass")
-//        .foregroundColor(.gray)
-//        .padding(.leading, 10)
-//      
-//      TextField("Start typing here...", text: $newMessage)
-//        .padding(12)
-//        .background(Color.white)
-//        .cornerRadius(30)
-//        .font(.body)
-//        .frame(height: 48)
-//        .padding(.horizontal, 8)
-//        .focused($isTextFieldFocused)
-//        .onTapGesture {
-//          isTextFieldFocused = true
-//        }
-//      
-//      Button(action: {
-//        guard !newMessage.isEmpty else { return }
-//        sendMessage(newMessage)
-//        isTextFieldFocused = false
-//      }) {
-//        Image(systemName: "paperplane.fill")
-//          .foregroundColor(.white)
-//          .padding(12)
-//          .background(newMessage.isEmpty ? Color.gray : Color.blue)
-//          .clipShape(Circle())
-//          .shadow(radius: 5)
-//      }
-//      .disabled(newMessage.isEmpty)
-//    }
-//    .padding(.horizontal, 16)
-//    .padding(.bottom, 16)
-//  }
-//  
-//  private func sendMessage(_ message: String) {
-//    viewModel.vmssid = session
-//    viewModel.sendMessage(newMessage: message)
-//    newMessage = ""
-//  }
-//}
 
 struct NewSessionView: View {
   @State var session: String
@@ -159,9 +60,8 @@ struct NewSessionView: View {
       if let backgroundImage = backgroundImage {
         Image(uiImage: backgroundImage)
           .resizable()
-          .scaledToFit()
+          .scaledToFill()
           .frame(maxWidth: .infinity, maxHeight: .infinity)
-          .clipped()
           .ignoresSafeArea()
       }
       
@@ -203,7 +103,6 @@ struct NewSessionView: View {
               }
             }
           )
-          // Initial scroll to bottom when view appears
           .onAppear {
             proxy.scrollTo("bottomID", anchor: .bottom)
           }
@@ -212,7 +111,7 @@ struct NewSessionView: View {
         textfieldView
           .padding(.bottom, 5)
       }
-      .navigationTitle("Chat")
+      .navigationTitle(SetUIComponents.shared.chatTitle ?? "Chats")
       .navigationBarTitleDisplayMode(.inline)
     }
   }
@@ -236,6 +135,7 @@ struct NewSessionView: View {
         }
       
       Button(action: {
+        newMessage = viewModel.trimLeadingSpaces(from: newMessage)
         guard !newMessage.isEmpty else { return }
         sendMessage(newMessage)
         isTextFieldFocused = false
@@ -257,6 +157,7 @@ struct NewSessionView: View {
     viewModel.sendMessage(newMessage: message)
     newMessage = ""
   }
+  
 }
 
 struct MessageBubble: View {

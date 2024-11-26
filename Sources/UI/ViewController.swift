@@ -5,45 +5,6 @@
 //  Created by Brunda B on 21/11/24.
 //
 
-
-//public class ViewController: UIViewController {
-//  
-//  var chatBotView: SomeMainView!
-//  
-//  public init(backgroundImage: UIImage? = nil) {
-//    super.init(nibName: nil, bundle: nil)
-//    
-//    if let image = backgroundImage {
-//      chatBotView = SomeMainView(backgroundImage: image)
-//    } else {
-//      
-//      chatBotView = SomeMainView()
-//    }
-//  }
-//  
-//  required init?(coder: NSCoder) {
-//         super.init(coder: coder)
-//     }
-//  
-//  public override func viewDidLoad() {
-//    super.viewDidLoad()
-//    
-//    self.navigationController?.setNavigationBarHidden(true, animated: false)
-//    
-//    
-//    let uiHostingViewController = UIHostingController(rootView: chatBotView)
-//    addChild(uiHostingViewController)
-//    view.addSubview(uiHostingViewController.view)
-//    
-//    uiHostingViewController.view.translatesAutoresizingMaskIntoConstraints = false
-//    NSLayoutConstraint.activate([
-//      uiHostingViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-//      uiHostingViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-//      uiHostingViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-//      uiHostingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-//    ])
-//  }
-//}
 import UIKit
 import SwiftUI
 import SwiftData
@@ -57,17 +18,15 @@ public class ViewController: UIViewController {
     backgroundImage: UIImage? = nil,
     emptyMessageColor: Color? = nil,
     editButtonColor: Color? = nil,
-    backButtonColor: Color? = nil,
     ctx: ModelContext
   ) {
     super.init(nibName: nil, bundle: nil)
     
     // Pass the background image to SomeMainView
-    chatBotView = SomeMainView(
+      chatBotView = SomeMainView(
       backgroundImage: backgroundImage,
       emptyMessageColor: emptyMessageColor,
       editButtonColor: editButtonColor,
-      backButtonColor: backButtonColor,
       ctx: ctx
     )
   }

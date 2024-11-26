@@ -20,13 +20,11 @@ public struct MainView: View {
   var backgroundImage: UIImage?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
-  var backButtonColor: Color?
   
-  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, backButtonColor: Color?, ctx: ModelContext) {
+  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, ctx: ModelContext) {
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
-    self.backButtonColor = backButtonColor
     
     self.viewModel = ChatViewModel(context: ctx)
   }
@@ -51,7 +49,7 @@ public struct MainView: View {
           editButtonView
         }
         .padding(.top, 45)
-        .navigationBarHidden(true) // Hide default navigation bar
+        .navigationBarHidden(true)
       }
       .background(
         NavigationLink(
@@ -75,12 +73,14 @@ public struct MainView: View {
          HStack {
            Image(systemName: "chevron.left")
              .font(.title3)
-             .foregroundColor(backButtonColor ?? .black)
+             .foregroundColor(Color.blue)
+           Text("Back")
+             .foregroundStyle(Color.blue)
          }
          .padding(.leading, 5)
        }
-       Text("Chat History")
-         .foregroundColor(backButtonColor ?? .black)
+       Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
+         .foregroundColor(Color.black)
        Spacer()
      }
   }
@@ -131,13 +131,25 @@ public struct MainView: View {
         newSessionId = viewModel.vmssid
         isNavigatingToNewSession = true
       }) {
-        Image(systemName: "square.and.pencil")
-          .font(.title2)
-          .foregroundColor(.white)
-          .padding()
-          .background(editButtonColor)
-          .clipShape(Circle())
-          .shadow(radius: 10)
+        
+        //MARK: - Todo Support image
+//        if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
+//          Image(newChatButtonImage)
+//        } else {
+          Image(systemName: "square.and.pencil")
+            .font(.title2)
+            .foregroundColor(.white)
+            .padding()
+            .background(editButtonColor)
+            .clipShape(Circle())
+            .shadow(radius: 10)
+//        }
+        
+        if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
+          Text(newChatButtonText)
+            .foregroundStyle(Color.black)
+            .font(.title2)
+        }
       }
       .padding(.bottom, 40)
       .padding(.trailing, 16)
@@ -167,28 +179,24 @@ public struct SomeMainView: View {
   var backgroundImage: UIImage?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
-  var backButtonColor: Color?
   var ctx: ModelContext
   
   public init(
     backgroundImage: UIImage? = nil,
     emptyMessageColor: Color? = .white,
     editButtonColor: Color? = .blue,
-    backButtonColor: Color?,
     ctx: ModelContext
   ) {
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
-    self.backButtonColor = backButtonColor
     self.ctx = ctx
     
     QueueConfigRepo1.shared.modelContext = ctx
   }
   
   public var body: some View {
-    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, backButtonColor: backButtonColor, ctx: ctx)
-  //    .modelContext(QueueConfigRepo.shared.modelContext)
+    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, ctx: ctx)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

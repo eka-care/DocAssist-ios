@@ -158,4 +158,11 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   func setThreadTitle(with query: String) {
     QueueConfigRepo1.shared.SaveTitle(sessionId: self.vmssid, title: query)
   }
+  
+  func trimLeadingSpaces(from input: String) -> String {
+    if input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+      return ""
+    }
+    return input.trimmingCharacters(in: .whitespacesAndNewlines)
+  }
 }
