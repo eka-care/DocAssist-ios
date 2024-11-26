@@ -37,10 +37,11 @@ public struct MainView: View {
             .resizable()
             .scaledToFill()
             .edgesIgnoringSafeArea(.all)
-        } else {
-          Color.white
-            .edgesIgnoringSafeArea(.all)
         }
+//        } else {
+//          Color.white
+//            .edgesIgnoringSafeArea(.all)
+//        }
 
         VStack {
           headerView
