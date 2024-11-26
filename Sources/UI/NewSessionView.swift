@@ -114,7 +114,6 @@ struct NewSessionView: View {
       }
       HStack {
         Spacer()
-        
         Button(action: {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
           guard !newMessage.isEmpty else { return }
@@ -122,9 +121,8 @@ struct NewSessionView: View {
           isTextFieldFocused = false
         }) {
           Image(systemName: "paperplane.fill")
-            .foregroundColor(Color.gray)
-            .padding(12)
-            .background(newMessage.isEmpty ? Color.gray : Color.blue)
+            .padding(10)
+            .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
             .clipShape(Circle())
             .shadow(radius: 5)
         }
