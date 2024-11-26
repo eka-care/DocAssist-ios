@@ -32,7 +32,7 @@ public struct MainView: View {
   public var body: some View {
     NavigationView {
       ZStack {
-        if let backgroundImage = backgroundImage {
+        if let backgroundImage = SetUIComponents.shared.userAllChatBackgroundColor {
           Image(uiImage: backgroundImage)
             .resizable()
             .scaledToFill()

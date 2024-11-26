@@ -8,25 +8,6 @@
 import SwiftUI
 import SwiftData
 
-@MainActor
-public class SetUIComponents {
-  
-  public var userBackGroundColor: Color?
-  public var usertextColor: Color?
-  public var botBackGroundColor: Color?
-  public var botTextColor: Color?
-  public var chatIcon: UIImage?
-  public var userIcon: String?
-  public var chatHistoryTitle: String?
-  public var chatTitle: String?
-  public var newChatButtonText: String?
-  public var newChatButtonImage: UIImage?
-  public static let shared = SetUIComponents()
-
-  private init() {}
-  
-}
-
 struct NewSessionView: View {
   @State var session: String
   @State var newMessage: String = ""

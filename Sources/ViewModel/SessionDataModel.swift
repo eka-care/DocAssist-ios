@@ -6,11 +6,8 @@
 //
 
 import Foundation
-#if canImport(SwiftData)
 import SwiftData
-#endif
 
-@available(iOS 17, *)
 @Model
 public class SessionDataModel {
   public var userId = UUID()

@@ -70,7 +70,6 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
   
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     let receivedString = String(data: data, encoding: .utf8) ?? ""
-    print("#BB \(receivedString)")
     completion(.success(receivedString))
     
   }
