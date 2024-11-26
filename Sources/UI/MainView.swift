@@ -127,7 +127,6 @@ public struct MainView: View {
         newSessionId = viewModel.vmssid
         isNavigatingToNewSession = true
       }) {
-        // Check if a custom image is provided
         if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
           Image(uiImage: newChatButtonImage)
             .resizable()
@@ -146,13 +145,12 @@ public struct MainView: View {
         if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
           Text(newChatButtonText)
             .foregroundColor(.black)
-            .font(.title2)
             .padding(.leading, 8)
         }
       }
-      .padding(.bottom, 30)
+      .padding(.bottom, 20)
       .padding(.trailing, 16)
-      .frame(width: 200, height: 60)
+      .frame(width: 150, height: 60)
       .background(Color.white)
       .cornerRadius(30)
       .shadow(radius: 10)
