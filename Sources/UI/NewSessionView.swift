@@ -98,37 +98,39 @@ struct NewSessionView: View {
   }
   
   var textfieldView : some View {
-    HStack {
-      Image(systemName: "magnifyingglass")
-        .foregroundColor(.gray)
-        .padding(.leading, 10)
-      
-      TextField("Start typing here...", text: $newMessage)
-        .padding(12)
-        .background(Color.white)
-        .cornerRadius(30)
-        .font(.body)
-        .frame(height: 48)
-        .padding(.horizontal, 8)
-        .focused($isTextFieldFocused)
-        .onTapGesture {
-          isTextFieldFocused = true
-        }
-      
-      Button(action: {
-        newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-        guard !newMessage.isEmpty else { return }
-        sendMessage(newMessage)
-        isTextFieldFocused = false
-      }) {
-        Image(systemName: "paperplane.fill")
-          .foregroundColor(.white)
+    ZStack {
+      HStack {
+        TextField("Start typing here...", text: $newMessage)
           .padding(12)
-          .background(newMessage.isEmpty ? Color.gray : Color.blue)
-          .clipShape(Circle())
-          .shadow(radius: 5)
+          .background(Color.white)
+          .cornerRadius(30)
+          .font(.body)
+          .frame(height: 48)
+          .padding(.horizontal, 8)
+          .focused($isTextFieldFocused)
+          .onTapGesture {
+            isTextFieldFocused = true
+          }
       }
-      .disabled(newMessage.isEmpty)
+      HStack {
+        Spacer()
+        
+        Button(action: {
+          newMessage = viewModel.trimLeadingSpaces(from: newMessage)
+          guard !newMessage.isEmpty else { return }
+          sendMessage(newMessage)
+          isTextFieldFocused = false
+        }) {
+          Image(systemName: "paperplane.fill")
+            .foregroundColor(Color.gray)
+            .padding(12)
+            .background(newMessage.isEmpty ? Color.gray : Color.blue)
+            .clipShape(Circle())
+            .shadow(radius: 5)
+        }
+        .disabled(newMessage.isEmpty)
+        
+      }
     }
     .padding(.horizontal, 16)
     .padding(.bottom, 16)
