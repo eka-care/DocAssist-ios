@@ -17,7 +17,7 @@ public class SetUIComponents {
   public var botBackGroundColor: Color?
   public var botTextColor: Color?
   public var chatIcon: UIImage?
-  public var userIcon: String?
+  public var userIcon: UIImage?
   public var chatHistoryTitle: String?
   public var chatTitle: String?
   public var newChatButtonText: String?

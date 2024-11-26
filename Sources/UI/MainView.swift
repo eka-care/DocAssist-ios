@@ -46,6 +46,7 @@ public struct MainView: View {
         }
    //.padding(.top, 25)
         .navigationBarHidden(true)
+        .navigationTitle("Hello world")
       }
       .background(
         NavigationLink(
@@ -61,22 +62,24 @@ public struct MainView: View {
   
   // MARK: - Header View
    private var headerView: some View {
-    
-     HStack {
-       Button(action: {
-         dismiss()
-       }) {
-         HStack {
-           Image(systemName: "chevron.left")
-             .font(.title3)
-             .foregroundColor(Color.blue)
-           Text("Back")
-             .foregroundStyle(Color.blue)
+     VStack {
+       HStack {
+         Button(action: {
+           dismiss()
+         }) {
+           HStack {
+             Image(systemName: "chevron.left")
+               .font(.title3)
+               .foregroundColor(Color.blue)
+             Text("Back")
+               .foregroundStyle(Color.blue)
+           }
+           .padding(.leading, 5)
          }
-         .padding(.leading, 5)
        }
        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
          .foregroundColor(Color.black)
+         .font(.title)
        Spacer()
      }
   }

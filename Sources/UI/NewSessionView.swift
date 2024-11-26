@@ -160,7 +160,7 @@ struct MessageBubble: View {
               Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 30)
+                .frame(width: 35)
                 .cornerRadius(15)
             }
           }
@@ -180,10 +180,10 @@ struct MessageBubble: View {
           
           if message.role == .user {
             if let image = SetUIComponents.shared.userIcon {
-              Image(systemName: image)
+              Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 30)
+                .frame(width: 35)
                 .cornerRadius(15)
                 .foregroundStyle(Color.gray)
             }
