@@ -47,24 +47,24 @@ struct NewSessionView: View {
           }
 
           VStack {
-              if messages.isEmpty {
-                VStack {
-                  Spacer()
-                  if let image = SetUIComponents.shared.emptyChatImage {
-                    Image(uiImage: image)
-                      .resizable()
-                      .scaledToFit()
-                      .frame(width: 100)
-                  }
-                  Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
-                    .foregroundColor(.black)
-                    .font(.title3)
-                    .padding()
-                  Spacer()
-                  textfieldView
-                      .padding(.bottom, 5)
-                }
-              } else {
+//              if messages.isEmpty {
+//                VStack {
+//                  Spacer()
+//                  if let image = SetUIComponents.shared.emptyChatImage {
+//                    Image(uiImage: image)
+//                      .resizable()
+//                      .scaledToFit()
+//                      .frame(width: 100)
+//                  }
+//                  Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
+//                    .foregroundColor(.black)
+//                    .font(.title3)
+//                    .padding()
+//                  Spacer()
+//                  textfieldView
+//                      .padding(.bottom, 5)
+//                }
+//              } else {
                   ScrollViewReader { proxy in
                       ScrollView {
                           LazyVStack {
@@ -105,7 +105,7 @@ struct NewSessionView: View {
                   }
                 textfieldView
                     .padding(.bottom, 5)
-              }
+//              }
           }
           .navigationTitle(SetUIComponents.shared.chatTitle ?? "Chats")
           .navigationBarTitleDisplayMode(.inline)
