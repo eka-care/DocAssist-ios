@@ -75,7 +75,8 @@ public struct MainView: View {
             Text("Back")
               .foregroundStyle(Color.blue)
           }
-          .padding(.leading, 5)
+          .padding(.top, 7)
+          .padding(.bottom, 2)
         }
         Spacer()
       }
@@ -94,10 +95,10 @@ public struct MainView: View {
   private var mainContentView: some View {
     Group {
       if thread.isEmpty {
-        Text("No messages yet")
+        Text("No chats yet")
           .font(.title2)
           .fontWeight(.medium)
-          .foregroundColor(emptyMessageColor)
+          .foregroundColor(Color.blue)
           .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
           .padding()
       } else {
@@ -215,3 +216,4 @@ public struct SomeMainView: View {
       .navigationBarHidden(true)
   }
 }
+
