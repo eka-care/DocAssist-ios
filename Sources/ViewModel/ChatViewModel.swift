@@ -165,4 +165,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
     return input.trimmingCharacters(in: .whitespacesAndNewlines)
   }
+  
+  func getFormatedDateToDDMMYYYY(date: Date) -> String {
+      let dateFormatter = DateFormatter()
+      dateFormatter.dateFormat = "dd/MM/yyyy"
+      return dateFormatter.string(from: date)
+  }
 }

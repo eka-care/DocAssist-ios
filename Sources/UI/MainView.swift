@@ -135,7 +135,8 @@ public struct MainView: View {
       } else {
         List {
           ForEach(thread) { thread in
-            MessageSubView(thread.title)
+            let dateString = viewModel.getFormatedDateToDDMMYYYY(date: thread.createdAt)
+            MessageSubView(thread.title,dateString)
               .background(
                 NavigationLink(
                   destination: NewSessionView(session: thread.sessionId, viewModel: viewModel, backgroundImage: backgroundImage)
@@ -209,7 +210,7 @@ public struct MainView: View {
   }
   
   // MARK: - Message SubView
-  func MessageSubView(_ title: String) -> some View {
+  func MessageSubView(_ title: String, _ date: String) -> some View {
     VStack {
       HStack {
         Text(title)
@@ -217,6 +218,9 @@ public struct MainView: View {
           .foregroundColor(.primary)
           .lineLimit(1)
         Spacer()
+        Text(date)
+          .font(.caption)
+          .foregroundStyle(Color.gray)
       }
       HStack {
         Text(SetUIComponents.shared.subTitleForHistory ?? "")
@@ -260,4 +264,3 @@ public struct SomeMainView: View {
       .navigationBarHidden(true)
   }
 }
-
