@@ -25,6 +25,9 @@ public class SetUIComponents {
   public var emptyChatImage: UIImage?
   public var emptyChatTitle: String?
   public var ipadBgColor: UIImage?
+  public var chatBorder: Color?
+  public var subTitleForHistory: String?
+  
   public static let shared = SetUIComponents()
 
   private init() {}

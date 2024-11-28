@@ -144,7 +144,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   func createSession() {
     let currentDate = Date()
     let ssid = UUID().uuidString
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "new Session")
+    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session")
     context.insert(createSessionModel)
     
     saveData()

@@ -51,7 +51,7 @@ struct NewSessionView: View {
               Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 100)
+                .frame(width: 60)
             }
             Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
               .foregroundColor(.black)
@@ -112,7 +112,7 @@ struct NewSessionView: View {
   var textfieldView : some View {
     ZStack {
       HStack {
-        TextField("Start typing here...", text: $newMessage)
+        TextField("  Start typing...", text: $newMessage)
           .padding(12)
           .background(Color.white)
           .cornerRadius(30)
@@ -154,59 +154,82 @@ struct NewSessionView: View {
 }
 
 struct MessageBubble: View {
-  let message: ChatMessageModel
-  let m: String
-  
-  var body: some View {
-    HStack {
-      if message.role == .user {
-        Spacer()
-      }
-      
-      VStack(
-        alignment: message.role == .user ? .trailing : .leading
-      ) {
-        HStack {
-          if message.role == .Bot {
-            if let image = SetUIComponents.shared.chatIcon {
-              Image(uiImage: image)
+    let message: ChatMessageModel
+    let m: String
+
+    var body: some View {
+        HStack(alignment: .top) {
+            if message.role == .user {
+                Spacer()
+            }
+
+            if message.role == .Bot {
+                BotAvatarImage()
+                    .alignmentGuide(.top) { d in d[.top] }
+            }
+
+            MessageTextView(text: m, role: message.role)
+                .alignmentGuide(.top) { d in d[.top] }
+          
+            if message.role == .user {
+                UserAvatarImage()
+                    .alignmentGuide(.top) { d in d[.top] }
+            }
+
+            if message.role == .Bot {
+                Spacer()
+            }
+        }
+        .padding(.top, 4)
+    }
+}
+
+struct MessageTextView: View {
+    let text: String
+    let role: MessageRole
+    
+    var body: some View {
+        Text(text)
+            .padding(8)
+            .background(backgroundColor)
+            .foregroundColor(foregroundColor)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                  .stroke(SetUIComponents.shared.chatBorder ?? Color.gray, lineWidth: 0.3)
+            )
+            .contentTransition(.numericText())
+    }
+    
+    private var backgroundColor: Color {
+        role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .blue) : (SetUIComponents.shared.botBackGroundColor ?? .gray)
+    }
+    
+    private var foregroundColor: Color {
+        role == .user ? (SetUIComponents.shared.usertextColor ?? .black) : (SetUIComponents.shared.botTextColor ?? .white)
+    }
+}
+
+struct BotAvatarImage: View {
+    var body: some View {
+        if let image = SetUIComponents.shared.chatIcon {
+            Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 35)
-                .cornerRadius(15)
-            }
-          }
-          Text(.init(m))
-            .padding(8)
-            .background(
-              message.role == .user ? SetUIComponents.shared.userBackGroundColor ?? .blue : SetUIComponents.shared.botBackGroundColor ?? .gray
-            )
-            .foregroundColor(
-              message.role == .user ? SetUIComponents.shared.usertextColor ?? .black : SetUIComponents.shared.botTextColor ?? .white
-            )
-            .cornerRadius(16)
-            .animation(
-              .easeInOut,
-              value: message.messageText
-            )
-          
-          if message.role == .user {
-            if let image = SetUIComponents.shared.userIcon {
-              Image(uiImage: image)
+                .frame(width: 20)                
+        }
+    }
+}
+
+struct UserAvatarImage: View {
+    var body: some View {
+        if let image = SetUIComponents.shared.userIcon {
+            Image(uiImage: image)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 35)
                 .cornerRadius(15)
                 .foregroundStyle(Color.gray)
-            }
-          }
         }
-      }
-      
-      if message.role == .Bot {
-        Spacer()
-      }
     }
-    .padding(.top, 4)
-  }
 }

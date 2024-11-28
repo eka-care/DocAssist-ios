@@ -43,6 +43,7 @@ public struct MainView: View {
           ZStack {
             mainContentView
             editButtonView
+              .padding(.trailing, 10)
           }
           
         }
@@ -70,10 +71,10 @@ public struct MainView: View {
               }) {
                   HStack(spacing: 6) {
                       Image(systemName: "chevron.left")
-                      .font(.system(size: 19, weight: .medium))
+                      .font(.system(size: 21, weight: .medium))
                           .foregroundColor(.blue)
                       Text("Back")
-                          .font(.system(size: 16))
+                          .font(.system(size: 18))
                           .foregroundColor(.blue)
                   }
               }
@@ -86,8 +87,9 @@ public struct MainView: View {
           HStack {
               Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
                   .foregroundColor(.black)
-                  .font(.system(size: 28, weight: .medium))
+                  .font(.custom("Lato-Bold", size: 34))
                   .padding(.leading, 16)
+                  .padding(.top, 16)
               Spacer()
           }
       }
@@ -138,7 +140,7 @@ public struct MainView: View {
   private var editButtonView: some View {
     VStack {
       Spacer()
-      HStack {
+      HStack(spacing: 6) {
         Spacer()
         Button(action: {
           viewModel.createSession()
@@ -148,27 +150,34 @@ public struct MainView: View {
           if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
             Image(uiImage: newChatButtonImage)
               .resizable()
-              .frame(width: 35, height: 35)
+              .scaledToFit()
+              .frame(width: 18)
           } else {
             Image(systemName: "square.and.pencil")
+              .resizable()
               .font(.title2)
               .foregroundColor(.white)
-              .padding()
               .background(editButtonColor)
               .clipShape(Circle())
               .shadow(radius: 10)
+              .scaledToFit()
+              .frame(width: 18)
           }
           
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
             Text(newChatButtonText)
-              .foregroundColor(.black)
-              .padding(.trailing, 5)
+              .foregroundColor(Color.blue)
+              .font(.custom("Lato-Bold", size: 18))
           }
         }
-        .frame(width: 200, height: 60)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 14)
         .background(Color.white)
-        .cornerRadius(25)
-        .shadow(radius: 10)
+        .cornerRadius(16)
+        .overlay {
+          RoundedRectangle(cornerRadius: 16)
+            .stroke(Color.blue, lineWidth: 0.5)
+        }
       }
     }
     .padding(.trailing, 10)
@@ -176,18 +185,25 @@ public struct MainView: View {
 
   // MARK: - Message SubView
   func MessageSubView(_ title: String) -> some View {
-    HStack {
-      Text(title)
-        .font(.headline)
-        .foregroundColor(.primary)
-        .lineLimit(1)
-      Spacer()
+    VStack {
+      HStack {
+        Text(title)
+          .font(.custom("Lato-Regular", size: 16))
+          .foregroundColor(.primary)
+          .lineLimit(1)
+        Spacer()
+      }
+      HStack {
+        Text(SetUIComponents.shared.subTitleForHistory ?? "")
+          .font(.caption)
+          .foregroundStyle(Color.gray)
+        Spacer()
+      }
     }
-    .padding()
+    .padding(.all, 10)
     .background(
       RoundedRectangle(cornerRadius: 10)
         .fill(Color.white)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
     )
   }
 }
