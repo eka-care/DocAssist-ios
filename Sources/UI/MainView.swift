@@ -196,9 +196,8 @@ public struct MainView: View {
               .font(.custom("Lato-Bold", size: 18))
           }
         }
-        .padding(.horizontal, 10)
+        .frame(maxWidth: thread.isEmpty ? .infinity : 160)
         .padding(.vertical, 14)
-        .frame(maxWidth: thread.isEmpty ? .infinity : 200)
         .background(Color.white)
         .cornerRadius(16)
         .overlay {
@@ -207,7 +206,6 @@ public struct MainView: View {
         }
       }
     }
-    .padding(.trailing, 10)
   }
   
   // MARK: - Message SubView
