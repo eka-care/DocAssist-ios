@@ -61,34 +61,37 @@ public struct MainView: View {
   }
   
   // MARK: - Header View
-  
+
   private var headerView: some View {
-    VStack {
-      HStack {
-        Button(action: {
-          dismiss()
-        }) {
+      VStack(alignment: .leading, spacing: 4) {
           HStack {
-            Image(systemName: "chevron.left")
-              .font(.title3)
-              .foregroundColor(Color.blue)
-            Text("Back")
-              .foregroundStyle(Color.blue)
+              Button(action: {
+                  dismiss()
+              }) {
+                  HStack(spacing: 6) {
+                      Image(systemName: "chevron.left")
+                      .font(.system(size: 19, weight: .medium))
+                          .foregroundColor(.blue)
+                      Text("Back")
+                          .font(.system(size: 16))
+                          .foregroundColor(.blue)
+                  }
+              }
+              .contentShape(Rectangle())
+              Spacer()
           }
-          .padding(.top, 7)
-          .padding(.bottom, 2)
-        }
-        Spacer()
-      }
-      HStack {
-        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-          .foregroundColor(Color.black)
-          .font(.largeTitle)
-          .fontWeight(.medium)
           .padding(.leading, 10)
-        Spacer()
+          .padding(.top, 9)
+        
+          HStack {
+              Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
+                  .foregroundColor(.black)
+                  .font(.system(size: 28, weight: .medium))
+                  .padding(.leading, 16)
+              Spacer()
+          }
       }
-    }
+      .padding(.bottom, 8)
   }
  
 
