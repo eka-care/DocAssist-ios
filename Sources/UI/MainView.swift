@@ -16,7 +16,7 @@ public struct MainView: View {
   @State private var isNavigatingToNewSession: Bool = false
   @Environment(\.modelContext) var modelContext
   @Environment(\.dismiss) var dismiss
-  
+  private var bgcolors: Color
   var backgroundImage: UIImage?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
@@ -27,6 +27,7 @@ public struct MainView: View {
     self.editButtonColor = editButtonColor
     
     self.viewModel = ChatViewModel(context: ctx)
+    self.bgcolors = SetUIComponents.shared.emptyHistoryBgColor ?? Color.gray
   }
 
   public var body: some View {
@@ -99,13 +100,38 @@ public struct MainView: View {
 
   private var mainContentView: some View {
     Group {
+      // MARK: - Make this generic
       if thread.isEmpty {
-        Text("No chats yet")
-          .font(.title2)
-          .fontWeight(.medium)
-          .foregroundColor(Color.blue)
-          .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-          .padding()
+        ZStack {
+          bgcolors
+            .ignoresSafeArea()
+          VStack {
+            HStack {
+              Text("Start a new chat with Doc Assist to-")
+                .fontWeight(.medium)
+                .font(.custom("Lato-Regular", size: 16))
+                .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
+                .padding(.leading , 20)
+                .padding(.top, 25)
+                Spacer()
+            }
+            HStack {
+              Text("""
+      💊 Confirm drug interactions
+      🥬 Generate diet charts
+      🏋️‍♀️ Get lifestyle advice for a patient
+      📃 Generate medical certificate templates
+      and much more..
+      """)
+              .padding(.leading , 20)
+              .padding(.top, 5)
+              .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
+              Spacer()
+            }
+            Spacer()
+          }
+        }
+      
       } else {
         List {
           ForEach(thread) { thread in
@@ -135,7 +161,7 @@ public struct MainView: View {
       }
     }
   }
-
+  
   // MARK: - Floating Edit Button
   private var editButtonView: some View {
     VStack {
@@ -172,6 +198,7 @@ public struct MainView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 14)
+        .frame(maxWidth: thread.isEmpty ? .infinity : 200)
         .background(Color.white)
         .cornerRadius(16)
         .overlay {
@@ -182,7 +209,7 @@ public struct MainView: View {
     }
     .padding(.trailing, 10)
   }
-
+  
   // MARK: - Message SubView
   func MessageSubView(_ title: String) -> some View {
     VStack {

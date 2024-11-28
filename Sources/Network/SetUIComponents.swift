@@ -27,6 +27,8 @@ public class SetUIComponents {
   public var ipadBgColor: UIImage?
   public var chatBorder: Color?
   public var subTitleForHistory: String?
+  public var emptyHistoryBgColor: Color?
+  public var emptyHistoryFgColor: Color?
   
   public static let shared = SetUIComponents()
 
