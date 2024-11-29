@@ -128,6 +128,7 @@ struct NewSessionView: View {
           guard !newMessage.isEmpty else { return }
           sendMessage(newMessage)
           isTextFieldFocused = false
+          viewModel.returnFromNewSessionWithTyping = true
         }) {
           Image(systemName: "paperplane.fill")
             .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)

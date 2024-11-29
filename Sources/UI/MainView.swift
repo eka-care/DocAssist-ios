@@ -173,6 +173,8 @@ public struct MainView: View {
           viewModel.createSession()
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
+          viewModel.firtTime = false
+          viewModel.returnFromNewSessionWithTyping = false
         }) {
           if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
             Image(uiImage: newChatButtonImage)
@@ -205,6 +207,7 @@ public struct MainView: View {
           RoundedRectangle(cornerRadius: 16)
             .stroke(Color.blue, lineWidth: 0.5)
         }
+        .disabled(!(viewModel.firtTime || !viewModel.returnFromNewSessionWithTyping))
       }
     }
   }
