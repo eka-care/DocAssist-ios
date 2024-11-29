@@ -141,10 +141,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try QueueConfigRepo1.shared.modelContext.fetch(descriptor).first
   }
   
-  func createSession() {
+  func createSession(subTitle: String?) {
     let currentDate = Date()
     let ssid = UUID().uuidString
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session")
+    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle)
     context.insert(createSessionModel)
     
     saveData()

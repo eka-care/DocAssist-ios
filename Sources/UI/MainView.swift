@@ -20,12 +20,13 @@ public struct MainView: View {
   var backgroundImage: UIImage?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
+  var subTitle: String?
   
-  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, ctx: ModelContext) {
+  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
-    
+    self.subTitle = subTitle
     self.viewModel = ChatViewModel(context: ctx)
     self.bgcolors = SetUIComponents.shared.emptyHistoryBgColor ?? Color.gray
   }
@@ -170,7 +171,7 @@ public struct MainView: View {
       HStack(spacing: 6) {
         Spacer()
         Button(action: {
-          viewModel.createSession()
+          viewModel.createSession(subTitle: subTitle)
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
         }) {
@@ -213,7 +214,7 @@ public struct MainView: View {
   func MessageSubView(_ title: String, _ date: String) -> some View {
     VStack {
       HStack {
-        Text(title)
+        Text(subTitle ?? "General Chat")
           .font(.custom("Lato-Regular", size: 16))
           .foregroundColor(.primary)
           .lineLimit(1)
@@ -242,24 +243,27 @@ public struct SomeMainView: View {
   var backgroundImage: UIImage?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
+  var subTitle: String?
   var ctx: ModelContext
   
   public init(
     backgroundImage: UIImage? = nil,
     emptyMessageColor: Color? = .white,
     editButtonColor: Color? = .blue,
+    subTitle: String? = "General Chat",
     ctx: ModelContext
   ) {
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
+    self.subTitle = subTitle
     self.ctx = ctx
     
     QueueConfigRepo1.shared.modelContext = ctx
   }
   
   public var body: some View {
-    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, ctx: ctx)
+    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

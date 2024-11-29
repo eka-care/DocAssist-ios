@@ -18,6 +18,7 @@ public class ViewController: UIViewController {
     backgroundImage: UIImage? = nil,
     emptyMessageColor: Color? = nil,
     editButtonColor: Color? = nil,
+    subTitle: String? = nil,
     ctx: ModelContext
   ) {
     super.init(nibName: nil, bundle: nil)
@@ -27,6 +28,7 @@ public class ViewController: UIViewController {
       backgroundImage: backgroundImage,
       emptyMessageColor: emptyMessageColor,
       editButtonColor: editButtonColor,
+      subTitle: subTitle,
       ctx: ctx
     )
   }
