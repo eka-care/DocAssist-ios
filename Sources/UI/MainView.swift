@@ -207,7 +207,7 @@ public struct MainView: View {
           RoundedRectangle(cornerRadius: 16)
             .stroke(Color.blue, lineWidth: 0.5)
         }
-        .disabled(!(viewModel.firtTime || viewModel.returnFromNewSessionWithTyping))
+        .disabled(!(viewModel.firtTime || !viewModel.returnFromNewSessionWithTyping))
       }
     }
   }
