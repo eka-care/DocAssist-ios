@@ -19,8 +19,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   @Published var isLoading: Bool = false
   @Published var vmssid: String = ""
-  @Published var firtTime: Bool = true
-  @Published var returnFromNewSessionWithTyping: Bool = false
   private var dataStorage: String = ""
   private let networkCall = NetworkCall()
   
