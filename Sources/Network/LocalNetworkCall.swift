@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Network
 
 public final class NwConfig {
   public var baseUrl: String = ""
@@ -81,4 +82,26 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
       print("Streaming complete")
     }
   }
+}
+
+@MainActor
+class NetworkMonitor: ObservableObject {
+    @Published var isConnected: Bool = true
+    
+    private var monitor: NWPathMonitor
+    private let queue = DispatchQueue.global(qos: .background)
+    
+    init() {
+        monitor = NWPathMonitor()
+        monitor.pathUpdateHandler = { path in
+            DispatchQueue.main.async {
+                self.isConnected = path.status == .satisfied
+            }
+        }
+        monitor.start(queue: queue)
+    }
+    
+    deinit {
+        monitor.cancel()
+    }
 }
