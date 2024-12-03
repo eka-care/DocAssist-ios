@@ -238,37 +238,6 @@ import SwiftData
 //  }
 //}
 //
-//public struct SomeMainView: View {
-//  
-//  var backgroundImage: UIImage?
-//  var emptyMessageColor: Color?
-//  var editButtonColor: Color?
-//  var subTitle: String?
-//  var ctx: ModelContext
-//  
-//  public init(
-//    backgroundImage: UIImage? = nil,
-//    emptyMessageColor: Color? = .white,
-//    editButtonColor: Color? = .blue,
-//    subTitle: String? = "General Chat",
-//    ctx: ModelContext
-//  ) {
-//    self.backgroundImage = backgroundImage
-//    self.emptyMessageColor = emptyMessageColor
-//    self.editButtonColor = editButtonColor
-//    self.subTitle = subTitle
-//    self.ctx = ctx
-//    
-//    QueueConfigRepo1.shared.modelContext = ctx
-//  }
-//  
-//  public var body: some View {
-//    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx)
-//      .modelContext(ctx)
-//      .navigationBarHidden(true)
-//  }
-//}
-
 public struct SomeMainView: View {
   
   var backgroundImage: UIImage?
@@ -350,7 +319,6 @@ public struct MainView: View {
           .modelContext(modelContext)
       }
     }
-  }
   
   // MARK: - Header View
   private var headerView: some View {
