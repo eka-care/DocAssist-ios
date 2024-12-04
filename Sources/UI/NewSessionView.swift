@@ -40,6 +40,9 @@ struct NewSessionView: View {
         newView
       }
     }
+    .onAppear {
+      print("#BB onAppear: \(viewModel.vmssid)")
+    }
   }
   
   var newView: some View {

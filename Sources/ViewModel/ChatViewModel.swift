@@ -23,6 +23,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   private let networkCall = NetworkCall()
   
   func sendMessage(newMessage: String) {
+    print("#BB The vmssid is \(vmssid) in send Message")
     addUserMessage(newMessage)
     startStreamingPostRequest(query: newMessage)
   }
@@ -151,8 +152,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     switchToSession(ssid)
   }
   
-  private func switchToSession(_ id: String) {
+ func switchToSession(_ id: String) {
+    print("#BB vmmsid before switchsession \(vmssid)")
     vmssid = id
+    print("#BB vmmsid after switchsession \(vmssid)")
   }
   
   func setThreadTitle(with query: String) {
