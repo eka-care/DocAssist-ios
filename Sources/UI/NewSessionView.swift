@@ -133,20 +133,21 @@ struct NewSessionView: View {
           isTextFieldFocused = false
         }) {
           Image(systemName: "paperplane.fill")
-            .foregroundStyle(newMessage.isEmpty ? Color.gray : Color.blue)
+            .foregroundStyle((newMessage.isEmpty || viewModel.streamStarted) ? Color.gray : Color.blue)
             .padding(10)
             .background(Circle().fill(Color.white))
         }
         .disabled(newMessage.isEmpty)
+        .disabled(viewModel.streamStarted)
       }
       .padding(.horizontal, 12)
     }
-    .frame(height: 48)
+    .frame(height: 40)
     .padding(.horizontal, 16)
-    .padding(.bottom, 16)
+    .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
   }
   private func sendMessage(_ message: String) {
-    viewModel.vmssid = session
+   // viewModel.vmssid = session
     viewModel.sendMessage(newMessage: message)
     newMessage = ""
   }

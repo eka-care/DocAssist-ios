@@ -19,9 +19,9 @@ public final class NwConfig {
 
 final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
-  @MainActor func startStreamingPostRequest(query: String, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
+  @MainActor func startStreamingPostRequest(query: String, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
     
-    let streamDelegate = StreamDelegate(completion: completion)
+    let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
     
     guard var urlComponents = URLComponents(string: NwConfig.shared.baseUrl) else {
       fatalError("Invalid URL")
@@ -65,9 +65,14 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
 final class StreamDelegate: NSObject, URLSessionDataDelegate {
   
   private let completion: @Sendable (Result<String, Error>) -> Void
-  init(completion: @escaping  @Sendable (Result<String, Error>) -> Void) {
-    self.completion = completion
-  }
+  private let onStreamComplete: @Sendable () -> Void
+  init(
+         completion: @escaping @Sendable (Result<String, Error>) -> Void,
+         onStreamComplete: @escaping @Sendable () -> Void
+     ) {
+         self.completion = completion
+         self.onStreamComplete = onStreamComplete
+     }
   
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     let receivedString = String(data: data, encoding: .utf8) ?? ""
@@ -81,6 +86,7 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
     } else {
       print("Streaming complete")
     }
+    onStreamComplete()
   }
 }
 

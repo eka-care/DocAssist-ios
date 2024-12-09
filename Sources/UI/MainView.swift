@@ -44,10 +44,12 @@ public struct MainView: View {
         }
         VStack {
           headerView
+            .padding(.bottom, 20)
           ZStack {
             mainContentView
             editButtonView
-              .padding(.trailing, 20)
+              .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
+              .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 0)
           }
           
         }
@@ -69,25 +71,26 @@ public struct MainView: View {
 
   private var headerView: some View {
       VStack(alignment: .leading, spacing: 4) {
+        if UIDevice.current.userInterfaceIdiom == .phone {
           HStack {
-              Button(action: {
-                  dismiss()
-              }) {
-                  HStack(spacing: 6) {
-                      Image(systemName: "chevron.left")
-                      .font(.system(size: 21, weight: .medium))
-                          .foregroundColor(.blue)
-                      Text("Back")
-                          .font(.system(size: 18))
-                          .foregroundColor(.blue)
-                  }
+            Button(action: {
+              dismiss()
+            }) {
+              HStack(spacing: 6) {
+                Image(systemName: "chevron.left")
+                  .font(.system(size: 21, weight: .medium))
+                  .foregroundColor(.blue)
+                Text("Back")
+                  .font(.system(size: 18))
+                  .foregroundColor(.blue)
               }
-              .contentShape(Rectangle())
-              Spacer()
+            }
+            .contentShape(Rectangle())
+            Spacer()
           }
           .padding(.leading, 10)
           .padding(.top, 9)
-        
+        }
           HStack {
               Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
                   .foregroundColor(.black)
@@ -97,84 +100,140 @@ public struct MainView: View {
               Spacer()
           }
       }
-      .padding(.bottom, 8)
-  }
- 
-
-  private var mainContentView: some View {
-    Group {
-      // MARK: - Make this generic
-      if thread.isEmpty {
-        ZStack {
-          bgcolors
-            .ignoresSafeArea()
-          VStack {
-            HStack {
-              Text("Start a new chat with Doc Assist to-")
-                .fontWeight(.medium)
-                .font(.custom("Lato-Regular", size: 18))
-                .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
-                .padding(.leading , 20)
-                .padding(.top, 25)
-                Spacer()
-            }
-            HStack {
-              Text("""
-      💊 Confirm drug interactions
-      🥬 Generate diet charts
-      🏋️‍♀️ Get lifestyle advice for a patient
-      📃 Generate medical certificate templates
-      and much more..
-      """)
-              .padding(.leading , 20)
-              .padding(.top, 5)
-              .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
-              Spacer()
-            }
-            Spacer()
-          }
-        }
-      
-      } else {
-        List {
-          ForEach(thread) { thread in
-            let dateString = viewModel.getFormatedDateToDDMMYYYY(date: thread.createdAt)
-            MessageSubView(thread.title,dateString,thread.subTitle)
-              .background(
-                NavigationLink(
-                  destination: NewSessionView(session: thread.sessionId, viewModel: viewModel, backgroundImage: backgroundImage)
-                    .modelContext(modelContext),
-                  label: {
-                    EmptyView()
-                  }
-                )
-                .opacity(0)
-              )
-              .onTapGesture {
-                viewModel.vmssid = thread.sessionId
-              }
-              .listRowSeparator(.hidden)
-              .listRowBackground(Color.clear)
-              .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
-              .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                Button(role: .destructive) {
-                  QueueConfigRepo1.shared.deleteSession(sessionId: thread.sessionId)
-                } label: {
-                  Label("Delete", systemImage: "trash")
-                }
-              }
-          }
-        }
-      }
-    }
+      .padding(.bottom, 5)
   }
   
-  // MARK: - Floating Edit Button
+  private var mainContentView: some View {
+      Group {
+          if thread.isEmpty {
+              emptyStateView
+          } else {
+              threadListView
+          }
+      }
+  }
+
+  // MARK: - Empty State View
+  private var emptyStateView: some View {
+      ZStack {
+          bgcolors
+              .ignoresSafeArea()
+          VStack {
+              HStack {
+                  Text("Start a new chat with Doc Assist to-")
+                      .fontWeight(.medium)
+                      .font(.custom("Lato-Regular", size: 18))
+                      .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
+                      .padding(.leading, 20)
+                      .padding(.top, 25)
+                  Spacer()
+              }
+              HStack {
+                  Text("""
+          💊 Confirm drug interactions
+          🥬 Generate diet charts
+          🏋️‍♀️ Get lifestyle advice for a patient
+          📃 Generate medical certificate templates
+          and much more..
+          """)
+                  .padding(.leading, 20)
+                  .padding(.top, 5)
+                  .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
+                  Spacer()
+              }
+              Spacer()
+          }
+      }
+  }
+
+  private var threadListView: some View {
+      ScrollView {
+          VStack() {
+            ForEach(Array(thread.enumerated()), id: \.element.id) { index, thread in
+              threadItemView(for: thread)
+                           .padding(.top, index == 0 ? 20 : 0)
+                   }
+          }
+          .padding(.horizontal)
+      }
+      .background(navigationLinkToNewSession)
+      .background(Color.gray.opacity(0.1))
+  }
+
+  private func threadItemView(for thread: SessionDataModel) -> some View {
+      Button(action: {
+      
+          if selectedSessionId != thread.sessionId {
+              newSessionId = nil
+          }
+          
+          viewModel.vmssid = thread.sessionId
+          selectedSessionId = thread.sessionId
+          isNavigating = true
+      }) {
+          MessageSubView(
+              thread.title,
+              viewModel.getFormatedDateToDDMMYYYY(date: thread.createdAt),
+              thread.subTitle
+          )
+          .background(Color.clear)
+          .background(
+              RoundedRectangle(cornerRadius: 10)
+                  .fill(Color.clear)
+          )
+          .overlay(
+              UIDevice.current.userInterfaceIdiom == .pad ?
+                  RoundedRectangle(cornerRadius: 10)
+                      .stroke(
+                          (newSessionId == thread.sessionId) ||
+                          (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.blue : Color.clear,
+                          lineWidth: 1
+                      )
+                  : nil
+          )
+          .contextMenu {
+              Button(role: .destructive) {
+                  QueueConfigRepo1.shared.deleteSession(sessionId: thread.sessionId)
+              } label: {
+                  Label("Delete", systemImage: "trash")
+              }
+          }
+      }
+      .buttonStyle(PlainButtonStyle())
+  }
+
+  // MARK: - Navigation Link
+  private var navigationLinkToNewSession: some View {
+      NavigationLink(
+          destination: destinationView,
+          isActive: $isNavigating
+      ) {
+          EmptyView()
+      }
+  }
+
+  private var destinationView: some View {
+      if let sessionId = selectedSessionId {
+          return AnyView(
+              NewSessionView(
+                  session: sessionId,
+                  viewModel: viewModel,
+                  backgroundImage: backgroundImage
+              )
+              .modelContext(modelContext)
+          )
+      } else {
+          return AnyView(EmptyView())
+      }
+  }
+
   private var editButtonView: some View {
     VStack {
       Spacer()
-      HStack(spacing: 6) {
-        Spacer()
+      HStack() {
+        if UIDevice.current.userInterfaceIdiom == .phone {
+          Spacer()
+        }
         Button(action: {
           viewModel.createSession(subTitle: subTitle)
           newSessionId = viewModel.vmssid
@@ -210,6 +269,11 @@ public struct MainView: View {
         .overlay {
           RoundedRectangle(cornerRadius: 16)
             .stroke(Color.blue, lineWidth: 0.5)
+        }
+        .shadow(color: Color.black.opacity(0.3), radius: 18, x: 0, y: 8)
+        
+        if UIDevice.current.userInterfaceIdiom == .pad {
+          Spacer()
         }
       }
       .padding(.bottom, 20)

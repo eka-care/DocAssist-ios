@@ -12,7 +12,7 @@ import SwiftUI
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   private var context: ModelContext
-  
+  @Published var streamStarted: Bool = false
   init(context: ModelContext) {
     self.context = context
   }
@@ -53,8 +53,13 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   func startStreamingPostRequest(query: String) {
+    streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
-    networkCall.startStreamingPostRequest(query: query) { [weak self] result in
+    networkCall.startStreamingPostRequest(query: query, onStreamComplete: { [weak self] in
+      Task { @MainActor in
+          self?.streamStarted = false 
+      }
+  }) { [weak self] result in
           switch result {
           case .success(let responseString):
             Task {
