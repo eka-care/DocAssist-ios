@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-public struct MainView: View {
+struct MainView: View {
   
   @Query(sort: \SessionDataModel.createdAt, order: .reverse) var thread: [SessionDataModel]
   @ObservedObject var viewModel: ChatViewModel
@@ -18,13 +18,14 @@ public struct MainView: View {
   @Environment(\.dismiss) var dismiss
   @State private var selectedSessionId: String? = nil
   @State private var isNavigating: Bool = false
+  @State private var searchText: String = ""
   private var bgcolors: Color
   var backgroundImage: UIImage?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var subTitle: String?
   
-  public init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
+  init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
     self.backgroundImage = backgroundImage
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
@@ -34,7 +35,7 @@ public struct MainView: View {
   }
 
   public var body: some View {
-    NavigationView {
+    if UIDevice.current.userInterfaceIdiom == .pad {
       ZStack {
         if let backgroundImage = SetUIComponents.shared.userAllChatBackgroundColor {
           Image(uiImage: backgroundImage)
@@ -64,6 +65,38 @@ public struct MainView: View {
           EmptyView()
         }
       )
+    } else {
+      NavigationView {
+        ZStack {
+          if let backgroundImage = SetUIComponents.shared.userAllChatBackgroundColor {
+            Image(uiImage: backgroundImage)
+              .resizable()
+              .scaledToFill()
+              .edgesIgnoringSafeArea(.all)
+          }
+          VStack {
+            headerView
+              .padding(.bottom, 20)
+            ZStack {
+              mainContentView
+              editButtonView
+                .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
+                .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 0)
+            }
+            
+          }
+          .navigationBarHidden(true)
+        }
+        .background(
+          NavigationLink(
+            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage)
+              .modelContext(modelContext),
+            isActive: $isNavigatingToNewSession
+          ) {
+            EmptyView()
+          }
+        )
+      }
     }
   }
   

@@ -13,7 +13,6 @@ public class ViewController: UIViewController {
   
   var chatBotView: SomeMainView!
   
-  // Custom initializer to accept the optional UIImage for background
   public init(
     backgroundImage: UIImage? = nil,
     emptyMessageColor: Color? = nil,

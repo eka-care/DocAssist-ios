@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-struct NewSessionView: View {
+public struct NewSessionView: View {
   @State var session: String
   @State var newMessage: String = ""
   @Query private var messages: [ChatMessageModel]
@@ -30,7 +30,7 @@ struct NewSessionView: View {
     self.backgroundImage = backgroundImage
   }
   
-  var body: some View {
+public  var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       if let backgroundImage {
         newView
@@ -39,9 +39,6 @@ struct NewSessionView: View {
       } else {
         newView
       }
-    }
-    .onAppear {
-      print("#BB onAppear: \(viewModel.vmssid)")
     }
   }
   
@@ -147,7 +144,6 @@ struct NewSessionView: View {
     .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
   }
   private func sendMessage(_ message: String) {
-   // viewModel.vmssid = session
     viewModel.sendMessage(newMessage: message)
     newMessage = ""
   }
