@@ -6,15 +6,13 @@
 //
 
 import Foundation
-#if canImport(SwiftData)
 import SwiftData
-#endif
 
 @MainActor
-final class QueueConfigRepo1 {
+final class DatabaseConfig {
   var modelContext: ModelContext!
   
-  static let shared = QueueConfigRepo1()
+  static let shared = DatabaseConfig()
   private init() { }
   
   func getLastMessageIdUsingSessionId(sessionId: String) -> Int? {

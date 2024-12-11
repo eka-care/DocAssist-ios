@@ -58,7 +58,7 @@ struct MainView: View {
       }
       .background(
         NavigationLink(
-          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage)
+          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage, patientName: "")
             .modelContext(modelContext),
           isActive: $isNavigatingToNewSession
         ) {
@@ -89,7 +89,7 @@ struct MainView: View {
         }
         .background(
           NavigationLink(
-            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage)
+            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage, patientName: "")
               .modelContext(modelContext),
             isActive: $isNavigatingToNewSession
           ) {
@@ -226,7 +226,7 @@ struct MainView: View {
           )
           .contextMenu {
               Button(role: .destructive) {
-                  QueueConfigRepo1.shared.deleteSession(sessionId: thread.sessionId)
+                  DatabaseConfig.shared.deleteSession(sessionId: thread.sessionId)
               } label: {
                   Label("Delete", systemImage: "trash")
               }
@@ -251,7 +251,7 @@ struct MainView: View {
               NewSessionView(
                   session: sessionId,
                   viewModel: viewModel,
-                  backgroundImage: backgroundImage
+                  backgroundImage: backgroundImage, patientName: ""
               )
               .modelContext(modelContext)
           )
@@ -268,7 +268,7 @@ struct MainView: View {
           Spacer()
         }
         Button(action: {
-          viewModel.createSession(subTitle: subTitle)
+          let session = viewModel.createSession(subTitle: subTitle)
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
         }) {
@@ -362,7 +362,7 @@ public struct SomeMainView: View {
     self.subTitle = subTitle
     self.ctx = ctx
     
-    QueueConfigRepo1.shared.modelContext = ctx
+    DatabaseConfig.shared.modelContext = ctx
   }
   
   public var body: some View {

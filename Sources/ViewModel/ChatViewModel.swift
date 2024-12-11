@@ -15,6 +15,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var streamStarted: Bool = false
   init(context: ModelContext) {
     self.context = context
+    DatabaseConfig.shared.modelContext = context
   }
   
   @Published var isLoading: Bool = false
@@ -29,7 +30,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   private func addUserMessage(_ query: String) {
-    let msgIddup = (QueueConfigRepo1.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
+    let msgIddup = (DatabaseConfig.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
       if let fetchedSeesion = try fetchSession(bySessionId: vmssid) {
@@ -95,7 +96,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   private func updateMessage(with message: Message) {
     let descriptor = FetchDescriptor<ChatMessageModel>()
-    let allMessage = try? QueueConfigRepo1.shared.modelContext.fetch(descriptor)
+    let allMessage = try? DatabaseConfig.shared.modelContext.fetch(descriptor)
     
     if let existingItem = allMessage?.first(where: {
       $0.sessionData?.sessionId == vmssid &&
@@ -144,10 +145,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
         session.sessionId == sessionId
       }
     )
-    return try QueueConfigRepo1.shared.modelContext.fetch(descriptor).first
+    return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-  func createSession(subTitle: String?) {
+  func createSession(subTitle: String?) -> String {
     let currentDate = Date()
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle)
@@ -155,16 +156,15 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     
     saveData()
     switchToSession(ssid)
+    return ssid
   }
   
  func switchToSession(_ id: String) {
-    print("#BB vmmsid before switchsession \(vmssid)")
     vmssid = id
-    print("#BB vmmsid after switchsession \(vmssid)")
   }
   
   func setThreadTitle(with query: String) {
-    QueueConfigRepo1.shared.SaveTitle(sessionId: self.vmssid, title: query)
+    DatabaseConfig.shared.SaveTitle(sessionId: self.vmssid, title: query)
   }
   
   func trimLeadingSpaces(from input: String) -> String {

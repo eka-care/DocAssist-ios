@@ -16,8 +16,9 @@ public struct NewSessionView: View {
   var backgroundImage: UIImage?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
+  private var patientName: String? = ""
   
-  init(session: String, viewModel: ChatViewModel, backgroundImage: UIImage?) {
+  init(session: String, viewModel: ChatViewModel, backgroundImage: UIImage?, patientName: String) {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -28,6 +29,7 @@ public struct NewSessionView: View {
     )
     self.viewModel = viewModel
     self.backgroundImage = backgroundImage
+    self.patientName = patientName
   }
   
 public  var body: some View {
@@ -44,6 +46,13 @@ public  var body: some View {
   
   var newView: some View {
     VStack {
+      if let patientName {
+        if patientName != "" {
+          Text("Chat about \(patientName)")
+            .frame(maxWidth: .infinity)
+            .background(Color.gray.opacity(0.1))
+        }
+      }
       if messages.isEmpty {
         VStack {
           Spacer()
