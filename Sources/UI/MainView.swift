@@ -20,13 +20,13 @@ struct MainView: View {
   @State private var isNavigating: Bool = false
   @State private var searchText: String = ""
   private var bgcolors: Color
-  var backgroundImage: UIImage?
+  var backgroundColor: Color?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var subTitle: String?
   
-  init(backgroundImage: UIImage? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
-    self.backgroundImage = backgroundImage
+  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
+    self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
@@ -37,8 +37,8 @@ struct MainView: View {
   public var body: some View {
     if UIDevice.current.userInterfaceIdiom == .pad {
       ZStack {
-        if let backgroundImage = SetUIComponents.shared.userAllChatBackgroundColor {
-          Image(uiImage: backgroundImage)
+        if let backgroundColor = SetUIComponents.shared.userAllChatBackgroundColor {
+          Image(uiImage: backgroundColor)
             .resizable()
             .scaledToFill()
             .edgesIgnoringSafeArea(.all)
@@ -58,7 +58,7 @@ struct MainView: View {
       }
       .background(
         NavigationLink(
-          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage, patientName: "")
+          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat")
             .modelContext(modelContext),
           isActive: $isNavigatingToNewSession
         ) {
@@ -68,8 +68,8 @@ struct MainView: View {
     } else {
       NavigationView {
         ZStack {
-          if let backgroundImage = SetUIComponents.shared.userAllChatBackgroundColor {
-            Image(uiImage: backgroundImage)
+          if let backgroundColor = SetUIComponents.shared.userAllChatBackgroundColor {
+            Image(uiImage: backgroundColor)
               .resizable()
               .scaledToFill()
               .edgesIgnoringSafeArea(.all)
@@ -89,7 +89,7 @@ struct MainView: View {
         }
         .background(
           NavigationLink(
-            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundImage: backgroundImage, patientName: "")
+            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat")
               .modelContext(modelContext),
             isActive: $isNavigatingToNewSession
           ) {
@@ -251,7 +251,7 @@ struct MainView: View {
               NewSessionView(
                   session: sessionId,
                   viewModel: viewModel,
-                  backgroundImage: backgroundImage, patientName: ""
+                  backgroundColor: backgroundColor, patientName: ""
               )
               .modelContext(modelContext)
           )
@@ -268,7 +268,7 @@ struct MainView: View {
           Spacer()
         }
         Button(action: {
-          let session = viewModel.createSession(subTitle: subTitle)
+          _ = viewModel.createSession(subTitle: subTitle)
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
         }) {
@@ -343,20 +343,20 @@ struct MainView: View {
 
 public struct SomeMainView: View {
   
-  var backgroundImage: UIImage?
+  var backgroundColor: Color?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var subTitle: String?
   var ctx: ModelContext
   
   public init(
-    backgroundImage: UIImage? = nil,
+    backgroundColor: Color? = .white,
     emptyMessageColor: Color? = .white,
     editButtonColor: Color? = .blue,
     subTitle: String? = "General Chat",
     ctx: ModelContext
   ) {
-    self.backgroundImage = backgroundImage
+    self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
@@ -366,7 +366,7 @@ public struct SomeMainView: View {
   }
   
   public var body: some View {
-    MainView(backgroundImage: backgroundImage, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx)
+    MainView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

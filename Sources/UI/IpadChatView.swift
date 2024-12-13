@@ -11,20 +11,20 @@ import SwiftData
 public struct IpadChatView: View {
   
   @State private var splitViewColumnVisibility: NavigationSplitViewVisibility = .doubleColumn
-    var backgroundImage: UIImage?
+    var backgroundColor: Color?
     var emptyMessageColor: Color?
     var editButtonColor: Color?
     var subTitle: String?
     var ctx: ModelContext
   
     public init(
-      backgroundImage: UIImage? = nil,
+      backgroundColor: Color? = nil,
       emptyMessageColor: Color? = .white,
       editButtonColor: Color? = .blue,
       subTitle: String? = "General Chat",
       ctx: ModelContext
     ) {
-      self.backgroundImage = backgroundImage
+      self.backgroundColor = backgroundColor
       self.emptyMessageColor = emptyMessageColor
       self.editButtonColor = editButtonColor
       self.subTitle = subTitle
@@ -34,7 +34,7 @@ public struct IpadChatView: View {
   public var body: some View {
     NavigationSplitView(columnVisibility: $splitViewColumnVisibility) {
             SomeMainView(
-              backgroundImage: backgroundImage,
+              backgroundColor: backgroundColor,
               emptyMessageColor: emptyMessageColor,
               editButtonColor: editButtonColor,
               subTitle: subTitle,

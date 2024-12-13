@@ -13,12 +13,12 @@ public struct NewSessionView: View {
   @State var newMessage: String = ""
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
-  var backgroundImage: UIImage?
+  var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
   private var patientName: String? = ""
   
-  init(session: String, viewModel: ChatViewModel, backgroundImage: UIImage?, patientName: String) {
+  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String) {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -28,15 +28,15 @@ public struct NewSessionView: View {
       order: .forward
     )
     self.viewModel = viewModel
-    self.backgroundImage = backgroundImage
+    self.backgroundColor = backgroundColor
     self.patientName = patientName
   }
   
 public  var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      if let backgroundImage {
+      if let backgroundColor {
         newView
-          .background(Image(uiImage: backgroundImage))
+          .background(backgroundColor)
         
       } else {
         newView
@@ -48,7 +48,7 @@ public  var body: some View {
     VStack {
       if let patientName {
         if patientName != "" {
-          Text("Chat about \(patientName)")
+          Text("\(patientName)")
             .frame(maxWidth: .infinity)
             .background(Color.gray.opacity(0.1))
         }
@@ -128,7 +128,7 @@ public  var body: some View {
           .padding(.vertical, 10)
           .font(.body)
           .focused($isTextFieldFocused)
-          .onTapGesture {
+          .onAppear() {
             isTextFieldFocused = true
           }
         
@@ -177,10 +177,10 @@ struct MessageBubble: View {
       MessageTextView(text: m, role: message.role)
         .alignmentGuide(.top) { d in d[.top] }
       
-      if message.role == .user {
-        UserAvatarImage()
-          .alignmentGuide(.top) { d in d[.top] }
-      }
+//      if message.role == .user {
+//        UserAvatarImage()
+//          .alignmentGuide(.top) { d in d[.top] }
+//      }
       
       if message.role == .Bot {
         Spacer()
@@ -200,15 +200,15 @@ struct MessageTextView: View {
       .background(backgroundColor)
       .foregroundColor(foregroundColor)
       .cornerRadius(12)
-      .overlay(
-        RoundedRectangle(cornerRadius: 12)
-          .stroke(SetUIComponents.shared.chatBorder ?? Color.gray, lineWidth: 0.3)
-      )
+//      .overlay(
+//        RoundedRectangle(cornerRadius: 12)
+//          .stroke(SetUIComponents.shared.chatBorder ?? Color.gray, lineWidth: 0.3)
+//      )
       .contentTransition(.numericText())
   }
   
   private var backgroundColor: Color {
-    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .blue) : (SetUIComponents.shared.botBackGroundColor ?? .gray)
+    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .blue) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
   }
   
   private var foregroundColor: Color {
