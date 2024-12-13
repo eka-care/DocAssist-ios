@@ -175,8 +175,17 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   func getFormatedDateToDDMMYYYY(date: Date) -> String {
+    let calendar = Calendar.current
+    if calendar.isDateInToday(date) {
+      let timeFormatter = DateFormatter()
+      timeFormatter.dateFormat = "HH:mm a"
+      return timeFormatter.string(from: date)
+    } else if calendar.isDateInYesterday(date) {
+      return "Yesterday"
+    } else {
       let dateFormatter = DateFormatter()
       dateFormatter.dateFormat = "dd/MM/yyyy"
       return dateFormatter.string(from: date)
+    }
   }
 }

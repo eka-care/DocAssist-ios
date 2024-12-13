@@ -81,7 +81,7 @@ struct MainView: View {
               mainContentView
               editButtonView
                 .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
-                .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 0)
+                .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 10)
             }
             
           }
@@ -141,42 +141,44 @@ struct MainView: View {
           if thread.isEmpty {
               emptyStateView
           } else {
+            VStack {
+              Divider()
               threadListView
+            }
           }
       }
   }
 
   // MARK: - Empty State View
   private var emptyStateView: some View {
-      ZStack {
-          bgcolors
-              .ignoresSafeArea()
-          VStack {
-              HStack {
-                  Text("Start a new chat with Doc Assist to-")
-                      .fontWeight(.medium)
-                      .font(.custom("Lato-Regular", size: 18))
-                      .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
-                      .padding(.leading, 20)
-                      .padding(.top, 25)
-                  Spacer()
-              }
-              HStack {
-                  Text("""
-          💊 Confirm drug interactions
-          🥬 Generate diet charts
-          🏋️‍♀️ Get lifestyle advice for a patient
-          📃 Generate medical certificate templates
-          and much more..
-          """)
-                  .padding(.leading, 20)
-                  .padding(.top, 5)
-                  .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
-                  Spacer()
-              }
-              Spacer()
-          }
+    VStack {
+      Divider()
+      HStack {
+        Text("Start a new chat with Doc Assist to-")
+          .fontWeight(.bold)
+          .font(.custom("Lato-Bold", size: 18))
+          .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
+          .padding(.leading, 20)
+          .padding(.top, 16)
+        Spacer()
       }
+      HStack {
+        VStack(alignment: .leading, spacing: 12) {
+          Text("💊 Confirm drug interactions")
+          Text("🥬 Generate diet charts")
+          Text("🏋️‍♀️ Get lifestyle advice for a patient")
+          Text("📃 Generate medical certificate templates")
+          Text("and much more..")
+        }
+        .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
+        .padding(.leading, 20)
+        .padding(.top, 10)
+        .font(.custom("Lato-Regular", size: 15))
+        Spacer()
+      }
+        Spacer()
+      }
+
   }
 
   private var threadListView: some View {
@@ -190,7 +192,6 @@ struct MainView: View {
           .padding(.horizontal)
       }
       .background(navigationLinkToNewSession)
-      .background(Color.gray.opacity(0.1))
   }
 
   private func threadItemView(for thread: SessionDataModel) -> some View {
@@ -298,12 +299,12 @@ struct MainView: View {
         .frame(maxWidth: thread.isEmpty ? .infinity : 160)
         .padding(.vertical, 14)
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(10)
         .overlay {
-          RoundedRectangle(cornerRadius: 16)
+          RoundedRectangle(cornerRadius: 10)
             .stroke(Color.blue, lineWidth: 0.5)
         }
-        .shadow(color: Color.black.opacity(0.3), radius: 18, x: 0, y: 8)
+        .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
         
         if UIDevice.current.userInterfaceIdiom == .pad {
           Spacer()
@@ -317,27 +318,29 @@ struct MainView: View {
   func MessageSubView(_ title: String, _ date: String, _ subTitle: String?) -> some View {
     VStack {
       HStack {
-        Text(title)
+        Text(subTitle ?? "GeneralChat")
           .font(.custom("Lato-Regular", size: 16))
           .foregroundColor(.primary)
           .lineLimit(1)
         Spacer()
-        Text(date)
-          .font(.caption)
-          .foregroundStyle(Color.gray)
+          Text(date)
+            .font(.caption)
+            .foregroundStyle(Color.gray)
+          Image(systemName: "chevron.right")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 7)
+            .foregroundStyle(Color.gray)
       }
       HStack {
-        Text(subTitle ?? "")
+        Text(title)
           .font(.caption)
           .foregroundStyle(Color.gray)
+          .lineLimit(1)
         Spacer()
       }
+      Divider()
     }
-    .padding(.all, 10)
-    .background(
-      RoundedRectangle(cornerRadius: 10)
-        .fill(Color.white)
-    )
   }
 }
 

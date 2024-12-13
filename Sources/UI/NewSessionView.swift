@@ -16,7 +16,8 @@ public struct NewSessionView: View {
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
-  private var patientName: String? = ""
+  @State private var patientName: String? = "General Chat"
+  @Environment(\.dismiss) var dismiss
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String) {
     self.session = session
@@ -29,7 +30,14 @@ public struct NewSessionView: View {
     )
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
+    print("#BB patientName: \(patientName)")
     self.patientName = patientName
+    
+    let appearance = UINavigationBarAppearance()
+          appearance.configureWithOpaqueBackground()
+          appearance.backgroundColor = UIColor.white
+          UINavigationBar.appearance().standardAppearance = appearance
+          UINavigationBar.appearance().scrollEdgeAppearance = appearance
   }
   
 public  var body: some View {
@@ -46,13 +54,13 @@ public  var body: some View {
   
   var newView: some View {
     VStack {
-      if let patientName {
-        if patientName != "" {
-          Text("\(patientName)")
-            .frame(maxWidth: .infinity)
-            .background(Color.gray.opacity(0.1))
-        }
-      }
+//      if let patientName {
+//        if patientName != "" {
+//          Text("\(patientName)")
+//            .frame(maxWidth: .infinity)
+//            .background(Color.gray.opacity(0.1))
+//        }
+  //    }
       if messages.isEmpty {
         VStack {
           Spacer()
@@ -113,17 +121,24 @@ public  var body: some View {
           .padding(.bottom, 5)
       }
     }
-    .navigationTitle(SetUIComponents.shared.chatTitle ?? "Chats")
-    .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+        ToolbarItem(placement: .principal) {
+            VStack {
+              Text(patientName ?? "General Chat")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                Text("Ask Anything")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
   }
   
   var textfieldView: some View {
     ZStack {
-      RoundedRectangle(cornerRadius: 30)
-        .fill(Color.white)
-      
       HStack {
-        TextField("  Start typing...", text: $newMessage)
+        TextField("  Start typing...", text: $newMessage, axis: .vertical)
           .padding(.horizontal, 12)
           .padding(.vertical, 10)
           .font(.body)
@@ -131,24 +146,31 @@ public  var body: some View {
           .onAppear() {
             isTextFieldFocused = true
           }
-        
         Button(action: {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
           guard !newMessage.isEmpty else { return }
           sendMessage(newMessage)
           isTextFieldFocused = false
         }) {
-          Image(systemName: "paperplane.fill")
-            .foregroundStyle((newMessage.isEmpty || viewModel.streamStarted) ? Color.gray : Color.blue)
-            .padding(10)
-            .background(Circle().fill(Color.white))
+          Image(systemName: "arrow.up")
+            .foregroundStyle(Color.white)
+            .fontWeight(.bold)
+            .padding(4)
+            .background(Circle().fill((newMessage.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.4) : Color.blue))
         }
         .disabled(newMessage.isEmpty)
         .disabled(viewModel.streamStarted)
       }
       .padding(.horizontal, 12)
+      .background(RoundedRectangle(cornerRadius: 30).fill(Color.white))
+      .overlay {
+        RoundedRectangle(cornerRadius: 30)
+          .stroke(
+            isTextFieldFocused ? Color.blue : Color.clear,
+            lineWidth: 1
+          )
+      }
     }
-    .frame(height: 40)
     .padding(.horizontal, 16)
     .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
   }
@@ -177,11 +199,6 @@ struct MessageBubble: View {
       MessageTextView(text: m, role: message.role)
         .alignmentGuide(.top) { d in d[.top] }
       
-//      if message.role == .user {
-//        UserAvatarImage()
-//          .alignmentGuide(.top) { d in d[.top] }
-//      }
-      
       if message.role == .Bot {
         Spacer()
       }
@@ -200,10 +217,6 @@ struct MessageTextView: View {
       .background(backgroundColor)
       .foregroundColor(foregroundColor)
       .cornerRadius(12)
-//      .overlay(
-//        RoundedRectangle(cornerRadius: 12)
-//          .stroke(SetUIComponents.shared.chatBorder ?? Color.gray, lineWidth: 0.3)
-//      )
       .contentTransition(.numericText())
   }
   
