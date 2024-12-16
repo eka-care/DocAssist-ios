@@ -208,7 +208,7 @@ public  var body: some View {
       .overlay {
         RoundedRectangle(cornerRadius: 30)
           .stroke(
-            isTextFieldFocused ? Color.blue : Color.clear,
+            isTextFieldFocused ? Color.myColor : Color.clear,
             lineWidth: 1
           )
       }

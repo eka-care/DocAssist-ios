@@ -22,3 +22,7 @@ struct DetailEmptyView: View {
 #Preview {
   DetailEmptyView()
 }
+
+extension Color {
+  static let myColor = Color("messageBorder")
+}
