@@ -24,6 +24,7 @@ struct MainView: View {
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var subTitle: String?
+  @State private var patientName: String? = ""
   
   init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
     self.backgroundColor = backgroundColor
@@ -89,7 +90,7 @@ struct MainView: View {
         }
         .background(
           NavigationLink(
-            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
+            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "", calledFromPatientContext: false)
               .modelContext(modelContext),
             isActive: $isNavigatingToNewSession
           ) {
@@ -137,16 +138,13 @@ struct MainView: View {
   }
   
   private var mainContentView: some View {
-      Group {
-          if thread.isEmpty {
-              emptyStateView
-          } else {
-            VStack {
-              Divider()
-              threadListView
-            }
-          }
+    Group {
+      if thread.isEmpty {
+        emptyStateView
+      } else {
+        threadListView
       }
+    }
   }
 
   // MARK: - Empty State View
@@ -182,27 +180,35 @@ struct MainView: View {
   }
 
   private var threadListView: some View {
+    VStack {
+      Divider()
       ScrollView {
-          VStack() {
-            ForEach(Array(thread.enumerated()), id: \.element.id) { index, thread in
-              threadItemView(for: thread)
-                           .padding(.top, index == 0 ? 20 : 0)
-                   }
+        VStack() {
+          ForEach(Array(thread.enumerated()), id: \.element.id) { index, thread in
+            threadItemView(for: thread)
+              .padding(.top, index == 0 ? 20 : 0)
           }
-          .padding(.horizontal)
+        }
+        .padding(.horizontal)
       }
       .background(navigationLinkToNewSession)
+      .contentMargins(.top, 0, for: .scrollContent)
+    }
   }
 
   private func threadItemView(for thread: SessionDataModel) -> some View {
       Button(action: {
-      
           if selectedSessionId != thread.sessionId {
               newSessionId = nil
           }
-          
           viewModel.vmssid = thread.sessionId
           selectedSessionId = thread.sessionId
+        do {
+          let patient = try fetchPatientName(fromSessionId: thread.sessionId, context: DatabaseConfig.shared.modelContext)
+          patientName = patient
+        } catch {
+          print("No patient name found")
+        }
           isNavigating = true
       }) {
           MessageSubView(
@@ -252,7 +258,7 @@ struct MainView: View {
               NewSessionView(
                   session: sessionId,
                   viewModel: viewModel,
-                  backgroundColor: backgroundColor, patientName: "",
+                  backgroundColor: backgroundColor, patientName: patientName ?? "",
                   calledFromPatientContext: false
               )
               .modelContext(modelContext)
@@ -299,11 +305,12 @@ struct MainView: View {
         }
         .frame(maxWidth: thread.isEmpty ? .infinity : 160)
         .padding(.vertical, 14)
+        .padding(.horizontal, 5)
         .background(Color.white)
         .cornerRadius(10)
         .overlay {
           RoundedRectangle(cornerRadius: 10)
-            .stroke(Color.blue, lineWidth: 0.5)
+            .stroke(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
         }
         .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
         

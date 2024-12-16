@@ -147,26 +147,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-//  func createSession(subTitle: String?, oid: String = "") -> String {
-//    let currentDate = Date()
-//    
-//    if oid != "" {
-//      do {
-//        let result = try fetchSessionId(fromOid: oid, context: DatabaseConfig.shared.modelContext)
-//
-//      }
-//      catch {
-//        return ""
-//      }}
-//    let ssid = UUID().uuidString
-//    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid)
-//    context.insert(createSessionModel)
-//    
-//    saveData()
-//    switchToSession(ssid)
-//    return ssid
-//  }
-  
   func createSession(subTitle: String?, oid: String = "") -> String {
       let currentDate = Date()
       let context = DatabaseConfig.shared.modelContext
@@ -227,4 +207,13 @@ func fetchSessionId(fromOid oid: String, context: ModelContext) throws -> String
     )
     let results = try context.fetch(fetchDescriptor)
     return results.first?.sessionId
+}
+ 
+func fetchPatientName (fromSessionId ssid: String, context: ModelContext) throws -> String {
+
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate { $0.sessionId == ssid }
+    )
+  let results = try context.fetch(fetchDescriptor)
+    return results.first?.subTitle ?? ""
 }

@@ -19,6 +19,7 @@ public struct NewSessionView: View {
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
+  private var subTitle: String = "Ask anything ..."
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -72,11 +73,11 @@ public  var body: some View {
           Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
             .foregroundColor(.black)
             .font(.custom("Lato-Bold", size: 20))
-            .fontWeight(.heavy)
-            .padding()
+            .fontWeight(.medium)
+            .padding(.top, 5)
           if calledFromPatientContext {
             Group {
-              Text("Doc Assist uses the patient data andprescription")
+              Text("Doc Assist uses the patient data and prescription")
               Text("data to generate responses")
             }
               .foregroundStyle(.secondary)
@@ -132,10 +133,10 @@ public  var body: some View {
     .toolbar {
         ToolbarItem(placement: .principal) {
             VStack {
-              Text("General Chat")
+              Text(patientName ?? "General Chat")
                     .font(.headline)
                     .foregroundColor(.primary)
-                Text("Ask anything...")
+              Text(subTitle)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -257,8 +258,8 @@ struct MessageTextView: View {
       .padding(8)
       .background(backgroundColor)
       .foregroundColor(foregroundColor)
-      .cornerRadius(12)
       .contentTransition(.numericText())
+      .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
   }
   
   private var backgroundColor: Color {
@@ -292,4 +293,24 @@ struct UserAvatarImage: View {
         .foregroundStyle(Color.gray)
     }
   }
+}
+
+extension View {
+    func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
+        clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
+    }
+}
+
+struct CustomCornerShape: Shape {
+    var cornerRadius: CGFloat
+    var corners: UIRectCorner
+    
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: corners,
+            cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
+        )
+        return Path(path.cgPath)
+    }
 }
