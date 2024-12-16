@@ -24,7 +24,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   private let networkCall = NetworkCall()
   
   func sendMessage(newMessage: String) {
-    print("#BB The vmssid is \(vmssid) in send Message")
     addUserMessage(newMessage)
     startStreamingPostRequest(query: newMessage)
   }
@@ -148,15 +147,46 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-  func createSession(subTitle: String?) -> String {
-    let currentDate = Date()
-    let ssid = UUID().uuidString
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle)
-    context.insert(createSessionModel)
-    
-    saveData()
-    switchToSession(ssid)
-    return ssid
+//  func createSession(subTitle: String?, oid: String = "") -> String {
+//    let currentDate = Date()
+//    
+//    if oid != "" {
+//      do {
+//        let result = try fetchSessionId(fromOid: oid, context: DatabaseConfig.shared.modelContext)
+//
+//      }
+//      catch {
+//        return ""
+//      }}
+//    let ssid = UUID().uuidString
+//    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid)
+//    context.insert(createSessionModel)
+//    
+//    saveData()
+//    switchToSession(ssid)
+//    return ssid
+//  }
+  
+  func createSession(subTitle: String?, oid: String = "") -> String {
+      let currentDate = Date()
+      let context = DatabaseConfig.shared.modelContext
+      if !oid.isEmpty {
+          do {
+            if let existingSessionId = try fetchSessionId(fromOid: oid, context: DatabaseConfig.shared.modelContext) {
+              switchToSession(existingSessionId)
+                  return existingSessionId
+              }
+          } catch {
+              print("Error fetching session for oid: \(error)")
+          }
+      }
+
+      let ssid = UUID().uuidString
+    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid)
+    context?.insert(createSessionModel)
+      saveData()
+      switchToSession(ssid)
+      return ssid
   }
   
  func switchToSession(_ id: String) {
@@ -188,4 +218,13 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       return dateFormatter.string(from: date)
     }
   }
+}
+
+func fetchSessionId(fromOid oid: String, context: ModelContext) throws -> String? {
+
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+        predicate: #Predicate { $0.oid == oid }
+    )
+    let results = try context.fetch(fetchDescriptor)
+    return results.first?.sessionId
 }

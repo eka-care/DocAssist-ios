@@ -33,7 +33,7 @@ public class DocAssistViewController: UIViewController {
           )
           uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
-      default: // Default to phone for any other input or nil
+      default:
           let iphoneView = SomeMainView(
               backgroundColor: backgroundColor,
               emptyMessageColor: emptyMessageColor,
@@ -78,11 +78,12 @@ public class ViewControllerForIpadPatient: UIViewController {
   public init(
     backgroundColor: Color? = nil,
     ctx: ModelContext,
-    patientSubtitle: String?
+    patientSubtitle: String?,
+    oid: String
   ) {
     vm = ChatViewModel(context: ctx)
-    let session = vm.createSession(subTitle: patientSubtitle)
-    let newSessionView = NewSessionView(session: session, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "")
+    let session = vm.createSession(subTitle: patientSubtitle, oid: oid)
+    let newSessionView = NewSessionView(session: session, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
     docAssistView = AnyView(newSessionView.modelContext(ctx))
     super.init(nibName: nil, bundle: nil)
 

@@ -58,7 +58,7 @@ struct MainView: View {
       }
       .background(
         NavigationLink(
-          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat")
+          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
             .modelContext(modelContext),
           isActive: $isNavigatingToNewSession
         ) {
@@ -89,7 +89,7 @@ struct MainView: View {
         }
         .background(
           NavigationLink(
-            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat")
+            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
               .modelContext(modelContext),
             isActive: $isNavigatingToNewSession
           ) {
@@ -252,7 +252,8 @@ struct MainView: View {
               NewSessionView(
                   session: sessionId,
                   viewModel: viewModel,
-                  backgroundColor: backgroundColor, patientName: ""
+                  backgroundColor: backgroundColor, patientName: "",
+                  calledFromPatientContext: false
               )
               .modelContext(modelContext)
           )
@@ -316,31 +317,54 @@ struct MainView: View {
   
   // MARK: - Message SubView
   func MessageSubView(_ title: String, _ date: String, _ subTitle: String?) -> some View {
-    VStack {
-      HStack {
-        Text(subTitle ?? "GeneralChat")
-          .font(.custom("Lato-Regular", size: 16))
-          .foregroundColor(.primary)
-          .lineLimit(1)
-        Spacer()
+    HStack {
+      nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
+     VStack (spacing: 6) {
+        HStack {
+          Text(subTitle ?? "GeneralChat")
+            .font(.custom("Lato-Regular", size: 16))
+            .foregroundColor(.primary)
+            .lineLimit(1)
+          Spacer()
           Text(date)
             .font(.caption)
             .foregroundStyle(Color.gray)
           Image(systemName: "chevron.right")
             .resizable()
             .scaledToFit()
-            .frame(width: 7)
+            .frame(width: 6)
             .foregroundStyle(Color.gray)
+        }
+        HStack {
+          Text(title)
+            .font(.custom("Lato-Regular", size: 14))
+            .fontWeight(.regular)
+            .foregroundStyle(Color.gray)
+            .lineLimit(1)
+          Spacer()
+        }
+        Divider()
       }
-      HStack {
-        Text(title)
-          .font(.caption)
-          .foregroundStyle(Color.gray)
-          .lineLimit(1)
-        Spacer()
-      }
-      Divider()
     }
+  }
+  
+  private func nameInitialsView(initials: String) -> some View {
+    ZStack {
+      LinearGradient(
+          colors: [
+              Color(red: 186/255, green: 186/255, blue: 186/255, opacity: 1.0),
+              Color(red: 161/255, green: 161/255, blue: 161/255, opacity: 1.0)
+          ],
+          startPoint: .top,
+          endPoint: .bottom
+      )
+        .frame(width: 38, height: 38)
+      Text(initials)
+        .foregroundStyle(.white)
+        .font(.custom("Lato-Bold", size: 16))
+        .fontWeight(.bold)
+    }
+    .clipShape(Circle())
   }
 }
 
@@ -374,3 +398,8 @@ public struct SomeMainView: View {
       .navigationBarHidden(true)
   }
 }
+
+func getInitials(name: String?) -> String? {
+  name?.uppercased().components(separatedBy: " ").reduce("") { $0 + $1.prefix(1) }
+}
+

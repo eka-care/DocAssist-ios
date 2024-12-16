@@ -16,10 +16,11 @@ public struct NewSessionView: View {
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
-  @State private var patientName: String? = "General Chat"
+  private var patientName: String?
   @Environment(\.dismiss) var dismiss
+  private var calledFromPatientContext: Bool
   
-  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String) {
+  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -30,8 +31,8 @@ public struct NewSessionView: View {
     )
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
-    print("#BB patientName: \(patientName)")
     self.patientName = patientName
+    self.calledFromPatientContext = calledFromPatientContext
     
     let appearance = UINavigationBarAppearance()
           appearance.configureWithOpaqueBackground()
@@ -43,7 +44,12 @@ public struct NewSessionView: View {
 public  var body: some View {
     VStack(alignment: .leading, spacing: 0) {
       if let backgroundColor {
-        newView
+        VStack {
+          if calledFromPatientContext {
+            headerView
+          }
+          newView
+        }
           .background(backgroundColor)
         
       } else {
@@ -54,13 +60,6 @@ public  var body: some View {
   
   var newView: some View {
     VStack {
-//      if let patientName {
-//        if patientName != "" {
-//          Text("\(patientName)")
-//            .frame(maxWidth: .infinity)
-//            .background(Color.gray.opacity(0.1))
-//        }
-  //    }
       if messages.isEmpty {
         VStack {
           Spacer()
@@ -72,8 +71,17 @@ public  var body: some View {
           }
           Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
             .foregroundColor(.black)
-            .font(.title3)
+            .font(.custom("Lato-Bold", size: 20))
+            .fontWeight(.heavy)
             .padding()
+          if calledFromPatientContext {
+            Group {
+              Text("Doc Assist uses the patient data andprescription")
+              Text("data to generate responses")
+            }
+              .foregroundStyle(.secondary)
+              .font(.subheadline)
+          }
           Spacer()
           textfieldView
             .padding(.bottom, 5)
@@ -124,15 +132,48 @@ public  var body: some View {
     .toolbar {
         ToolbarItem(placement: .principal) {
             VStack {
-              Text(patientName ?? "General Chat")
+              Text("General Chat")
                     .font(.headline)
                     .foregroundColor(.primary)
-                Text("Ask Anything")
+                Text("Ask anything...")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
         }
     }
+  }
+  private var headerView: some View {
+      VStack(alignment: .leading, spacing: 4) {
+        if UIDevice.current.userInterfaceIdiom == .phone {
+          HStack {
+            Button(action: {
+              dismiss()
+            }) {
+              HStack(spacing: 6) {
+                Image(systemName: "chevron.left")
+                  .font(.system(size: 21, weight: .medium))
+                  .foregroundColor(.blue)
+                Spacer()
+                VStack {
+                  Text(patientName ?? "General Chat")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Text("Ask anything about this patient")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+              }
+            }
+            .contentShape(Rectangle())
+            Spacer()
+          }
+          .padding(.leading, 10)
+          .padding(.top, 9)
+        }
+      }
+      .padding(.bottom, 5)
+      .background(Color.white)
   }
   
   var textfieldView: some View {
