@@ -19,7 +19,8 @@ public struct NewSessionView: View {
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
-  private var subTitle: String = "Ask anything ..."
+  private var subTitle: String = "Ask anything.."
+  @State private var hasFocusedOnce = false
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -34,12 +35,6 @@ public struct NewSessionView: View {
     self.backgroundColor = backgroundColor
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
-    
-    let appearance = UINavigationBarAppearance()
-          appearance.configureWithOpaqueBackground()
-          appearance.backgroundColor = UIColor.white
-          UINavigationBar.appearance().standardAppearance = appearance
-          UINavigationBar.appearance().scrollEdgeAppearance = appearance
   }
   
 public  var body: some View {
@@ -92,9 +87,8 @@ public  var body: some View {
           ScrollView {
             LazyVStack {
               ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "")
+                MessageBubble(message: message, m: message.messageText ?? "afdf")
                   .padding(.horizontal)
-                  .padding(.top, message == messages.first ? 20 : 0)
                   .id(message.id)
               }
               Color.clear
@@ -130,6 +124,7 @@ public  var body: some View {
           .padding(.bottom, 5)
       }
     }
+    .navigationBarTitleDisplayMode(.inline)
     .toolbar {
         ToolbarItem(placement: .principal) {
             VStack {
@@ -144,37 +139,35 @@ public  var body: some View {
     }
   }
   private var headerView: some View {
-      VStack(alignment: .leading, spacing: 4) {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-          HStack {
-            Button(action: {
-              dismiss()
-            }) {
-              HStack(spacing: 6) {
-                Image(systemName: "chevron.left")
-                  .font(.system(size: 21, weight: .medium))
-                  .foregroundColor(.blue)
-                Spacer()
-                VStack {
-                  Text(patientName ?? "General Chat")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    Text("Ask anything about this patient")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                Spacer()
-              }
+    VStack(alignment: .leading, spacing: 4) {
+      HStack {
+        Button(action: {
+          dismiss()
+        }) {
+          HStack(spacing: 6) {
+            Image(systemName: "chevron.left")
+              .font(.system(size: 21, weight: .medium))
+              .foregroundColor(.blue)
+            Spacer()
+            VStack {
+              Text(patientName ?? "General Chat")
+                .font(.headline)
+                .foregroundColor(.primary)
+              Text("Ask anything about this patient")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
             }
-            .contentShape(Rectangle())
             Spacer()
           }
-          .padding(.leading, 10)
-          .padding(.top, 9)
         }
+        .contentShape(Rectangle())
+        Spacer()
       }
-      .padding(.bottom, 5)
-      .background(Color.white)
+      .padding(.leading, 10)
+      .padding(.top, 9)
+    }
+    .padding(.bottom, 5)
+    .background(Color.white)
   }
   
   var textfieldView: some View {
@@ -185,14 +178,11 @@ public  var body: some View {
           .padding(.vertical, 10)
           .font(.body)
           .focused($isTextFieldFocused)
-          .onAppear() {
-            isTextFieldFocused = true
-          }
         Button(action: {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
           guard !newMessage.isEmpty else { return }
           sendMessage(newMessage)
-          isTextFieldFocused = false
+          isTextFieldFocused.toggle()
         }) {
           Image(systemName: "arrow.up")
             .foregroundStyle(Color.white)
@@ -215,6 +205,12 @@ public  var body: some View {
     }
     .padding(.horizontal, 16)
     .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
+    .onAppear {
+        if !hasFocusedOnce {
+            isTextFieldFocused = true
+            hasFocusedOnce = true
+        }
+    }
   }
   private func sendMessage(_ message: String) {
     viewModel.sendMessage(newMessage: message)

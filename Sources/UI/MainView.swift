@@ -90,7 +90,7 @@ struct MainView: View {
         }
         .background(
           NavigationLink(
-            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "", calledFromPatientContext: false)
+            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "General Chat", calledFromPatientContext: false)
               .modelContext(modelContext),
             isActive: $isNavigatingToNewSession
           ) {
@@ -105,7 +105,7 @@ struct MainView: View {
 
   private var headerView: some View {
       VStack(alignment: .leading, spacing: 4) {
-        if UIDevice.current.userInterfaceIdiom == .phone {
+      //  if UIDevice.current.userInterfaceIdiom == .phone {
           HStack {
             Button(action: {
               dismiss()
@@ -124,7 +124,7 @@ struct MainView: View {
           }
           .padding(.leading, 10)
           .padding(.top, 9)
-        }
+       // }
           HStack {
               Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
                   .foregroundColor(.black)
@@ -186,7 +186,6 @@ struct MainView: View {
         VStack() {
           ForEach(Array(thread.enumerated()), id: \.element.id) { index, thread in
             threadItemView(for: thread)
-              .padding(.top, index == 0 ? 20 : 0)
           }
         }
         .padding(.horizontal)
@@ -214,22 +213,22 @@ struct MainView: View {
           MessageSubView(
               thread.title,
               viewModel.getFormatedDateToDDMMYYYY(date: thread.createdAt),
-              thread.subTitle
+              thread.subTitle,
+              foregroundColor: (newSessionId == thread.sessionId) ||
+              (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false
           )
           .background(Color.clear)
           .background(
-              RoundedRectangle(cornerRadius: 10)
-                  .fill(Color.clear)
+            UIDevice.current.userInterfaceIdiom == .pad ?
+                   RoundedRectangle(cornerRadius: 10)
+                       .fill(
+                           (newSessionId == thread.sessionId) ||
+                           (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.selectedIpadChatColor : Color.clear)
+                   : nil
           )
-          .overlay(
-              UIDevice.current.userInterfaceIdiom == .pad ?
-                  RoundedRectangle(cornerRadius: 10)
-                      .stroke(
-                          (newSessionId == thread.sessionId) ||
-                          (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.blue : Color.clear,
-                          lineWidth: 1
-                      )
-                  : nil
+          .foregroundColor(
+              (newSessionId == thread.sessionId) ||
+              (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.blue : Color.primary
           )
           .contextMenu {
               Button(role: .destructive) {
@@ -323,36 +322,39 @@ struct MainView: View {
   }
   
   // MARK: - Message SubView
-  func MessageSubView(_ title: String, _ date: String, _ subTitle: String?) -> some View {
-    HStack {
-      nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
-     VStack (spacing: 6) {
-        HStack {
-          Text(subTitle ?? "GeneralChat")
-            .font(.custom("Lato-Regular", size: 16))
-            .foregroundColor(.primary)
-            .lineLimit(1)
-          Spacer()
-          Text(date)
-            .font(.caption)
-            .foregroundStyle(Color.gray)
-          Image(systemName: "chevron.right")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 6)
-            .foregroundStyle(Color.gray)
+  func MessageSubView(_ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool) -> some View {
+    VStack {
+      HStack {
+        nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
+        VStack (spacing: 6) {
+          HStack {
+            Text(subTitle ?? "GeneralChat")
+              .font(.custom("Lato-Regular", size: 16))
+              .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
+              .lineLimit(1)
+            Spacer()
+            Text(date)
+              .font(.caption)
+              .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
+            Image(systemName: "chevron.right")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 6)
+              .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
+          }
+          HStack {
+            Text(title)
+              .font(.custom("Lato-Regular", size: 14))
+              .fontWeight(.regular)
+              .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
+              .lineLimit(1)
+            Spacer()
+          }
+          Divider()
         }
-        HStack {
-          Text(title)
-            .font(.custom("Lato-Regular", size: 14))
-            .fontWeight(.regular)
-            .foregroundStyle(Color.gray)
-            .lineLimit(1)
-          Spacer()
-        }
-        Divider()
       }
     }
+    .padding(UIDevice.current.userInterfaceIdiom == .pad ? 3 : 0)
   }
   
   private func nameInitialsView(initials: String) -> some View {

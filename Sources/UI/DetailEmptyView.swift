@@ -24,5 +24,6 @@ struct DetailEmptyView: View {
 }
 
 extension Color {
-  static let myColor = Color("messageBorder")
+  static let myColor = Color(.messageBorder)
+  static let selectedIpadChatColor = Color(.selectedChat)
 }
