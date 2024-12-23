@@ -16,19 +16,22 @@ public struct IpadChatView: View {
     var editButtonColor: Color?
     var subTitle: String?
     var ctx: ModelContext
+    var delegate: ConvertVoiceToText
   
     public init(
       backgroundColor: Color? = nil,
       emptyMessageColor: Color? = .white,
       editButtonColor: Color? = .blue,
       subTitle: String? = "General Chat",
-      ctx: ModelContext
+      ctx: ModelContext,
+      delegate: ConvertVoiceToText
     ) {
       self.backgroundColor = backgroundColor
       self.emptyMessageColor = emptyMessageColor
       self.editButtonColor = editButtonColor
       self.subTitle = subTitle
       self.ctx = ctx
+      self.delegate = delegate
     }
   
   public var body: some View {
@@ -38,7 +41,8 @@ public struct IpadChatView: View {
               emptyMessageColor: emptyMessageColor,
               editButtonColor: editButtonColor,
               subTitle: subTitle,
-              ctx: ctx
+              ctx: ctx,
+              delegate: delegate
             )
     } detail: {
       DetailEmptyView()

@@ -23,15 +23,15 @@ struct MainView: View {
   var backgroundColor: Color?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
-  var subTitle: String?
+  var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
   
-  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext) {
+  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext, delegate: ConvertVoiceToText) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
-    self.viewModel = ChatViewModel(context: ctx)
+    self.viewModel = ChatViewModel(context: ctx, delegate: delegate)
     self.bgcolors = SetUIComponents.shared.emptyHistoryBgColor ?? Color.gray
   }
 
@@ -223,7 +223,7 @@ struct MainView: View {
                    RoundedRectangle(cornerRadius: 10)
                        .fill(
                            (newSessionId == thread.sessionId) ||
-                           (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.selectedIpadChatColor : Color.clear)
+                           (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.primaryprimary : Color.clear)
                    : nil
           )
           .foregroundColor(
@@ -384,25 +384,28 @@ public struct SomeMainView: View {
   var editButtonColor: Color?
   var subTitle: String?
   var ctx: ModelContext
+  var delegate: ConvertVoiceToText
   
   public init(
     backgroundColor: Color? = .white,
     emptyMessageColor: Color? = .white,
     editButtonColor: Color? = .blue,
     subTitle: String? = "General Chat",
-    ctx: ModelContext
+    ctx: ModelContext,
+    delegate: ConvertVoiceToText
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
     self.ctx = ctx
+    self.delegate = delegate
     
     DatabaseConfig.shared.modelContext = ctx
   }
   
   public var body: some View {
-    MainView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx)
+    MainView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx, delegate: delegate)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }
@@ -412,3 +415,6 @@ func getInitials(name: String?) -> String? {
   name?.uppercased().components(separatedBy: " ").reduce("") { $0 + $1.prefix(1) }
 }
 
+public protocol ConvertVoiceToText {
+  func convertVoiceToText(audioFileURL: URL, completion: @escaping (String) -> Void)
+}

@@ -19,7 +19,8 @@ public class DocAssistViewController: UIViewController {
       editButtonColor: Color? = nil,
       subTitle: String? = nil,
       ctx: ModelContext,
-      deviceType: String? = "phone"
+      deviceType: String? = "phone",
+      delegate: ConvertVoiceToText
   ) {
       super.init(nibName: nil, bundle: nil)
       switch deviceType?.lowercased() {
@@ -29,7 +30,8 @@ public class DocAssistViewController: UIViewController {
               emptyMessageColor: emptyMessageColor,
               editButtonColor: editButtonColor,
               subTitle: subTitle,
-              ctx: ctx
+              ctx: ctx,
+              delegate: delegate
           )
           uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -39,7 +41,8 @@ public class DocAssistViewController: UIViewController {
               emptyMessageColor: emptyMessageColor,
               editButtonColor: editButtonColor,
               subTitle: subTitle,
-              ctx: ctx
+              ctx: ctx,
+              delegate: delegate
           )
           uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
       }
@@ -82,9 +85,10 @@ public class ViewControllerForIpadPatient: UIViewController {
     backgroundColor: Color? = nil,
     ctx: ModelContext,
     patientSubtitle: String?,
-    oid: String
+    oid: String,
+    delegate: ConvertVoiceToText
   ) {
-    vm = ChatViewModel(context: ctx)
+    vm = ChatViewModel(context: ctx, delegate: delegate)
     let session = vm.createSession(subTitle: patientSubtitle, oid: oid)
     let newSessionView = NewSessionView(session: session, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
     docAssistView = AnyView(newSessionView.modelContext(ctx))

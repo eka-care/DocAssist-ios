@@ -8,20 +8,30 @@
 import Foundation
 import SwiftData
 import SwiftUI
+import AVFAudio
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   private var context: ModelContext
   @Published var streamStarted: Bool = false
-  init(context: ModelContext) {
-    self.context = context
-    DatabaseConfig.shared.modelContext = context
-  }
-  
+  private var delegate : ConvertVoiceToText? = nil
   @Published var isLoading: Bool = false
   @Published var vmssid: String = ""
   private var dataStorage: String = ""
   private let networkCall = NetworkCall()
+  
+  @Published var isRecording = false
+  @Published var currentRecording: URL?
+  @Published var voiceText: String?
+  
+  var audioRecorder: AVAudioRecorder?
+  var audioPlayer: AVAudioPlayer?
+  
+  init(context: ModelContext, delegate: ConvertVoiceToText? = nil) {
+    self.context = context
+    DatabaseConfig.shared.modelContext = context
+    self.delegate = delegate
+  }
   
   func sendMessage(newMessage: String) {
     addUserMessage(newMessage)
@@ -83,6 +93,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           if let jsonData = jsonString.data(using: .utf8) {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
+              print("Message: \(message.text)")
               self.updateMessage(with: message)
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
@@ -198,6 +209,16 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       return dateFormatter.string(from: date)
     }
   }
+  
+  func onTapOfAudioButton(){
+    guard let currentRecording = currentRecording else {
+      return
+    }
+    delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] text in
+      guard let self = self else { return }
+      voiceText = text
+    })
+  }
 }
 
 func fetchSessionId(fromOid oid: String, context: ModelContext) throws -> String? {
@@ -216,4 +237,54 @@ func fetchPatientName (fromSessionId ssid: String, context: ModelContext) throws
     )
   let results = try context.fetch(fetchDescriptor)
     return results.first?.subTitle ?? ""
+}
+
+
+extension ChatViewModel: AVAudioRecorderDelegate  {
+  
+  func startRecording() {
+    let recordingSession = AVAudioSession.sharedInstance()
+    do {
+      try recordingSession.setCategory(.record, mode: .default)
+      try recordingSession.setActive(true)
+      
+      let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      let audioFilename = documentsPath.appendingPathComponent("\(Date().toString(dateFormat: "dd-MM-YY_'at'_HH:mm:ss")).m4a")
+      
+      let settings = [
+        AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+        AVSampleRateKey: 44100,
+        AVNumberOfChannelsKey: 1,
+        AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+      ]
+      
+      audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+      audioRecorder?.delegate = self
+      audioRecorder?.record()
+      
+      isRecording = true
+      currentRecording = audioFilename
+    } catch {
+      print("Could not start recording: \(error)")
+    }
+  }
+  
+  func stopRecording() {
+    guard isRecording, let recorder = audioRecorder else {
+      print("No recording to stop.")
+      return
+    }
+    recorder.stop()
+    onTapOfAudioButton()
+    isRecording = false
+  }
+}
+
+
+extension Date {
+    func toString(dateFormat format: String) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = format
+        return dateFormatter.string(from: self)
+    }
 }

@@ -16,11 +16,13 @@ public struct NewSessionView: View {
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
-  private var patientName: String?
+  private var patientName: String? = "General Chat"
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
+  private var suggestionsTextsForPatientContext: [String] = ["💉 Generate a vaccination chart for an infant","🥬 Generate a diet chart","🏋️‍♀️ Give lifestyle advice for a patient","👨🏻‍⚖️ How can I minimise medico-legal risks?"]
+  private var suggestionsTextForGeneralChat: [String] = ["💉 Generate a vaccination chart for an infant","🥬 Diet for hyperuricemia","📄 Should moxclav to be given in pregnancy?","👨🏻‍⚖️ How can I minimise medico-legal risks?"]
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -65,11 +67,13 @@ public  var body: some View {
               .scaledToFit()
               .frame(width: 60)
           }
+          
           Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
             .foregroundColor(.black)
             .font(.custom("Lato-Bold", size: 20))
             .fontWeight(.medium)
             .padding(.top, 5)
+          
           if calledFromPatientContext {
             Group {
               Text("Doc Assist uses the patient data and prescription")
@@ -78,6 +82,14 @@ public  var body: some View {
               .foregroundStyle(.secondary)
               .font(.subheadline)
           }
+          
+          let suggestions = calledFromPatientContext ? suggestionsTextsForPatientContext : suggestionsTextForGeneralChat
+
+          ForEach(suggestions, id: \.self) { suggestion in
+              SuggestionView(suggestionText: suggestion, viewModel: viewModel)
+                  .padding(.all, 4)
+          }
+          
           Spacer()
           textfieldView
             .padding(.bottom, 5)
@@ -178,6 +190,20 @@ public  var body: some View {
           .padding(.vertical, 10)
           .font(.body)
           .focused($isTextFieldFocused)
+          .onChange(of: viewModel.voiceText) { _ , newVoiceText in
+            if let voiceText = newVoiceText, !voiceText.isEmpty {
+              newMessage = voiceText
+              viewModel.voiceText = ""
+            }
+          }
+        VStack {
+          Image(systemName: viewModel.isRecording ? "stop.fill" : "mic.fill")
+            .foregroundColor(.gray.opacity(0.5))
+            .font(.system(size: 20))
+            .onTapGesture {
+              viewModel.isRecording ? viewModel.stopRecording() : viewModel.startRecording()
+            }
+        }
         Button(action: {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
           guard !newMessage.isEmpty else { return }
@@ -206,12 +232,13 @@ public  var body: some View {
     .padding(.horizontal, 16)
     .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
     .onAppear {
-        if !hasFocusedOnce {
-            isTextFieldFocused = true
-            hasFocusedOnce = true
-        }
+      if !hasFocusedOnce, !messages.isEmpty {
+        isTextFieldFocused = true
+        hasFocusedOnce = true
+      }
     }
   }
+  
   private func sendMessage(_ message: String) {
     viewModel.sendMessage(newMessage: message)
     newMessage = ""
@@ -309,4 +336,35 @@ struct CustomCornerShape: Shape {
         )
         return Path(path.cgPath)
     }
+}
+
+struct SuggestionView: View {
+  
+  var suggestionText: String = ""
+  var viewModel: ChatViewModel
+  
+  init(suggestionText: String, viewModel: ChatViewModel) {
+    self.suggestionText = suggestionText
+    self.viewModel = viewModel
+  }
+  
+  var body: some View {
+    ZStack {
+      RoundedRectangle(cornerRadius: 20)
+        .frame(width: 360, height: 40)
+        .foregroundStyle(Color.nuetralWhite)
+      Button(action: {
+        viewModel.sendMessage(newMessage: suggestionText)
+      }) {
+        HStack {
+          Text(suggestionText)
+            .foregroundColor(Color.primary)
+            .lineLimit(1)
+            .padding(.leading, 10)
+          Spacer()
+        }
+      }
+    }
+    .frame(width: 360, height: 40)
+  }
 }
