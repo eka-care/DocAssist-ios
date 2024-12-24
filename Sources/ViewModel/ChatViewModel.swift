@@ -24,6 +24,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var isRecording = false
   @Published var currentRecording: URL?
   @Published var voiceText: String?
+  @Published var voiceProcessing: Bool = false
   
   var audioRecorder: AVAudioRecorder?
   var audioPlayer: AVAudioPlayer?
@@ -214,9 +215,11 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     guard let currentRecording = currentRecording else {
       return
     }
+    voiceProcessing = true
     delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] text in
       guard let self = self else { return }
-      voiceText = text
+      self.voiceText = text
+      self.voiceProcessing = false
     })
   }
 }
@@ -277,15 +280,6 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     recorder.stop()
     onTapOfAudioButton()
     isRecording = false
-    
-    if let fileURL = currentRecording {
-        do {
-            try FileManager.default.removeItem(at: fileURL)
-            print("Audio file removed from document path.")
-        } catch {
-            print("Failed to remove audio file: \(error)")
-        }
-    }
   }
 }
 

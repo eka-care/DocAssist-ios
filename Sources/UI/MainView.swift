@@ -10,7 +10,11 @@ import SwiftData
 
 struct MainView: View {
   
-  @Query(sort: \SessionDataModel.lastUpdatedAt, order: .reverse) var thread: [SessionDataModel]
+  @Query(
+      filter: #Predicate<SessionDataModel> { !$0.chatMessages.isEmpty },
+      sort: \SessionDataModel.lastUpdatedAt,
+      order: .reverse
+  ) var thread: [SessionDataModel]
   @ObservedObject var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
   @State private var isNavigatingToNewSession: Bool = false
@@ -328,10 +332,10 @@ struct MainView: View {
         nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
         VStack (spacing: 6) {
           HStack {
-            Text(subTitle ?? "GeneralChat")
+            Text(title)
               .font(.custom("Lato-Regular", size: 16))
               .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
-              .lineLimit(1)
+              .lineLimit(2)
             Spacer()
             Text(date)
               .font(.caption)
@@ -343,7 +347,7 @@ struct MainView: View {
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
           }
           HStack {
-            Text(title)
+            Text(subTitle ?? "GeneralChat")
               .font(.custom("Lato-Regular", size: 14))
               .fontWeight(.regular)
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
@@ -368,10 +372,16 @@ struct MainView: View {
           endPoint: .bottom
       )
         .frame(width: 38, height: 38)
-      Text(initials)
-        .foregroundStyle(.white)
-        .font(.custom("Lato-Bold", size: 16))
-        .fontWeight(.bold)
+      Group {
+        if initials == "GeneralChat" {
+          Image(.chatBotBW)
+        } else {
+          Text(initials)
+        }
+      }
+      .foregroundStyle(.white)
+      .font(.custom("Lato-Bold", size: 16))
+      .fontWeight(.bold)
     }
     .clipShape(Circle())
   }
@@ -412,7 +422,11 @@ public struct SomeMainView: View {
 }
 
 func getInitials(name: String?) -> String? {
-  name?.uppercased().components(separatedBy: " ").reduce("") { $0 + $1.prefix(1) }
+  if name != "General Chat" {
+    return name?.uppercased().components(separatedBy: " ").reduce("") { $0 + $1.prefix(1) }
+  } else {
+    return "GeneralChat"
+  }
 }
 
 public protocol ConvertVoiceToText {

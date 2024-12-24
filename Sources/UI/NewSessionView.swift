@@ -22,7 +22,6 @@ public struct NewSessionView: View {
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
-  private var suggestionsTextsForPatientContext: [String] = ["📄 Create a medical certificate for this patient","🥬 Generate a diet chart","🏋️‍♀️ Recommend therapy for this patient","👨🏻‍⚖️ Suggest differential for this patient"]
   private var suggestionsTextForGeneralChat: [String] = ["💊 What are Ozempic contraindications?","🥬 Diet for hyperuricemia","📄 List of Pregnancy-safe antibiotics?","👨🏻‍⚖️ How can I minimise medico-legal risks?"]
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
@@ -85,11 +84,11 @@ public  var body: some View {
                 .font(.subheadline)
             }
 
-            let suggestions = calledFromPatientContext ? suggestionsTextsForPatientContext : suggestionsTextForGeneralChat
+          let suggestions = calledFromPatientContext ? SetUIComponents.shared.patientChatDefaultSuggestion : SetUIComponents.shared.generalChatDefaultSuggestion
 
             ScrollView {
                 LazyVStack(spacing: 4) {
-                    ForEach(suggestions, id: \.self) { suggestion in
+                  ForEach(suggestions ?? suggestionsTextForGeneralChat, id: \.self) { suggestion in
                         SuggestionView(suggestionText: suggestion, viewModel: viewModel)
                             .padding(.all, 4)
                     }
@@ -101,6 +100,13 @@ public  var body: some View {
 
             textfieldView
                 .padding(.bottom, 5)
+            
+        }
+        .onAppear {
+            if !hasFocusedOnce {
+                isTextFieldFocused = true
+                hasFocusedOnce = true
+            }
         }
       } else {
         ScrollViewReader { proxy in
@@ -151,9 +157,9 @@ public  var body: some View {
               Text(patientName?.isEmpty ?? true ? "General Chat" : patientName ?? "General Chat")
                     .font(.headline)
                     .foregroundColor(.primary)
-              Text(subTitle)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+//              Text(subTitle)
+//                    .font(.subheadline)
+//                    .foregroundColor(.secondary)
             }
         }
     }
@@ -173,9 +179,9 @@ public  var body: some View {
               Text(patientName ?? "General Chat")
                 .font(.headline)
                 .foregroundColor(.primary)
-              Text("Ask anything about this patient")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+//              Text("Ask anything about this patient")
+//                .font(.subheadline)
+//                .foregroundColor(.secondary)
             }
             Spacer()
           }
@@ -193,8 +199,15 @@ public  var body: some View {
   var textfieldView: some View {
       ZStack {
           HStack {
-            TextField(viewModel.isRecording ? "Tap to stop recording" : "Start typing or tap the mic to speak...", text: $newMessage, axis: .vertical)
-                .padding(.horizontal, 12)
+//              TextField(viewModel.isRecording ? "Tap to stop recording" : "Tap on mic to speak...", text: $newMessage, axis: .vertical)
+            TextField(
+                viewModel.isRecording
+                    ? "Tap to stop recording"
+                : (viewModel.voiceProcessing ? "Processing..." : "Tap on mic to speak..."),
+                text: $newMessage,
+                axis: .vertical
+            )
+                  .padding(.horizontal, 12)
                   .padding(.vertical, 10)
                   .font(.body)
                   .focused($isTextFieldFocused)
@@ -204,42 +217,43 @@ public  var body: some View {
                           viewModel.voiceText = ""
                       }
                   }
-
-              Button(action: {
-                  newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-                  guard !newMessage.isEmpty else { return }
-                  sendMessage(newMessage)
-                  isTextFieldFocused.toggle()
-              }) {
-                  Image(systemName: "arrow.up")
+              
+              if !newMessage.isEmpty {
+                  Button(action: {
+                      newMessage = viewModel.trimLeadingSpaces(from: newMessage)
+                      guard !newMessage.isEmpty else { return }
+                      sendMessage(newMessage)
+                      isTextFieldFocused.toggle()
+                  }) {
+                      Image(systemName: "arrow.up")
                       .foregroundStyle(Color.white)
-                      .fontWeight(.bold)
-                      .frame(width: 30, height: 30)
-                      .background(
-                          Circle().fill(
-                              (newMessage.isEmpty || viewModel.streamStarted)
-                                  ? Color.gray.opacity(0.4)
-                                  : Color.blue
+                          .fontWeight(.bold)
+                          .frame(width: 30, height: 30)
+                          .background(
+                              Circle().fill(
+                                  (viewModel.streamStarted)
+                                      ? Color.gray.opacity(0.4)
+                                      : Color.blue
+                              )
                           )
-                      )
-              }
-              .disabled(newMessage.isEmpty)
-              .disabled(viewModel.streamStarted)
-
-              Button(action: {
-                  viewModel.isRecording ? viewModel.stopRecording() : viewModel.startRecording()
-              }) {
-                  Image(systemName: viewModel.isRecording ? "stop.fill" : "mic.fill")
-                      .foregroundStyle(Color.white)
-                      .fontWeight(.bold)
-                      .frame(width: 30, height: 30)
-                      .background(
-                          Circle().fill(
-                            viewModel.isRecording ? Color.red : Color.gray.opacity(0.4)
+                  }
+                  .disabled(viewModel.streamStarted)
+              } else {
+                  Button(action: {
+                      viewModel.isRecording ? viewModel.stopRecording() : viewModel.startRecording()
+                  }) {
+                      Image(systemName: viewModel.isRecording ? "stop.fill" : "mic.fill")
+                      .foregroundStyle(viewModel.isRecording ? Color.white : Color.gray.opacity(0.5))
+                          .fontWeight(.bold)
+                          .frame(width: 30, height: 30)
+                          .background(
+                              Circle().fill(
+                                viewModel.isRecording ? Color.red : Color.clear
+                              )
                           )
-                      )
+                  }
+                  .animation(.default, value: viewModel.isRecording)
               }
-              .animation(.default, value: viewModel.isRecording)
           }
           .padding(.horizontal, 12)
           .background(RoundedRectangle(cornerRadius: 30).fill(Color.white))
@@ -253,12 +267,6 @@ public  var body: some View {
       }
       .padding(.horizontal, 16)
       .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
-      .onAppear {
-          if !hasFocusedOnce {
-              isTextFieldFocused = true
-              hasFocusedOnce = true
-          }
-      }
   }
   
   private func sendMessage(_ message: String) {

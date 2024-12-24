@@ -30,6 +30,8 @@ public class SetUIComponents {
   public var emptyHistoryBgColor: Color?
   public var emptyHistoryFgColor: Color?
   public var ipadEmptyChatView: UIImage?
+  public var generalChatDefaultSuggestion: [String]?
+  public var patientChatDefaultSuggestion: [String]?
   
   public static let shared = SetUIComponents()
 
