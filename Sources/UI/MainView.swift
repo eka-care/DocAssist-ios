@@ -10,7 +10,7 @@ import SwiftData
 
 struct MainView: View {
   
-  @Query(sort: \SessionDataModel.createdAt, order: .reverse) var thread: [SessionDataModel]
+  @Query(sort: \SessionDataModel.lastUpdatedAt, order: .reverse) var thread: [SessionDataModel]
   @ObservedObject var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
   @State private var isNavigatingToNewSession: Bool = false
@@ -212,7 +212,7 @@ struct MainView: View {
       }) {
           MessageSubView(
               thread.title,
-              viewModel.getFormatedDateToDDMMYYYY(date: thread.createdAt),
+              viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
               thread.subTitle,
               foregroundColor: (newSessionId == thread.sessionId) ||
               (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false
@@ -275,7 +275,7 @@ struct MainView: View {
           Spacer()
         }
         Button(action: {
-          _ = viewModel.createSession(subTitle: subTitle)
+          _ = viewModel.createSession(subTitle: "General Chat")
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
         }) {

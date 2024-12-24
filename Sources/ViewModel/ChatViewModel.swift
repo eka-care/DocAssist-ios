@@ -12,12 +12,13 @@ import AVFAudio
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
-  private var context: ModelContext
+ 
   @Published var streamStarted: Bool = false
-  private var delegate : ConvertVoiceToText? = nil
   @Published var isLoading: Bool = false
   @Published var vmssid: String = ""
   private var dataStorage: String = ""
+  private var context: ModelContext
+  private var delegate : ConvertVoiceToText? = nil
   private let networkCall = NetworkCall()
   
   @Published var isRecording = false
@@ -67,19 +68,18 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     NwConfig.shared.queryParams["session_id"] = vmssid
     networkCall.startStreamingPostRequest(query: query, onStreamComplete: { [weak self] in
       Task { @MainActor in
-          self?.streamStarted = false 
+        self?.streamStarted = false
       }
-  }) { [weak self] result in
-          switch result {
-          case .success(let responseString):
-            Task {
-              await self?.handleStreamResponse(responseString)
-            }
-          case .failure(let error):
-            print("Error streaming: \(error)")
-          }
+    }) { [weak self] result in
+      switch result {
+      case .success(let responseString):
+        Task {
+          await self?.handleStreamResponse(responseString)
         }
-
+      case .failure(let error):
+        print("Error streaming: \(error)")
+      }
+    }
   }
   
   func handleStreamResponse(_ responseString: String) {
@@ -115,7 +115,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       existingItem.messageText = message.text
       saveData()
       print("SESSION DATA SAVED")
-    } else { /// Else we create a new entry in db
+    } else { 
       createNewChatMessage(from: message)
     }
   }
@@ -277,6 +277,15 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     recorder.stop()
     onTapOfAudioButton()
     isRecording = false
+    
+    if let fileURL = currentRecording {
+        do {
+            try FileManager.default.removeItem(at: fileURL)
+            print("Audio file removed from document path.")
+        } catch {
+            print("Failed to remove audio file: \(error)")
+        }
+    }
   }
 }
 

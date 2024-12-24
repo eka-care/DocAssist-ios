@@ -37,6 +37,7 @@ final class DatabaseConfig {
     
     let session = try? modelContext.fetch(fetchDescriptor)
     session?.first?.title = title
+    session?.first?.lastUpdatedAt = Date()
     do {
       try modelContext.save()
     } catch {
