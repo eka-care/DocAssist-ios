@@ -48,8 +48,7 @@ public  var body: some View {
           }
           newView
         }
-          .background(backgroundColor)
-        
+          .background(backgroundColor)        
       } else {
         newView
       }
@@ -69,7 +68,7 @@ public  var body: some View {
                     .frame(width: 60)
             }
 
-            Text(SetUIComponents.shared.emptyChatTitle ?? "No Chat yet")
+          Text((calledFromPatientContext ? "Ask anything about \(patientName ?? "User")" : SetUIComponents.shared.emptyChatTitle) ?? "No chats yet")
                 .foregroundColor(.black)
                 .font(.custom("Lato-Bold", size: 20))
                 .fontWeight(.medium)
@@ -77,7 +76,7 @@ public  var body: some View {
 
             if calledFromPatientContext {
                 Group {
-                    Text("Doc Assist uses the patient data and prescription")
+                    Text("DocAssist uses patient's available medical")
                     Text("data to generate responses")
                 }
                 .foregroundStyle(.secondary)

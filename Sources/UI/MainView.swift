@@ -30,6 +30,20 @@ struct MainView: View {
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
   
+  var filteredSessions: [SessionDataModel] {
+        if searchText.isEmpty {
+            return thread
+        } else {
+            return thread.filter { session in
+                session.title.localizedCaseInsensitiveContains(searchText) ||
+                (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+                session.chatMessages.contains { chatMessage in
+                  chatMessage.messageText?.localizedCaseInsensitiveContains(searchText) ?? false
+              }
+            }
+        }
+    }
+  
   init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext, delegate: ConvertVoiceToText) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
@@ -50,7 +64,7 @@ struct MainView: View {
         }
         VStack {
           headerView
-            .padding(.bottom, 20)
+            .padding(.bottom, 15)
           ZStack {
             mainContentView
             editButtonView
@@ -81,7 +95,7 @@ struct MainView: View {
           }
           VStack {
             headerView
-              .padding(.bottom, 20)
+              .padding(.bottom, 15)
             ZStack {
               mainContentView
               editButtonView
@@ -108,37 +122,36 @@ struct MainView: View {
   // MARK: - Header View
 
   private var headerView: some View {
-      VStack(alignment: .leading, spacing: 4) {
-      //  if UIDevice.current.userInterfaceIdiom == .phone {
-          HStack {
-            Button(action: {
-              dismiss()
-            }) {
-              HStack(spacing: 6) {
-                Image(systemName: "chevron.left")
-                  .font(.system(size: 21, weight: .medium))
-                  .foregroundColor(.blue)
-                Text("Back")
-                  .font(.system(size: 18))
-                  .foregroundColor(.blue)
-              }
-            }
-            .contentShape(Rectangle())
-            Spacer()
+    VStack(alignment: .leading, spacing: 4) {
+      HStack {
+        Button(action: {
+          dismiss()
+        }) {
+          HStack(spacing: 6) {
+            Image(systemName: "chevron.left")
+              .font(.system(size: 21, weight: .medium))
+              .foregroundColor(.blue)
+            Text("Back")
+              .font(.system(size: 18))
+              .foregroundColor(.blue)
           }
-          .padding(.leading, 10)
-          .padding(.top, 9)
-       // }
-          HStack {
-              Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-                  .foregroundColor(.black)
-                  .font(.custom("Lato-Bold", size: 34))
-                  .padding(.leading, 16)
-                  .padding(.top, 16)
-              Spacer()
-          }
+        }
+        .contentShape(Rectangle())
+        Spacer()
       }
-      .padding(.bottom, 5)
+      .padding(.leading, 10)
+      .padding(.top, 9)
+      HStack {
+        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
+          .foregroundColor(.black)
+          .font(.custom("Lato-Bold", size: 34))
+          .padding(.leading, 16)
+          .padding(.top, 16)
+          .padding(.bottom, 4)
+        Spacer()
+      }
+      SearchBar(text: $searchText)
+    }
   }
   
   private var mainContentView: some View {
@@ -188,7 +201,7 @@ struct MainView: View {
       Divider()
       ScrollView {
         VStack() {
-          ForEach(Array(thread.enumerated()), id: \.element.id) { index, thread in
+          ForEach(Array(filteredSessions.enumerated()), id: \.element.id) { index, thread in
             threadItemView(for: thread)
           }
         }
@@ -431,4 +444,44 @@ func getInitials(name: String?) -> String? {
 
 public protocol ConvertVoiceToText {
   func convertVoiceToText(audioFileURL: URL, completion: @escaping (String) -> Void)
+}
+
+struct SearchBar: View {
+  @Binding var text: String
+  @State private var isEditing: Bool = false
+
+  var body: some View {
+    HStack {
+      ZStack {
+        RoundedRectangle(cornerRadius: 10)
+          .foregroundStyle(Color.gray.opacity(0.1))
+          .frame(height: 35)
+        
+        HStack {
+          Image(systemName: "magnifyingglass")
+            .foregroundColor(.gray)
+            .padding(.leading, 8)
+          
+          TextField("Search", text: $text, onEditingChanged: { editing in
+            withAnimation {
+              isEditing = editing
+            }
+          })
+          .padding(.vertical, 8)
+          .padding(.horizontal, 4)
+          
+          if !text.isEmpty {
+            Button(action: {
+              text = ""
+            }) {
+              Image(systemName: "xmark.circle.fill")
+                .foregroundColor(.gray)
+                .padding(.trailing, 8)
+            }
+          }
+        }
+      }
+    }
+    .padding(.horizontal, 16)
+  }
 }
