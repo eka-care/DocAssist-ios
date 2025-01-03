@@ -15,7 +15,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
  
   @Published var streamStarted: Bool = false
   @Published var isLoading: Bool = false
-  @Published var vmssid: String = ""
+  @Published private(set) var vmssid: String = ""
   private var dataStorage: String = ""
   private var context: ModelContext
   private var delegate : ConvertVoiceToText? = nil
@@ -159,12 +159,12 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-  func createSession(subTitle: String?, oid: String = "") -> String {
+  func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {
       let currentDate = Date()
       let context = DatabaseConfig.shared.modelContext
       if !oid.isEmpty {
           do {
-            if let existingSessionId = try fetchSessionId(fromOid: oid, context: DatabaseConfig.shared.modelContext) {
+            if let existingSessionId = try fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
               switchToSession(existingSessionId)
                   return existingSessionId
               }
@@ -173,8 +173,8 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           }
       }
 
-      let ssid = UUID().uuidString
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid)
+    let ssid = UUID().uuidString
+    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     context?.insert(createSessionModel)
       saveData()
       switchToSession(ssid)
@@ -224,10 +224,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
 }
 
-func fetchSessionId(fromOid oid: String, context: ModelContext) throws -> String? {
+func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String, context: ModelContext) throws -> String? {
 
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
-        predicate: #Predicate { $0.oid == oid }
+      predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
     )
     let results = try context.fetch(fetchDescriptor)
     return results.first?.sessionId

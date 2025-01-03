@@ -17,6 +17,8 @@ public struct IpadChatView: View {
     var subTitle: String?
     var ctx: ModelContext
     var delegate: ConvertVoiceToText
+    var userDocId: String
+    var userBId: String
   
     public init(
       backgroundColor: Color? = nil,
@@ -24,6 +26,8 @@ public struct IpadChatView: View {
       editButtonColor: Color? = .blue,
       subTitle: String? = "General Chat",
       ctx: ModelContext,
+      userDocId: String,
+      userBId: String,
       delegate: ConvertVoiceToText
     ) {
       self.backgroundColor = backgroundColor
@@ -31,6 +35,8 @@ public struct IpadChatView: View {
       self.editButtonColor = editButtonColor
       self.subTitle = subTitle
       self.ctx = ctx
+      self.userDocId = userDocId
+      self.userBId = userBId
       self.delegate = delegate
     }
   
@@ -42,6 +48,8 @@ public struct IpadChatView: View {
               editButtonColor: editButtonColor,
               subTitle: subTitle,
               ctx: ctx,
+              userDocId: userDocId,
+              userBId: userBId,
               delegate: delegate
             )
     } detail: {

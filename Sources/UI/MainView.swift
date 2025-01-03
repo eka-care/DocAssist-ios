@@ -14,7 +14,7 @@ struct MainView: View {
       filter: #Predicate<SessionDataModel> { !$0.chatMessages.isEmpty },
       sort: \SessionDataModel.lastUpdatedAt,
       order: .reverse
-  ) var thread: [SessionDataModel]
+  ) var allSessions: [SessionDataModel]
   @ObservedObject var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
   @State private var isNavigatingToNewSession: Bool = false
@@ -23,12 +23,21 @@ struct MainView: View {
   @State private var selectedSessionId: String? = nil
   @State private var isNavigating: Bool = false
   @State private var searchText: String = ""
+  @State private var userDocId: String
+  @State private var userBId: String
   private var bgcolors: Color
   var backgroundColor: Color?
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
+  
+  var thread: [SessionDataModel] {
+      allSessions.filter { session in
+        session.userBId == userBId &&
+        session.userDocId == userDocId
+      }
+  }
   
   var filteredSessions: [SessionDataModel] {
         if searchText.isEmpty {
@@ -44,13 +53,15 @@ struct MainView: View {
         }
     }
   
-  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", ctx: ModelContext, delegate: ConvertVoiceToText) {
+  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", userDocId: String, userBid: String, ctx: ModelContext, delegate: ConvertVoiceToText) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
     self.viewModel = ChatViewModel(context: ctx, delegate: delegate)
     self.bgcolors = SetUIComponents.shared.emptyHistoryBgColor ?? Color.gray
+    self.userDocId = userDocId
+    self.userBId = userBid
   }
 
   public var body: some View {
@@ -217,8 +228,8 @@ struct MainView: View {
           if selectedSessionId != thread.sessionId {
               newSessionId = nil
           }
-          viewModel.vmssid = thread.sessionId
-          selectedSessionId = thread.sessionId
+        viewModel.switchToSession(thread.sessionId)
+        selectedSessionId = thread.sessionId
         do {
           let patient = try fetchPatientName(fromSessionId: thread.sessionId, context: DatabaseConfig.shared.modelContext)
           patientName = patient
@@ -292,7 +303,10 @@ struct MainView: View {
           Spacer()
         }
         Button(action: {
-          _ = viewModel.createSession(subTitle: "General Chat")
+          if allSessions.isEmpty {
+            DatabaseConfig.shared.deleteAllValues()
+          }
+          _ = viewModel.createSession(subTitle: "General Chat", userDocId: userDocId, userBId: userBId)
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
         }) {
@@ -408,6 +422,8 @@ public struct SomeMainView: View {
   var subTitle: String?
   var ctx: ModelContext
   var delegate: ConvertVoiceToText
+  var userDocId: String
+  var userBId: String
   
   public init(
     backgroundColor: Color? = .white,
@@ -415,6 +431,8 @@ public struct SomeMainView: View {
     editButtonColor: Color? = .blue,
     subTitle: String? = "General Chat",
     ctx: ModelContext,
+    userDocId: String,
+    userBId: String,
     delegate: ConvertVoiceToText
   ) {
     self.backgroundColor = backgroundColor
@@ -422,13 +440,15 @@ public struct SomeMainView: View {
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
     self.ctx = ctx
+    self.userDocId = userDocId
+    self.userBId = userBId
     self.delegate = delegate
     
     DatabaseConfig.shared.modelContext = ctx
   }
   
   public var body: some View {
-    MainView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle, ctx: ctx, delegate: delegate)
+    MainView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

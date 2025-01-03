@@ -101,4 +101,13 @@ final class DatabaseConfig {
       return []
     }
   }
+  
+  func deleteAllValues() {
+    do {
+      try modelContext.delete(model: SessionDataModel.self)
+      try modelContext.delete(model: ChatMessageModel.self)
+    } catch {
+      print("Error deleting all values: \(error)")
+    }
+  }
 }
