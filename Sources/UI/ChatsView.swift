@@ -1,5 +1,5 @@
 //
-//  MainView.swift
+//  ChatsView.swift
 //  Chatbot
 //
 //  Created by Brunda B on 15/11/24.
@@ -8,12 +8,11 @@
 import SwiftUI
 import SwiftData
 
-struct MainView: View {
-  
+struct ChatsView: View {
   @Query(
-      filter: #Predicate<SessionDataModel> { !$0.chatMessages.isEmpty },
-      sort: \SessionDataModel.lastUpdatedAt,
-      order: .reverse
+    filter: #Predicate<SessionDataModel> { !$0.chatMessages.isEmpty },
+    sort: \SessionDataModel.lastUpdatedAt,
+    order: .reverse
   ) var allSessions: [SessionDataModel]
   @ObservedObject var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
@@ -33,25 +32,25 @@ struct MainView: View {
   @State private var patientName: String? = ""
   
   var thread: [SessionDataModel] {
-      allSessions.filter { session in
-        session.userBId == userBId &&
-        session.userDocId == userDocId
-      }
+    allSessions.filter { session in
+      session.userBId == userBId &&
+      session.userDocId == userDocId
+    }
   }
   
   var filteredSessions: [SessionDataModel] {
-        if searchText.isEmpty {
-            return thread
-        } else {
-            return thread.filter { session in
-                session.title.localizedCaseInsensitiveContains(searchText) ||
-                (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-                session.chatMessages.contains { chatMessage in
-                  chatMessage.messageText?.localizedCaseInsensitiveContains(searchText) ?? false
-              }
-            }
+    if searchText.isEmpty {
+      return thread
+    } else {
+      return thread.filter { session in
+        session.title.localizedCaseInsensitiveContains(searchText) ||
+        (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+        session.chatMessages.contains { chatMessage in
+          chatMessage.messageText?.localizedCaseInsensitiveContains(searchText) ?? false
         }
+      }
     }
+  }
   
   init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", userDocId: String, userBid: String, ctx: ModelContext, delegate: ConvertVoiceToText) {
     self.backgroundColor = backgroundColor
@@ -63,7 +62,7 @@ struct MainView: View {
     self.userDocId = userDocId
     self.userBId = userBid
   }
-
+  
   public var body: some View {
     if UIDevice.current.userInterfaceIdiom == .pad {
       ZStack {
@@ -88,7 +87,7 @@ struct MainView: View {
       }
       .background(
         NavigationLink(
-          destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
+          destination: ActiveChatView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
             .modelContext(modelContext),
           isActive: $isNavigatingToNewSession
         ) {
@@ -119,7 +118,7 @@ struct MainView: View {
         }
         .background(
           NavigationLink(
-            destination: NewSessionView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "General Chat", calledFromPatientContext: false)
+            destination: ActiveChatView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "General Chat", calledFromPatientContext: false)
               .modelContext(modelContext),
             isActive: $isNavigatingToNewSession
           ) {
@@ -131,7 +130,7 @@ struct MainView: View {
   }
   
   // MARK: - Header View
-
+  
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack {
@@ -174,7 +173,7 @@ struct MainView: View {
       }
     }
   }
-
+  
   // MARK: - Empty State View
   private var emptyStateView: some View {
     VStack {
@@ -202,11 +201,11 @@ struct MainView: View {
         .font(.custom("Lato-Regular", size: 15))
         Spacer()
       }
-        Spacer()
-      }
-
+      Spacer()
+    }
+    
   }
-
+  
   private var threadListView: some View {
     VStack {
       Divider()
@@ -222,79 +221,79 @@ struct MainView: View {
       .contentMargins(.top, 0, for: .scrollContent)
     }
   }
-
+  
   private func threadItemView(for thread: SessionDataModel) -> some View {
-      Button(action: {
-          if selectedSessionId != thread.sessionId {
-              newSessionId = nil
-          }
-        viewModel.switchToSession(thread.sessionId)
-        selectedSessionId = thread.sessionId
-        do {
-          let patient = try fetchPatientName(fromSessionId: thread.sessionId, context: DatabaseConfig.shared.modelContext)
-          patientName = patient
-        } catch {
-          print("No patient name found")
-        }
-          isNavigating = true
-      }) {
-          MessageSubView(
-              thread.title,
-              viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
-              thread.subTitle,
-              foregroundColor: (newSessionId == thread.sessionId) ||
-              (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false
-          )
-          .background(Color.clear)
-          .background(
-            UIDevice.current.userInterfaceIdiom == .pad ?
-                   RoundedRectangle(cornerRadius: 10)
-                       .fill(
-                           (newSessionId == thread.sessionId) ||
-                           (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.primaryprimary : Color.clear)
-                   : nil
-          )
-          .foregroundColor(
-              (newSessionId == thread.sessionId) ||
-              (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.blue : Color.primary
-          )
-          .contextMenu {
-              Button(role: .destructive) {
-                  DatabaseConfig.shared.deleteSession(sessionId: thread.sessionId)
-              } label: {
-                  Label("Delete", systemImage: "trash")
-              }
-          }
+    Button(action: {
+      if selectedSessionId != thread.sessionId {
+        newSessionId = nil
       }
-      .buttonStyle(PlainButtonStyle())
+      viewModel.switchToSession(thread.sessionId)
+      selectedSessionId = thread.sessionId
+      do {
+        let patient = try DatabaseConfig.shared.fetchPatientName(fromSessionId: thread.sessionId, context: DatabaseConfig.shared.modelContext)
+        patientName = patient
+      } catch {
+        print("No patient name found")
+      }
+      isNavigating = true
+    }) {
+      MessageSubView(
+        thread.title,
+        viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
+        thread.subTitle,
+        foregroundColor: (newSessionId == thread.sessionId) ||
+        (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false
+      )
+      .background(Color.clear)
+      .background(
+        UIDevice.current.userInterfaceIdiom == .pad ?
+        RoundedRectangle(cornerRadius: 10)
+          .fill(
+            (newSessionId == thread.sessionId) ||
+            (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.primaryprimary : Color.clear)
+        : nil
+      )
+      .foregroundColor(
+        (newSessionId == thread.sessionId) ||
+        (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.blue : Color.primary
+      )
+      .contextMenu {
+        Button(role: .destructive) {
+          DatabaseConfig.shared.deleteSession(sessionId: thread.sessionId)
+        } label: {
+          Label("Delete", systemImage: "trash")
+        }
+      }
+    }
+    .buttonStyle(PlainButtonStyle())
   }
-
+  
   // MARK: - Navigation Link
   private var navigationLinkToNewSession: some View {
-      NavigationLink(
-          destination: destinationView,
-          isActive: $isNavigating
-      ) {
-          EmptyView()
-      }
+    NavigationLink(
+      destination: destinationView,
+      isActive: $isNavigating
+    ) {
+      EmptyView()
+    }
   }
-
+  
   private var destinationView: some View {
-      if let sessionId = selectedSessionId {
-          return AnyView(
-              NewSessionView(
-                  session: sessionId,
-                  viewModel: viewModel,
-                  backgroundColor: backgroundColor, patientName: patientName ?? "",
-                  calledFromPatientContext: false
-              )
-              .modelContext(modelContext)
-          )
-      } else {
-          return AnyView(EmptyView())
-      }
+    if let sessionId = selectedSessionId {
+      return AnyView(
+        ActiveChatView(
+          session: sessionId,
+          viewModel: viewModel,
+          backgroundColor: backgroundColor, patientName: patientName ?? "",
+          calledFromPatientContext: false
+        )
+        .modelContext(modelContext)
+      )
+    } else {
+      return AnyView(EmptyView())
+    }
   }
-
+  
   private var editButtonView: some View {
     VStack {
       Spacer()
@@ -391,14 +390,14 @@ struct MainView: View {
   private func nameInitialsView(initials: String) -> some View {
     ZStack {
       LinearGradient(
-          colors: [
-              Color(red: 186/255, green: 186/255, blue: 186/255, opacity: 1.0),
-              Color(red: 161/255, green: 161/255, blue: 161/255, opacity: 1.0)
-          ],
-          startPoint: .top,
-          endPoint: .bottom
+        colors: [
+          Color(red: 186/255, green: 186/255, blue: 186/255, opacity: 1.0),
+          Color(red: 161/255, green: 161/255, blue: 161/255, opacity: 1.0)
+        ],
+        startPoint: .top,
+        endPoint: .bottom
       )
-        .frame(width: 38, height: 38)
+      .frame(width: 38, height: 38)
       Group {
         if initials == "GeneralChat" {
           Image(.chatBotBW)
@@ -414,46 +413,6 @@ struct MainView: View {
   }
 }
 
-public struct SomeMainView: View {
-  
-  var backgroundColor: Color?
-  var emptyMessageColor: Color?
-  var editButtonColor: Color?
-  var subTitle: String?
-  var ctx: ModelContext
-  var delegate: ConvertVoiceToText
-  var userDocId: String
-  var userBId: String
-  
-  public init(
-    backgroundColor: Color? = .white,
-    emptyMessageColor: Color? = .white,
-    editButtonColor: Color? = .blue,
-    subTitle: String? = "General Chat",
-    ctx: ModelContext,
-    userDocId: String,
-    userBId: String,
-    delegate: ConvertVoiceToText
-  ) {
-    self.backgroundColor = backgroundColor
-    self.emptyMessageColor = emptyMessageColor
-    self.editButtonColor = editButtonColor
-    self.subTitle = subTitle
-    self.ctx = ctx
-    self.userDocId = userDocId
-    self.userBId = userBId
-    self.delegate = delegate
-    
-    DatabaseConfig.shared.modelContext = ctx
-  }
-  
-  public var body: some View {
-    MainView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate)
-      .modelContext(ctx)
-      .navigationBarHidden(true)
-  }
-}
-
 func getInitials(name: String?) -> String? {
   if name != "General Chat" {
     return name?.uppercased().components(separatedBy: " ").reduce("") { $0 + $1.prefix(1) }
@@ -464,44 +423,4 @@ func getInitials(name: String?) -> String? {
 
 public protocol ConvertVoiceToText {
   func convertVoiceToText(audioFileURL: URL, completion: @escaping (String) -> Void)
-}
-
-struct SearchBar: View {
-  @Binding var text: String
-  @State private var isEditing: Bool = false
-
-  var body: some View {
-    HStack {
-      ZStack {
-        RoundedRectangle(cornerRadius: 10)
-          .foregroundStyle(Color.gray.opacity(0.1))
-          .frame(height: 35)
-        
-        HStack {
-          Image(systemName: "magnifyingglass")
-            .foregroundColor(.gray)
-            .padding(.leading, 8)
-          
-          TextField("Search", text: $text, onEditingChanged: { editing in
-            withAnimation {
-              isEditing = editing
-            }
-          })
-          .padding(.vertical, 8)
-          .padding(.horizontal, 4)
-          
-          if !text.isEmpty {
-            Button(action: {
-              text = ""
-            }) {
-              Image(systemName: "xmark.circle.fill")
-                .foregroundColor(.gray)
-                .padding(.trailing, 8)
-            }
-          }
-        }
-      }
-    }
-    .padding(.horizontal, 16)
-  }
 }

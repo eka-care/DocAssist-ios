@@ -110,4 +110,20 @@ final class DatabaseConfig {
       print("Error deleting all values: \(error)")
     }
   }
+  
+  func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String, context: ModelContext) throws -> String? {
+      let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+        predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
+      )
+      let results = try context.fetch(fetchDescriptor)
+      return results.first?.sessionId
+  }
+   
+  func fetchPatientName (fromSessionId ssid: String, context: ModelContext) throws -> String {
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate { $0.sessionId == ssid }
+    )
+    let results = try context.fetch(fetchDescriptor)
+    return results.first?.subTitle ?? ""
+  }
 }

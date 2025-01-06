@@ -42,7 +42,7 @@ public struct IpadChatView: View {
   
   public var body: some View {
     NavigationSplitView(columnVisibility: $splitViewColumnVisibility) {
-            SomeMainView(
+            GeneralChatView(
               backgroundColor: backgroundColor,
               emptyMessageColor: emptyMessageColor,
               editButtonColor: editButtonColor,

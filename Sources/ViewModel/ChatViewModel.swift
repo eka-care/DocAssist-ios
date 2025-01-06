@@ -12,7 +12,7 @@ import AVFAudio
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
- 
+  
   @Published var streamStarted: Bool = false
   @Published var isLoading: Bool = false
   @Published private(set) var vmssid: String = ""
@@ -160,28 +160,28 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {
-      let currentDate = Date()
-      let context = DatabaseConfig.shared.modelContext
-      if !oid.isEmpty {
-          do {
-            if let existingSessionId = try fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
-              switchToSession(existingSessionId)
-                  return existingSessionId
-              }
-          } catch {
-              print("Error fetching session for oid: \(error)")
-          }
+    let currentDate = Date()
+    let context = DatabaseConfig.shared.modelContext
+    if !oid.isEmpty {
+      do {
+        if let existingSessionId = try DatabaseConfig.shared.fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
+          switchToSession(existingSessionId)
+          return existingSessionId
+        }
+      } catch {
+        print("Error fetching session for oid: \(error)")
       }
-
+    }
+    
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     context?.insert(createSessionModel)
-      saveData()
-      switchToSession(ssid)
-      return ssid
+    saveData()
+    switchToSession(ssid)
+    return ssid
   }
   
- func switchToSession(_ id: String) {
+  func switchToSession(_ id: String) {
     vmssid = id
   }
   
@@ -211,7 +211,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  func onTapOfAudioButton(){
+  func onTapOfAudioButton() {
     guard let currentRecording = currentRecording else {
       return
     }
@@ -223,25 +223,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     })
   }
 }
-
-func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String, context: ModelContext) throws -> String? {
-
-    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
-      predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
-    )
-    let results = try context.fetch(fetchDescriptor)
-    return results.first?.sessionId
-}
- 
-func fetchPatientName (fromSessionId ssid: String, context: ModelContext) throws -> String {
-
-    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
-      predicate: #Predicate { $0.sessionId == ssid }
-    )
-  let results = try context.fetch(fetchDescriptor)
-    return results.first?.subTitle ?? ""
-}
-
 
 extension ChatViewModel: AVAudioRecorderDelegate  {
   
@@ -285,9 +266,9 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 
 extension Date {
-    func toString(dateFormat format: String) -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = format
-        return dateFormatter.string(from: self)
-    }
+  func toString(dateFormat format: String) -> String {
+    let dateFormatter = DateFormatter()
+    dateFormatter.dateFormat = format
+    return dateFormatter.string(from: self)
+  }
 }
