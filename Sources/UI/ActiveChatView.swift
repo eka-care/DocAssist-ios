@@ -95,12 +95,6 @@ public struct ActiveChatView: View {
           }
           .frame(maxHeight: 200)
           
-          Button {
-            print("Voice to rx")
-          } label: {
-            Text("Voice to rx")
-          }
-          
           Spacer()
           
           textfieldView
