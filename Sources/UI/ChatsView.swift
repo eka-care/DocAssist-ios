@@ -77,7 +77,7 @@ struct ChatsView: View {
             .padding(.bottom, 15)
           ZStack {
             mainContentView
-            editButtonView
+            NewChatButtonView
               .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
               .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 0)
           }
@@ -108,7 +108,7 @@ struct ChatsView: View {
               .padding(.bottom, 15)
             ZStack {
               mainContentView
-              editButtonView
+              NewChatButtonView
                 .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
                 .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 10)
             }
@@ -294,7 +294,7 @@ struct ChatsView: View {
     }
   }
   
-  private var editButtonView: some View {
+  private var NewChatButtonView: some View {
     VStack {
       Spacer()
       HStack() {
