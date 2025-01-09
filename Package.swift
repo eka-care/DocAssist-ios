@@ -15,8 +15,10 @@ let package = Package(
       targets: ["ChatBotAiPackage"]),
   ],
   dependencies: [
-    // Add MarkdownUI package dependency
-    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.0.2")
+    // MarkdownUI package dependency
+    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.0.2"),
+    // FireBase package dependency
+    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -24,8 +26,10 @@ let package = Package(
     .target(
       name: "ChatBotAiPackage",
       dependencies: [
-        // Add MarkdownUI as a dependency to this target
-        .product(name: "MarkdownUI", package: "swift-markdown-ui")
+        // MarkdownUI
+        .product(name: "MarkdownUI", package: "swift-markdown-ui"),
+        // FireBase
+        .product(name: "FirebaseFirestore", package: "firebase-ios-sdk")
       ],
       resources: [
         .process("Resources")
