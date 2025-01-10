@@ -36,8 +36,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   }
   
   func sendMessage(newMessage: String) {
-    addUserMessage(newMessage)
-    startStreamingPostRequest(query: newMessage)
+     addUserMessage(newMessage)
   }
   
   private func addUserMessage(_ query: String) {
@@ -60,8 +59,19 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       print("Unable to fetch data")
     }
     
+    
+      // send  message to firestore
+      
+      // start listening to it for data assistant
+      
+      // save data
+      
+      // and delete the old session
+      
+    
     saveData()
     setThreadTitle(with: query)
+    startStreamingPostRequest(query: query)
   }
   
   func startStreamingPostRequest(query: String) {
@@ -105,7 +115,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  private func updateMessage(with message: Message) {
+   func updateMessage(with message: Message) {
     let descriptor = FetchDescriptor<ChatMessageModel>()
     let allMessage = try? DatabaseConfig.shared.modelContext.fetch(descriptor)
     
