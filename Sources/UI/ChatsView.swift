@@ -95,7 +95,7 @@ struct ChatsView: View {
         }
       )
     } else {
-      NavigationView {
+      NavigationStack {
         ZStack {
           if let backgroundColor = SetUIComponents.shared.userAllChatBackgroundColor {
             Image(uiImage: backgroundColor)
@@ -109,7 +109,7 @@ struct ChatsView: View {
             ZStack {
               mainContentView
               NewChatButtonView
-                .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
+                .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 18 : 0)
                 .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 10)
             }
             
@@ -133,27 +133,27 @@ struct ChatsView: View {
   
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
-      HStack {
-        Button(action: {
-          dismiss()
-        }) {
-          HStack(spacing: 6) {
-            Image(systemName: "chevron.left")
-              .font(.system(size: 21, weight: .medium))
-              .foregroundColor(.blue)
-            Text("Back")
-              .font(.system(size: 18))
-              .foregroundColor(.blue)
-          }
-        }
-        .contentShape(Rectangle())
-        Spacer()
-      }
-      .padding(.leading, 10)
-      .padding(.top, 9)
+//      HStack {
+//        Button(action: {
+//          dismiss()
+//        }) {
+//          HStack(spacing: 6) {
+//            Image(systemName: "chevron.left")
+//              .font(.system(size: 21, weight: .medium))
+//              .foregroundColor(.blue)
+//            Text("Back")
+//              .font(.system(size: 18))
+//              .foregroundColor(.blue)
+//          }
+//        }
+//        .contentShape(Rectangle())
+//        Spacer()
+//      }
+//      .padding(.leading, 10)
+//      .padding(.top, 9)
       HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-          .foregroundColor(.black)
+          .foregroundColor(.titleColor)
           .font(.custom("Lato-Bold", size: 34))
           .padding(.leading, 16)
           .padding(.top, 16)
@@ -309,37 +309,27 @@ struct ChatsView: View {
           newSessionId = viewModel.vmssid
           isNavigatingToNewSession = true
         }) {
-          if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
-            Image(uiImage: newChatButtonImage)
-              .resizable()
-              .scaledToFit()
-              .frame(width: 18)
-          } else {
             Image(systemName: "square.and.pencil")
-              .resizable()
-              .font(.title2)
-              .foregroundColor(.white)
-              .background(editButtonColor)
-              .clipShape(Circle())
-              .shadow(radius: 10)
-              .scaledToFit()
-              .frame(width: 18)
-          }
+            .font(.system(size: 16, weight: .black, design: .default))
+            .frame(height: 16)
+            .underline(true, color: .primaryprimary)
+            
           
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
             Text(newChatButtonText)
-              .foregroundColor(Color.blue)
-              .font(.custom("Lato-Bold", size: 18))
+              .foregroundColor(Color.primaryprimary)
+              .font(.custom("Lato-Regular", size: 16))
           }
         }
-        .frame(maxWidth: thread.isEmpty ? .infinity : 160)
-        .padding(.vertical, 14)
-        .padding(.horizontal, 5)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 16)
+        .padding(.leading, 16)
+        .padding(.trailing, 16)
         .background(Color.white)
         .cornerRadius(10)
         .overlay {
           RoundedRectangle(cornerRadius: 10)
-            .stroke(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+            .stroke(Color.blue)
         }
         .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
         
@@ -391,8 +381,8 @@ struct ChatsView: View {
     ZStack {
       LinearGradient(
         colors: [
-          Color(red: 186/255, green: 186/255, blue: 186/255, opacity: 1.0),
-          Color(red: 161/255, green: 161/255, blue: 161/255, opacity: 1.0)
+          Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
+          Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
         ],
         startPoint: .top,
         endPoint: .bottom
@@ -400,12 +390,19 @@ struct ChatsView: View {
       .frame(width: 38, height: 38)
       Group {
         if initials == "GeneralChat" {
-          Image(.chatBotBW)
+          Image(.chatMsgs)
         } else {
           Text(initials)
         }
       }
-      .foregroundStyle(.white)
+      .foregroundStyle(LinearGradient(
+        colors: [
+          Color(red: 32/255, green: 92/255, blue: 255/255, opacity: 1.0),
+          Color(red: 174/255, green: 113/255, blue: 210/255, opacity: 1.0)
+        ],
+        startPoint: .leading,
+        endPoint: .trailing
+      ))
       .font(.custom("Lato-Bold", size: 16))
       .fontWeight(.bold)
     }
