@@ -195,7 +195,7 @@ public struct ActiveChatView: View {
         TextField(
           viewModel.isRecording
           ? "Tap to stop recording"
-          : (viewModel.voiceProcessing ? "Processing..." : "Tap on mic to speak..."),
+          : (viewModel.voiceProcessing ? "Processing..." : "Start typing..."),
           text: $newMessage,
           axis: .vertical
         )

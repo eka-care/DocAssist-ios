@@ -27,4 +27,5 @@ extension Color {
   static let myColor = Color(.messageBorder)
   static let primaryprimary = Color(.primaryPrimary)
   static let nuetralWhite = Color(.neutralWhite)
+  static let titleColor = Color(.titleBlue)
 }
