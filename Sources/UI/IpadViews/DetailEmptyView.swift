@@ -28,4 +28,7 @@ extension Color {
   static let primaryprimary = Color(.primaryPrimary)
   static let nuetralWhite = Color(.neutralWhite)
   static let titleColor = Color(.titleBlue)
+  static let neutrals100 = Color(.neutrals100)
+  static let neutrals800 = Color(.neutrals800)
+  static let neutrals600 = Color(.neutrals600)
 }
