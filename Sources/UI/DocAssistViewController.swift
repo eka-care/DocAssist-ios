@@ -12,7 +12,7 @@ import SwiftData
 public class DocAssistViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
-  
+  private var patientDelegate: NavigateToPatientDirectory
   public init(
     backgroundColor: Color? = nil,
     emptyMessageColor: Color? = nil,
@@ -22,8 +22,10 @@ public class DocAssistViewController: UIViewController {
     deviceType: String? = "phone",
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    patientDelegate: NavigateToPatientDirectory
   ) {
+    self.patientDelegate = patientDelegate
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
     case "ipad":
@@ -35,7 +37,9 @@ public class DocAssistViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate
+        delegate: delegate,
+        patientDelegate: patientDelegate,
+        searchForPatient: searchForPatient
       )
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -48,7 +52,9 @@ public class DocAssistViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate
+        delegate: delegate,
+        patientDelegate: patientDelegate,
+        searchForPatient: searchForPatient
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -80,6 +86,11 @@ public class DocAssistViewController: UIViewController {
   public override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
+  }
+  
+  private func searchForPatient() {
+    patientDelegate.navigateToPatientDirectory()
+    //navigationController?.present(,animated: true)
   }
 }
 

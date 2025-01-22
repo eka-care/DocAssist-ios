@@ -39,14 +39,22 @@ public struct ActiveChatView: View {
   }
   
   public var body: some View {
-      VStack(alignment: .leading, spacing: 0) {
-          if let backgroundColor {
-              content
-                  .background(backgroundColor)
-          } else {
-              content
+    VStack(alignment: .leading, spacing: 0) {
+      ZStack {
+        VStack {
+          Image(.bg)
+            .resizable()
+            .frame(height: 120)
+            .edgesIgnoringSafeArea(.all)
+          Spacer()
+        }
+        VStack {
+          ZStack {
+            content
           }
+        }
       }
+    }
   }
 
   private var content: some View {
@@ -55,84 +63,80 @@ public struct ActiveChatView: View {
               headerView
           }
           newView
+          .background(Color(red: 0.96, green: 0.96, blue: 0.96))
       }
   }
   
-  var newView: some View {
+  var EmptyChatView: some View {
     VStack {
-        if messages.isEmpty {
-          if !calledFromPatientContext {
-          VStack {
-            Spacer()
-            if let image = SetUIComponents.shared.emptyChatImage {
-              Image(uiImage: image)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 40)
-            }
-            
-            DocSuggestion(image: UIImage(resource: .chatMsgGray) ,title: "Ask anything from DocAssist AI", subTitle: "Medical fact checks, prescriptions and more..")
-              .padding()
-            DocSuggestion(image: UIImage(resource: .voiceToRxBW), title: "Create medical document", subTitle: "DocAssist AI can either listen to your live consultation or your dictation to create a medical document")
-            
-            Spacer()
-            
-            chatInputView
-              .padding(.bottom, 5)
-            
-          }
-          .onAppear {
-            if !hasFocusedOnce {
-              isTextFieldFocused = true
-              hasFocusedOnce = true
-            }
-          }
+      VStack {
+        Spacer()
+        if let image = SetUIComponents.shared.emptyChatImage {
+          Image(uiImage: image)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 40)
         }
+        
+        DocSuggestion(image: UIImage(resource: .chatMsgGray) ,title: "Ask anything from DocAssist AI", subTitle: "Medical fact checks, prescriptions and more..")
+          .padding()
+        DocSuggestion(image: UIImage(resource: .voiceToRxBW), title: "Create medical document", subTitle: "DocAssist AI can either listen to your live consultation or your dictation to create a medical document")
+        Spacer()
       }
-      else {
-        ScrollViewReader { proxy in
-          ScrollView {
-            VStack {
-              ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "No message")
-                  .padding(.horizontal)
-                  .id(message.id)
+      chatInputView
+        .padding(.bottom, 5)
+    }
+  }
+  
+  var newView: some View {
+      VStack {
+        if messages.isEmpty {
+          EmptyChatView
+        }
+        else {
+          ScrollViewReader { proxy in
+            ScrollView {
+              VStack {
+                ForEach(messages) { message in
+                  MessageBubble(message: message, m: message.messageText ?? "No message")
+                    .padding(.horizontal)
+                    .id(message.id)
+                }
+                Color.clear
+                  .frame(height: 1)
+                  .id("bottomID")
               }
-              Color.clear
-                .frame(height: 1)
-                .id("bottomID")
+              .padding(.top, 10)
             }
-            .padding(.top, 10)
-          }
-          .onChange(of: messages.count) { _, _ in
-            withAnimation(.easeOut(duration: 0.3)) {
-              proxy.scrollTo("bottomID", anchor: .bottom)
-            }
-          }
-          .onChange(of: isTextFieldFocused) { focused, _ in
-            if focused {
+            .onChange(of: messages.count) { _, _ in
               withAnimation(.easeOut(duration: 0.3)) {
                 proxy.scrollTo("bottomID", anchor: .bottom)
               }
             }
-          }
-          .simultaneousGesture(
-            DragGesture().onChanged { _ in
-              if isTextFieldFocused {
-                isTextFieldFocused = false
+            .onChange(of: isTextFieldFocused) { focused, _ in
+              if focused {
+                withAnimation(.easeOut(duration: 0.3)) {
+                  proxy.scrollTo("bottomID", anchor: .bottom)
+                }
               }
             }
-          )
-          .onAppear {
-            proxy.scrollTo("bottomID", anchor: .bottom)
+            .simultaneousGesture(
+              DragGesture().onChanged { _ in
+                if isTextFieldFocused {
+                  isTextFieldFocused = false
+                }
+              }
+            )
+            .onAppear {
+              proxy.scrollTo("bottomID", anchor: .bottom)
+            }
           }
+          chatInputView
+            .padding(.bottom, 5)
         }
-        chatInputView
-          .padding(.bottom, 5)
       }
-    }
-    .navigationTitle("New Chat")
-    .navigationBarTitleDisplayMode(.large)
+      .navigationTitle("New Chat")
+      .navigationBarTitleDisplayMode(.large)
   }
   
   private var headerView: some View {
@@ -145,6 +149,9 @@ public struct ActiveChatView: View {
             Image(systemName: "chevron.left")
               .font(.system(size: 21, weight: .medium))
               .foregroundColor(.blue)
+            Text("Back")
+              .font(Font.custom("Lato-Regular", size: 16))
+              .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
             Spacer()
           }
         }
@@ -153,12 +160,28 @@ public struct ActiveChatView: View {
       }
       .padding(.leading, 10)
       .padding(.top, 9)
+      
+      VStack(alignment: .leading, spacing: 0) {
+        Text("New chat")
+          .font(
+            Font.custom("Lato-Bold", size: 34)
+          )
+          .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
+        
+        Text("Parrotlet Lite")
+          .font(Font.custom("Lato-Regular", size: 14))
+          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .padding(.horizontal, 16)
+      .padding(.top, 3)
+      .padding(.bottom, 8)
+      .frame(maxWidth: .infinity, alignment: .topLeading)
     }
     .padding(.bottom, 5)
-    .background(Color.white)
   }
   
-  var chatInputView: some View {
+  var chatInputView : some View {
     VStack (spacing: 15) {
       HStack {
         TextField(" Start typing...", text: $newMessage, axis: .vertical)
@@ -180,14 +203,29 @@ public struct ActiveChatView: View {
             .foregroundStyle(Color.neutrals600)
         }
         
-        HStack (spacing: 6.5) {
-          Image(systemName: "person.fill")
-          Text("Amit Bharti")
+        if let patientName = patientName , !patientName.isEmpty,
+            patientName != "General Chat" {
+          HStack(alignment: .center, spacing: 4) {
+            VStack(alignment: .center, spacing: 10) {
+              Image(systemName: "person.fill")
+            }
+            .padding(4)
+            .frame(width: 16, height: 16, alignment: .center)
+            
+            
+            Text(patientName)
+              .font(
+                Font.custom("Lato-Bold", size: 12)
+              )
+              .foregroundColor(Color(red: 0.28, green: 0.28, blue: 0.28))
+          }
+          .padding(.horizontal, 8)
+          .padding(.vertical, 6)
+          .background(Color(red: 0.91, green: 0.91, blue: 0.91))
+          .cornerRadius(123)
+        } else {
+          Image(.user)
         }
-        .padding(8)
-        .foregroundStyle(Color.neutrals800)
-        .background(Color.neutrals100)
-        .cornerRadius(20)
         
         Spacer()
         
@@ -277,7 +315,7 @@ struct MessageTextView: View {
   }
   
   private var foregroundColor: Color {
-    role == .user ? (SetUIComponents.shared.usertextColor ?? .black) : (SetUIComponents.shared.botTextColor ?? .white)
+    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (Color(red: 0.28, green: 0.28, blue: 0.28))
   }
 }
 
