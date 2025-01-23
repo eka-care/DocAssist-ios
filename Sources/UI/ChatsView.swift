@@ -288,7 +288,7 @@ struct ChatsView: View {
   
   private var destinationView: some View {
     if let sessionId = selectedSessionId {
-//      if patientName == "General Chat" {
+      if patientName == "General Chat" {
         return AnyView(
           ActiveChatView(
             session: sessionId,
@@ -298,12 +298,12 @@ struct ChatsView: View {
           )
           .modelContext(modelContext)
         )
-//      }
-//      else {
-//        return AnyView(
-//          CompleteView(patientName: patientName ?? "")
-//        )
-//      }
+      }
+      else {
+        return AnyView(
+          ExistingPatientChatsView(patientName: patientName ?? "", viewModel: viewModel, oid: "", userDocId: userDocId, userBId: userBId)
+        )
+      }
     } else {
       return AnyView(EmptyView())
     }
@@ -355,7 +355,7 @@ struct ChatsView: View {
         nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
         VStack (spacing: 6) {
           HStack {
-            Text(title)
+            Text(subTitle ?? "GeneralChat")
               .font(.custom("Lato-Regular", size: 16))
               .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
               .lineLimit(2)
@@ -370,7 +370,7 @@ struct ChatsView: View {
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
           }
           HStack {
-            Text(subTitle ?? "GeneralChat")
+            Text(title)
               .font(.custom("Lato-Regular", size: 14))
               .fontWeight(.regular)
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)

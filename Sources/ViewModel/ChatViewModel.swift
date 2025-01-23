@@ -10,6 +10,11 @@ import SwiftData
 import SwiftUI
 import AVFAudio
 
+public struct ExistingChatResponse {
+  var chatExist: Bool
+  var sessionId: [String]
+}
+
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
@@ -159,14 +164,14 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-  func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {
+  func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> ExistingChatResponse {
     let currentDate = Date()
     let context = DatabaseConfig.shared.modelContext
     if !oid.isEmpty {
       do {
         if let existingSessionId = try DatabaseConfig.shared.fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
-          switchToSession(existingSessionId)
-          return existingSessionId
+         // switchToSession(existingSessionId)
+          return ExistingChatResponse(chatExist: true, sessionId: [existingSessionId])
         }
       } catch {
         print("Error fetching session for oid: \(error)")
@@ -178,7 +183,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     context?.insert(createSessionModel)
     saveData()
     switchToSession(ssid)
-    return ssid
+    return .init(chatExist: false, sessionId: [ssid])
   }
   
   func switchToSession(_ id: String) {

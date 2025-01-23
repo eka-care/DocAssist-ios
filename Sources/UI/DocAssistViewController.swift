@@ -90,7 +90,6 @@ public class DocAssistViewController: UIViewController {
   
   private func searchForPatient() {
     patientDelegate.navigateToPatientDirectory()
-    //navigationController?.present(,animated: true)
   }
 }
 
@@ -109,8 +108,13 @@ public class ViewControllerForIpadPatient: UIViewController {
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
     let session = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    let activeChatView = ActiveChatView(session: session, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
-    docAssistView = AnyView(activeChatView.modelContext(ctx))
+    if session.chatExist {
+      let existingChatsView = ExistingPatientChatsView(patientName: patientSubtitle ?? "", viewModel: vm, oid: oid, userDocId: userDocId, userBId: userBId)
+      docAssistView = AnyView(existingChatsView.modelContext(ctx))
+    } else {
+      let activeChatView = ActiveChatView(session: session.sessionId.first ?? "gmgfghjjhgjfjhf", viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
+      docAssistView = AnyView(activeChatView.modelContext(ctx))
+    }
     super.init(nibName: nil, bundle: nil)
     
   }

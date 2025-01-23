@@ -93,6 +93,7 @@ struct BlurButton: View {
 struct ChatListView: View {
   var body: some View {
     VStack(spacing: 16) {
+      ScrollView {
       Button {
         
       } label : {
@@ -156,48 +157,47 @@ struct ChatListView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
       
-      ScrollView {
-        VStack(spacing: 0) {
-          ChatRow(
-            icon: "waveform.circle.fill",
-            title: "Vital trends",
-            subtitle: "Chat",
-            time: "2m ago"
-          )
-          
-          Divider()
-            .padding(.leading, 56)
-          
-          ChatRow(
-            icon: "waveform.circle.fill",
-            title: "Vital trends",
-            subtitle: "Chat",
-            time: "2m ago"
-          )
-
-          Divider()
-            .padding(.leading, 56)
-          
-          ChatRow(
-            icon: "waveform.circle.fill",
-            title: "Vital trends",
-            subtitle: "Chat",
-            time: "2m ago"
-          )
-
-          Divider()
-            .padding(.leading, 56)
-          
-          ChatRow(
-            icon: "waveform.circle.fill",
-            title: "Vital trends",
-            subtitle: "Chat",
-            time: "2m ago"
-          )
-
-        }
-        .background(Color.white)
-        .cornerRadius(12)
+//      VStack(spacing: 0) {
+//          ChatRow(
+//            icon: "waveform.circle.fill",
+//            title: "Vital trends",
+//            subtitle: "Chat",
+//            time: "2m ago"
+//          )
+//          
+//          Divider()
+//            .padding(.leading, 56)
+//          
+//          ChatRow(
+//            icon: "waveform.circle.fill",
+//            title: "Vital trends",
+//            subtitle: "Chat",
+//            time: "2m ago"
+//          )
+//
+//          Divider()
+//            .padding(.leading, 56)
+//          
+//          ChatRow(
+//            icon: "waveform.circle.fill",
+//            title: "Vital trends",
+//            subtitle: "Chat",
+//            time: "2m ago"
+//          )
+//
+//          Divider()
+//            .padding(.leading, 56)
+//          
+//          ChatRow(
+//            icon: "waveform.circle.fill",
+//            title: "Vital trends",
+//            subtitle: "Chat",
+//            time: "2m ago"
+//          )
+//
+//        }
+        //.background(Color.white)
+        //.cornerRadius(12)
       }
       .scrollIndicators(.hidden)
     }
@@ -210,7 +210,6 @@ struct ChatListView: View {
 }
 
 struct ChatRow: View {
-  let icon: String
   let title: String
   let subtitle: String
   var draftCount: String? = nil
@@ -220,43 +219,38 @@ struct ChatRow: View {
     Button {
       
     } label: {
-      HStack(alignment: .center, spacing: 12) {
-        Image(.voiceToRxButton)
+       HStack(spacing: 12) {
+        // Image
+         Image(.circleWaveForm)
         
+        // Title and Subtitle
         VStack(alignment: .leading, spacing: 4) {
-          Text(title)
-            .font(Font.custom("Lato-Regular", size: 16))
-            .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
-            .frame(maxWidth: .infinity, alignment: .leading)
-          
-          HStack(alignment: .center) {
-            Text(subtitle)
-              .font(Font.custom("Lato-Regular", size: 14))
-              .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-            Text(draftCount ?? "2 draft")
-              .font(Font.custom("Lato-Regular", size: 14))
-              .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
-            Spacer()
+            Text(title)
+                .font(Font.custom("Lato-Regular", size: 16))
+                .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
             
-            Text(time)
-              .font(Font.custom("Lato-Regular", size: 13))
-              .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-            
-            VStack(alignment: .leading, spacing: 10) {
-              Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
-                .font(.system(size: 12))
+            HStack {
+                Text(subtitle)
+                    .font(Font.custom("Lato-Regular", size: 14))
+                    .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+                
+                Text(draftCount ?? "2 draft")
+                    .font(Font.custom("Lato-Regular", size: 14))
+                    .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
+                
+                Spacer()
+                
+                Text(time)
+                    .font(Font.custom("Lato-Regular", size: 13))
+                    .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+                
+                Image(systemName: "chevron.right")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 12))
+                    .frame(width: 16, height: 16)
             }
-            .padding(4)
-            .frame(width: 16, height: 16, alignment: .leading)
-          }
-          .padding(.leading, 0)
-          .padding(.trailing, 8)
-          .padding(.vertical, 0)
-          .frame(maxWidth: .infinity, alignment: .center)
         }
-      
-      }
+    }
       .padding()
     }
   }
