@@ -22,6 +22,7 @@ public struct ActiveChatView: View {
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
+  @State private var messageInput: Bool = true
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -182,11 +183,79 @@ public struct ActiveChatView: View {
   }
   
   var chatInputView : some View {
+    if messageInput {
+      AnyView(messageInputView)
+    } else {
+      AnyView(voiceInputView)
+    }
+  }
+  
+  var voiceInputView: some View {
+    
+    VStack(alignment: .leading, spacing: 10) {
+      
+      HStack(alignment: .center, spacing: 10) {
+        
+        //MARK: - Xmark
+        VStack(alignment: .center, spacing: 10) {
+          Button {
+            viewModel.stopRecording()
+            messageInput = true
+          } label: {
+            Image(.xmark)
+          }
+        }
+        .padding(0)
+        .frame(width: 36, height: 36, alignment: .center)
+        .cornerRadius(50)
+        
+        
+        Spacer()
+        AudioWaveformView()
+        TimerView()
+        //MARK: - Check
+        VStack(alignment: .center, spacing: 10) {
+          Button {
+            viewModel.stopRecording()
+            messageInput = true
+          } label: {
+            Image(.check)
+          }
+        }
+        .padding(0)
+        .frame(width: 36, height: 36, alignment: .center)
+        .cornerRadius(50)
+        
+      }
+      .padding(0)
+      .frame(maxWidth: .infinity, alignment: .center)
+    }
+    .padding(.horizontal, 2)
+    .padding(.vertical, 4)
+    .frame(maxWidth: .infinity, alignment: .leading)
+    .background(.white)
+    .cornerRadius(16)
+    .overlay(
+    RoundedRectangle(cornerRadius: 16)
+    .inset(by: -0.5)
+    .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+    )
+    .padding(8)
+  }
+  
+  var messageInputView: some View {
     VStack (spacing: 15) {
       HStack {
         TextField(" Start typing...", text: $newMessage, axis: .vertical)
+          .onChange(of: viewModel.voiceText) { _, newVoiceText in
+            if let voiceText = newVoiceText, !voiceText.isEmpty {
+              newMessage = voiceText
+              viewModel.voiceText = ""
+            }
+          }
       }
       
+      //MARK: - Medical Records
       HStack(spacing: 10) {
         
         Button {
@@ -195,14 +264,9 @@ public struct ActiveChatView: View {
           Image(systemName: "paperclip")
             .foregroundStyle(Color.neutrals600)
         }
+       
         
-        Button {
-          
-        } label: {
-          Image(systemName: "photo")
-            .foregroundStyle(Color.neutrals600)
-        }
-        
+        //MARK: - UserName
         if let patientName = patientName , !patientName.isEmpty,
             patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {
@@ -229,17 +293,21 @@ public struct ActiveChatView: View {
         
         Spacer()
         
+        //MARK: - Mic
         Button {
-          
+          messageInput = false
+          viewModel.startRecording()
         } label: {
           Image(systemName: "microphone")
             .foregroundStyle(Color.neutrals600)
         }
         
+        //MARK: - VoiceToRx or Send Button
         Button {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
            guard !newMessage.isEmpty else { return }
            sendMessage(newMessage)
+          isTextFieldFocused.toggle()
         } label: {
           if newMessage.isEmpty {
             Image(.voiceToRxButton)
@@ -251,7 +319,6 @@ public struct ActiveChatView: View {
                    .background(Circle().fill(Color.blue))
           }
         }
-        
       }
     }
     .padding(8)
