@@ -18,7 +18,9 @@ let package = Package(
     // MarkdownUI package dependency
     .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.0.2"),
     // FireBase package dependency
-    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1")
+    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
+   // Lottie dependency
+    .package(url: "https://github.com/airbnb/lottie-spm.git", from: "4.5.1")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -29,7 +31,9 @@ let package = Package(
         // MarkdownUI
         .product(name: "MarkdownUI", package: "swift-markdown-ui"),
         // FireBase
-        .product(name: "FirebaseFirestore", package: "firebase-ios-sdk")
+        .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
+        // Lottie dependency
+        .product(name: "Lottie", package: "lottie-ios")
       ],
       resources: [
         .process("Resources")
