@@ -15,14 +15,13 @@ public struct ActiveChatView: View {
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundColor: Color?
-  @FocusState private var isTextFieldFocused: Bool
+  @FocusState private var isTextFieldFocused: Bool // Focus binding for TextField
   @State private var scrollToBottom = false
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
-  @State private var messageInput: Bool = true
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -56,16 +55,19 @@ public struct ActiveChatView: View {
         }
       }
     }
+    .onTapGesture {
+      isTextFieldFocused = false
+    }
   }
-
+  
   private var content: some View {
-      VStack {
-          if calledFromPatientContext {
-              headerView
-          }
-          newView
-          .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+    VStack {
+      if calledFromPatientContext {
+        headerView
       }
+      newView
+        .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+    }
   }
   
   var EmptyChatView: some View {
@@ -78,8 +80,7 @@ public struct ActiveChatView: View {
             .scaledToFit()
             .frame(width: 40)
         }
-        
-        DocSuggestion(image: UIImage(resource: .chatMsgGray) ,title: "Ask anything from DocAssist AI", subTitle: "Medical fact checks, prescriptions and more..")
+        DocSuggestion(image: UIImage(resource: .chatMsgGray), title: "Ask anything from DocAssist AI", subTitle: "Medical fact checks, prescriptions and more..")
           .padding()
         DocSuggestion(image: UIImage(resource: .voiceToRxBW), title: "Create medical document", subTitle: "DocAssist AI can either listen to your live consultation or your dictation to create a medical document")
         Spacer()
@@ -90,54 +91,54 @@ public struct ActiveChatView: View {
   }
   
   var newView: some View {
-      VStack {
-        if messages.isEmpty {
-          EmptyChatView
-        }
-        else {
-          ScrollViewReader { proxy in
-            ScrollView {
-              VStack {
-                ForEach(messages) { message in
-                  MessageBubble(message: message, m: message.messageText ?? "No message")
-                    .padding(.horizontal)
-                    .id(message.id)
-                }
-                Color.clear
-                  .frame(height: 1)
-                  .id("bottomID")
+    VStack {
+      if messages.isEmpty {
+        EmptyChatView
+      }
+      else {
+        ScrollViewReader { proxy in
+          ScrollView {
+            VStack {
+              ForEach(messages) { message in
+                MessageBubble(message: message, m: message.messageText ?? "No message")
+                  .padding(.horizontal)
+                  .id(message.id)
               }
-              .padding(.top, 10)
+              Color.clear
+                .frame(height: 1)
+                .id("bottomID")
             }
-            .onChange(of: messages.count) { _, _ in
+            .padding(.top, 10)
+          }
+          .onChange(of: messages.count) { _, _ in
+            withAnimation(.easeOut(duration: 0.3)) {
+              proxy.scrollTo("bottomID", anchor: .bottom)
+            }
+          }
+          .onChange(of: isTextFieldFocused) { focused, _ in
+            if focused {
               withAnimation(.easeOut(duration: 0.3)) {
                 proxy.scrollTo("bottomID", anchor: .bottom)
               }
             }
-            .onChange(of: isTextFieldFocused) { focused, _ in
-              if focused {
-                withAnimation(.easeOut(duration: 0.3)) {
-                  proxy.scrollTo("bottomID", anchor: .bottom)
-                }
-              }
-            }
-            .simultaneousGesture(
-              DragGesture().onChanged { _ in
-                if isTextFieldFocused {
-                  isTextFieldFocused = false
-                }
-              }
-            )
-            .onAppear {
-              proxy.scrollTo("bottomID", anchor: .bottom)
-            }
           }
-          chatInputView
-            .padding(.bottom, 5)
+          .simultaneousGesture(
+            DragGesture().onChanged { _ in
+              if isTextFieldFocused {
+                isTextFieldFocused = false
+              }
+            }
+          )
+          .onAppear {
+            proxy.scrollTo("bottomID", anchor: .bottom)
+          }
         }
+        chatInputView
+          .padding(.bottom, 5)
       }
-      .navigationTitle("New Chat")
-      .navigationBarTitleDisplayMode(.large)
+    }
+    .navigationTitle("New Chat")
+    .navigationBarTitleDisplayMode(.large)
   }
   
   private var headerView: some View {
@@ -183,7 +184,7 @@ public struct ActiveChatView: View {
   }
   
   var chatInputView : some View {
-    if messageInput {
+    if viewModel.messageInput {
       AnyView(messageInputView)
     } else {
       AnyView(voiceInputView)
@@ -191,16 +192,12 @@ public struct ActiveChatView: View {
   }
   
   var voiceInputView: some View {
-    
     VStack(alignment: .leading, spacing: 10) {
-      
       HStack(alignment: .center, spacing: 10) {
-        
-        //MARK: - Xmark
         VStack(alignment: .center, spacing: 10) {
           Button {
             viewModel.stopRecording()
-            messageInput = true
+            viewModel.messageInput = true
           } label: {
             Image(.xmark)
           }
@@ -209,23 +206,28 @@ public struct ActiveChatView: View {
         .frame(width: 36, height: 36, alignment: .center)
         .cornerRadius(50)
         
+        if viewModel.isRecording {
+          AudioWaveformView()
+        } else {
+          Spacer()
+        }
         
-        Spacer()
-        AudioWaveformView()
         TimerView()
-        //MARK: - Check
+        
         VStack(alignment: .center, spacing: 10) {
           Button {
             viewModel.stopRecording()
-            messageInput = true
           } label: {
-            Image(.check)
+            if viewModel.voiceProcessing {
+              ProgressView()
+            } else {
+              Image(.check)
+            }
           }
         }
         .padding(0)
         .frame(width: 36, height: 36, alignment: .center)
         .cornerRadius(50)
-        
       }
       .padding(0)
       .frame(maxWidth: .infinity, alignment: .center)
@@ -236,9 +238,9 @@ public struct ActiveChatView: View {
     .background(.white)
     .cornerRadius(16)
     .overlay(
-    RoundedRectangle(cornerRadius: 16)
-    .inset(by: -0.5)
-    .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+      RoundedRectangle(cornerRadius: 16)
+        .inset(by: -0.5)
+        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
     )
     .padding(8)
   }
@@ -247,6 +249,7 @@ public struct ActiveChatView: View {
     VStack (spacing: 15) {
       HStack {
         TextField(" Start typing...", text: $newMessage, axis: .vertical)
+          .focused($isTextFieldFocused) // Bind focus state here
           .onChange(of: viewModel.voiceText) { _, newVoiceText in
             if let voiceText = newVoiceText, !voiceText.isEmpty {
               newMessage = voiceText
@@ -255,27 +258,22 @@ public struct ActiveChatView: View {
           }
       }
       
-      //MARK: - Medical Records
       HStack(spacing: 10) {
-        
         Button {
           
         } label: {
           Image(systemName: "paperclip")
             .foregroundStyle(Color.neutrals600)
         }
-       
         
-        //MARK: - UserName
         if let patientName = patientName , !patientName.isEmpty,
-            patientName != "General Chat" {
+           patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {
             VStack(alignment: .center, spacing: 10) {
               Image(systemName: "person.fill")
             }
             .padding(4)
             .frame(width: 16, height: 16, alignment: .center)
-            
             
             Text(patientName)
               .font(
@@ -293,30 +291,28 @@ public struct ActiveChatView: View {
         
         Spacer()
         
-        //MARK: - Mic
         Button {
-          messageInput = false
+          viewModel.messageInput = false
           viewModel.startRecording()
         } label: {
           Image(systemName: "microphone")
             .foregroundStyle(Color.neutrals600)
         }
         
-        //MARK: - VoiceToRx or Send Button
         Button {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-           guard !newMessage.isEmpty else { return }
-           sendMessage(newMessage)
+          guard !newMessage.isEmpty else { return }
+          sendMessage(newMessage)
           isTextFieldFocused.toggle()
         } label: {
           if newMessage.isEmpty {
             Image(.voiceToRxButton)
           } else {
             Image(systemName: "arrow.up")
-                   .foregroundStyle(Color.white)
-                   .fontWeight(.bold)
-                   .padding(4)
-                   .background(Circle().fill(Color.blue))
+              .foregroundStyle(Color.white)
+              .fontWeight(.bold)
+              .padding(4)
+              .background(Circle().fill(Color.blue))
           }
         }
       }
@@ -325,7 +321,7 @@ public struct ActiveChatView: View {
     .background(Color(.white))
     .cornerRadius(20)
     .overlay(content: {
-       RoundedRectangle(cornerRadius:20)
+      RoundedRectangle(cornerRadius:20)
         .stroke(Color.gray, lineWidth: 0.5)
     })
     .padding(8)

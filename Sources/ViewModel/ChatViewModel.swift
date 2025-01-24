@@ -30,6 +30,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var currentRecording: URL?
   @Published var voiceText: String?
   @Published var voiceProcessing: Bool = false
+  @Published var messageInput: Bool = true
   
   var audioRecorder: AVAudioRecorder?
   var audioPlayer: AVAudioPlayer?
@@ -99,7 +100,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           if let jsonData = jsonString.data(using: .utf8) {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              print("Message: \(message.text)")
               self.updateMessage(with: message)
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
@@ -225,6 +225,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       guard let self = self else { return }
       self.voiceText = text
       self.voiceProcessing = false
+      self.messageInput = true
     })
   }
 }
