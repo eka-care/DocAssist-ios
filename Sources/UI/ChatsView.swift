@@ -209,9 +209,10 @@ struct ChatsView: View {
   private func threadListView(allChats: Bool) -> some View {
     let filteredThreads: [SessionDataModel] = {
             if allChats {
-                return filteredSessions
+              return filteredSessions
             } else {
-                return filteredSessions.filter { $0.oid != "" }
+              return filteredSessions.filter { $0.subTitle != "General Chat"}
+            
             }
         }()
     return VStack {
@@ -220,6 +221,9 @@ struct ChatsView: View {
         VStack() {
           ForEach(Array(filteredThreads.enumerated()), id: \.element.id) { index, thread in
             threadItemView(for: thread, allChats: allChats)
+              .onAppear {  
+                print("Thread at index  \(thread.oid)")
+              }
           }
         }
         .padding(.horizontal)
@@ -288,6 +292,7 @@ struct ChatsView: View {
   
   private var destinationView: some View {
     if let sessionId = selectedSessionId {
+       
       if patientName == "General Chat" {
         return AnyView(
           ActiveChatView(
@@ -301,7 +306,8 @@ struct ChatsView: View {
       }
       else {
         return AnyView(
-          ExistingPatientChatsView(patientName: patientName ?? "", viewModel: viewModel, oid: "", userDocId: userDocId, userBId: userBId)
+          ExistingPatientChatsView(patientName: patientName ?? "", viewModel: viewModel, oid: "", userDocId: userDocId, userBId: userBId, sessions: ["",""], ctx: modelContext, calledFromPatientContext: false)
+            .modelContext(modelContext)
         )
       }
     } else {

@@ -164,27 +164,35 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-  func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> ExistingChatResponse {
-    let currentDate = Date()
-    let context = DatabaseConfig.shared.modelContext
-    if !oid.isEmpty {
-      do {
-        if let existingSessionId = try DatabaseConfig.shared.fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
-         // switchToSession(existingSessionId)
-          return ExistingChatResponse(chatExist: true, sessionId: [existingSessionId])
+  func isSessionsPresent(oid: String, userDocId: String, userBId: String) -> ExistingChatResponse {
+    do {
+      let sessions = try DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext)
+      if let sessions {
+        if sessions.count > 0 {
+          return .init(chatExist: true, sessionId: sessions)
         }
-      } catch {
-        print("Error fetching session for oid: \(error)")
+       else {
+        return .init(chatExist: false, sessionId: [])
       }
     }
-    
+    } catch {
+      print("Can't fetch the sessions")
+    }
+    return .init(chatExist: false, sessionId: [])
+  }
+  
+  func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {
+    let currentDate = Date()
+    let context = DatabaseConfig.shared.modelContext
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     context?.insert(createSessionModel)
     saveData()
     switchToSession(ssid)
-    return .init(chatExist: false, sessionId: [ssid])
+    return ssid
   }
+
+
   
   func switchToSession(_ id: String) {
     vmssid = id

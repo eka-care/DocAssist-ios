@@ -107,12 +107,13 @@ public class ViewControllerForIpadPatient: UIViewController {
     delegate: ConvertVoiceToText
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
-    let session = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+    let session = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
     if session.chatExist {
-      let existingChatsView = ExistingPatientChatsView(patientName: patientSubtitle ?? "", viewModel: vm, oid: oid, userDocId: userDocId, userBId: userBId)
+      let existingChatsView = ExistingPatientChatsView(patientName: patientSubtitle ?? "", viewModel: vm, oid: oid, userDocId: userDocId, userBId: userBId, sessions: session.sessionId, ctx: ctx, calledFromPatientContext: true)
       docAssistView = AnyView(existingChatsView.modelContext(ctx))
     } else {
-      let activeChatView = ActiveChatView(session: session.sessionId.first ?? "gmgfghjjhgjfjhf", viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
+      let newSession = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+      let activeChatView = ActiveChatView(session: newSession, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
       docAssistView = AnyView(activeChatView.modelContext(ctx))
     }
     super.init(nibName: nil, bundle: nil)

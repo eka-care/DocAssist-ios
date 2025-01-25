@@ -15,7 +15,7 @@ public struct ActiveChatView: View {
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundColor: Color?
-  @FocusState private var isTextFieldFocused: Bool // Focus binding for TextField
+  @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
@@ -25,6 +25,7 @@ public struct ActiveChatView: View {
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
+    print("#BB newSession is in activeview \(session)")
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
         message.sessionData?.sessionId == session
@@ -249,7 +250,6 @@ public struct ActiveChatView: View {
     VStack (spacing: 15) {
       HStack {
         TextField(" Start typing...", text: $newMessage, axis: .vertical)
-          .focused($isTextFieldFocused) // Bind focus state here
           .onChange(of: viewModel.voiceText) { _, newVoiceText in
             if let voiceText = newVoiceText, !voiceText.isEmpty {
               newMessage = voiceText
@@ -317,6 +317,7 @@ public struct ActiveChatView: View {
         }
       }
     }
+    .focused($isTextFieldFocused)
     .padding(8)
     .background(Color(.white))
     .cornerRadius(20)
