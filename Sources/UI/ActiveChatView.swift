@@ -22,6 +22,11 @@ public struct ActiveChatView: View {
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
+  @State private var selectedImages: [UIImage] = [
+      UIImage(systemName: "doc.fill")!,
+      UIImage(systemName: "photo.fill")!,
+      UIImage(systemName: "folder.fill")!
+  ]
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -57,6 +62,9 @@ public struct ActiveChatView: View {
     }
     .onTapGesture {
       isTextFieldFocused = false
+    }
+    .onAppear {
+      print("#BB session Id in active chat \(session)")
     }
   }
   
@@ -247,6 +255,24 @@ public struct ActiveChatView: View {
   
   var messageInputView: some View {
     VStack (spacing: 15) {
+      
+      VStack {
+        if !selectedImages.isEmpty {
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+              ForEach(selectedImages.indices, id: \.self) { index in
+                ImagePreviewCell(image: selectedImages[index]) {
+                  selectedImages.remove(at: index)
+                }
+              }
+            }
+            .padding(.horizontal)
+          }
+          .frame(height: 20)
+        }
+      }
+      .padding()
+      
       HStack {
         TextField(" Start typing...", text: $newMessage, axis: .vertical)
           .onChange(of: viewModel.voiceText) { _, newVoiceText in

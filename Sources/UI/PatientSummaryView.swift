@@ -167,59 +167,110 @@ struct ChatListView: View {
   }
 }
 
+//struct ChatRow: View {
+//  let title: String
+//  let subtitle: String
+//  var draftCount: String? = nil
+//  let time: String
+//  let vm: ChatViewModel
+//  let oid: String
+//  let sessionFromExisting: String
+//  
+//  var body: some View {
+//    Button {
+//    } label: {
+//      HStack(spacing: 12) {
+//        Image(.circleWaveForm)
+//        VStack(alignment: .leading, spacing: 4) {
+//          Text(title)
+//            .font(Font.custom("Lato-Regular", size: 16))
+//            .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
+//          
+//          HStack {
+//            Text(subtitle)
+//              .font(Font.custom("Lato-Regular", size: 14))
+//              .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+//            
+//            Text(draftCount ?? "2 draft")
+//              .font(Font.custom("Lato-Regular", size: 14))
+//              .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
+//            
+//            Spacer()
+//            
+//            Text(time)
+//              .font(Font.custom("Lato-Regular", size: 13))
+//              .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+//            
+//            Image(systemName: "chevron.right")
+//              .foregroundColor(.gray)
+//              .font(.system(size: 12))
+//              .frame(width: 16, height: 16)
+//          }
+//        }
+//      }
+//      .padding()
+//    }
+//    .onAppear {
+//      print("#BB oid is \(oid)")
+//      print("#BB session in existing chat \(sessionFromExisting)")
+//    }
+//  }
+//}
+
 struct ChatRow: View {
-  let title: String
-  let subtitle: String
-  var draftCount: String? = nil
-  let time: String
-  let session: String
-  let vm: ChatViewModel
-  @State private var path = NavigationPath()
-  
-  var body: some View {
-    NavigationStack(path: $path) {
-      Button {
-        path.append("NewView")
-      } label: {
-        HStack(spacing: 12) {
-          Image(.circleWaveForm)
-          VStack(alignment: .leading, spacing: 4) {
-            Text(title)
-              .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
-            
-            HStack {
-              Text(subtitle)
-                .font(Font.custom("Lato-Regular", size: 14))
-                .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-              
-              Text(draftCount ?? "2 draft")
-                .font(Font.custom("Lato-Regular", size: 14))
-                .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
-              
-              Spacer()
-              
-              Text(time)
-                .font(Font.custom("Lato-Regular", size: 13))
-                .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-              
-              Image(systemName: "chevron.right")
-                .foregroundColor(.gray)
-                .font(.system(size: 12))
-                .frame(width: 16, height: 16)
+    let title: String
+    let subtitle: String
+    var draftCount: String? = nil
+    let time: String
+    let vm: ChatViewModel
+    let oid: String
+    let sessionId: String
+  let patientName: String
+    
+    var body: some View {
+        NavigationLink {
+            ActiveChatView(
+              session: sessionId,
+                viewModel: vm,
+                backgroundColor: .white,
+              patientName: patientName,
+                calledFromPatientContext: false
+            )
+        } label: {
+            HStack(spacing: 12) {
+                Image(.circleWaveForm)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(Font.custom("Lato-Regular", size: 16))
+                        .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
+                    
+                    HStack {
+                        Text(subtitle)
+                            .font(Font.custom("Lato-Regular", size: 14))
+                            .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+                        
+                        Text(draftCount ?? "2 draft")
+                            .font(Font.custom("Lato-Regular", size: 14))
+                            .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
+                        
+                        Spacer()
+                        
+                        Text(time)
+                            .font(Font.custom("Lato-Regular", size: 13))
+                            .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+                        
+                        Image(systemName: "chevron.right")
+                            .foregroundColor(.gray)
+                            .font(.system(size: 12))
+                            .frame(width: 16, height: 16)
+                    }
+                }
             }
-          }
+            .padding()
         }
-        .padding()
-      }
-      .navigationDestination(for: String.self) { view in
-        if view == "NewView" {
-          ActiveChatView(session: session, viewModel: vm, backgroundColor: .blue, patientName: "", calledFromPatientContext: false)
-        }
-      }
     }
-  }
 }
+
 
 struct CompleteView: View {
   var patientName: String

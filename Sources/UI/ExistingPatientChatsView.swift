@@ -69,17 +69,17 @@ public struct ExistingPatientChatsView: View {
         }
         .navigationTitle(patientName)
         .navigationBarTitleDisplayMode(.large)
-        .navigationDestination(for: String.self) { view in
-          ActiveChatView(
-            session: createNewSession ?? "",
-            viewModel: viewModel,
-            backgroundColor: backgroundColor,
-            patientName: patientName,
-            calledFromPatientContext: false)
-          .modelContext(ctx)
-          
+        .navigationDestination(for: String.self) { str in
+          if str == "ActiveView" {
+            ActiveChatView(
+              session: createNewSession ?? "",
+              viewModel: viewModel,
+              backgroundColor: backgroundColor,
+              patientName: patientName,
+              calledFromPatientContext: false)
+            .modelContext(ctx)
+          }
         }
-      
       
     }
   }
@@ -100,8 +100,10 @@ public struct ExistingPatientChatsView: View {
               title: chat.title,
               subtitle: "Chat",
               time: "2m ago",
-              session: chat.sessionId,
-              vm: viewModel
+              vm: viewModel,
+              oid: chat.oid ?? "No oid present",
+              sessionId: chat.sessionId,
+              patientName: patientName
             )
             Divider()
           }
