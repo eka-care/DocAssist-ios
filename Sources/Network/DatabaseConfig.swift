@@ -126,4 +126,21 @@ final class DatabaseConfig {
     let results = try context.fetch(fetchDescriptor)
     return results.first?.subTitle ?? ""
   }
+  
+  func fetchChatUsing(patientName: String) -> [SessionDataModel] {
+    
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate<SessionDataModel> { session in
+        session.subTitle == patientName
+      }
+    )
+    
+    do {
+      let results = try modelContext.fetch(fetchDescriptor)
+      return results
+    } catch {
+      print("Error fetching sessions for patient \(patientName): \(error)")
+      return []
+    }
+  }
 }

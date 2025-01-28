@@ -156,48 +156,6 @@ struct ChatListView: View {
         .font(.custom("Lato-Regular", size: 14))
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal)
-      
-//      VStack(spacing: 0) {
-//          ChatRow(
-//            icon: "waveform.circle.fill",
-//            title: "Vital trends",
-//            subtitle: "Chat",
-//            time: "2m ago"
-//          )
-//          
-//          Divider()
-//            .padding(.leading, 56)
-//          
-//          ChatRow(
-//            icon: "waveform.circle.fill",
-//            title: "Vital trends",
-//            subtitle: "Chat",
-//            time: "2m ago"
-//          )
-//
-//          Divider()
-//            .padding(.leading, 56)
-//          
-//          ChatRow(
-//            icon: "waveform.circle.fill",
-//            title: "Vital trends",
-//            subtitle: "Chat",
-//            time: "2m ago"
-//          )
-//
-//          Divider()
-//            .padding(.leading, 56)
-//          
-//          ChatRow(
-//            icon: "waveform.circle.fill",
-//            title: "Vital trends",
-//            subtitle: "Chat",
-//            time: "2m ago"
-//          )
-//
-//        }
-        //.background(Color.white)
-        //.cornerRadius(12)
       }
       .scrollIndicators(.hidden)
     }
@@ -214,44 +172,51 @@ struct ChatRow: View {
   let subtitle: String
   var draftCount: String? = nil
   let time: String
+  let session: String
+  let vm: ChatViewModel
+  @State private var path = NavigationPath()
   
   var body: some View {
-    Button {
-      
-    } label: {
-       HStack(spacing: 12) {
-        // Image
-         Image(.circleWaveForm)
-        
-        // Title and Subtitle
-        VStack(alignment: .leading, spacing: 4) {
+    NavigationStack(path: $path) {
+      Button {
+        path.append("NewView")
+      } label: {
+        HStack(spacing: 12) {
+          Image(.circleWaveForm)
+          VStack(alignment: .leading, spacing: 4) {
             Text(title)
-                .font(Font.custom("Lato-Regular", size: 16))
-                .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
+              .font(Font.custom("Lato-Regular", size: 16))
+              .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
             
             HStack {
-                Text(subtitle)
-                    .font(Font.custom("Lato-Regular", size: 14))
-                    .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-                
-                Text(draftCount ?? "2 draft")
-                    .font(Font.custom("Lato-Regular", size: 14))
-                    .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
-                
-                Spacer()
-                
-                Text(time)
-                    .font(Font.custom("Lato-Regular", size: 13))
-                    .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-                
-                Image(systemName: "chevron.right")
-                    .foregroundColor(.gray)
-                    .font(.system(size: 12))
-                    .frame(width: 16, height: 16)
+              Text(subtitle)
+                .font(Font.custom("Lato-Regular", size: 14))
+                .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+              
+              Text(draftCount ?? "2 draft")
+                .font(Font.custom("Lato-Regular", size: 14))
+                .foregroundColor(Color(red: 0.56, green: 0.41, blue: 0.03))
+              
+              Spacer()
+              
+              Text(time)
+                .font(Font.custom("Lato-Regular", size: 13))
+                .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
+              
+              Image(systemName: "chevron.right")
+                .foregroundColor(.gray)
+                .font(.system(size: 12))
+                .frame(width: 16, height: 16)
             }
+          }
         }
-    }
-      .padding()
+        .padding()
+      }
+      .navigationDestination(for: String.self) { view in
+        if view == "NewView" {
+          ActiveChatView(session: session, viewModel: vm, backgroundColor: .blue, patientName: "", calledFromPatientContext: false)
+        }
+      }
     }
   }
 }
@@ -268,5 +233,18 @@ struct CompleteView: View {
       PatientSummaryView(patientName: patientName)
       ChatListView()
     }
+  }
+}
+
+struct DetailView: View {
+  var session: String
+  
+  init(session: String) {
+    self.session = session
+  }
+  
+  var body: some View {
+    Text("Hello world")
+    Text(session)
   }
 }

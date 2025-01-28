@@ -93,7 +93,7 @@ public class DocAssistViewController: UIViewController {
   }
 }
 
-public class ViewControllerForIpadPatient: UIViewController {
+public class ActiveChatViewController: UIViewController {
   
   var docAssistView: AnyView
   var vm: ChatViewModel
@@ -104,20 +104,36 @@ public class ViewControllerForIpadPatient: UIViewController {
     oid: String,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    calledFromPatientContext: Bool
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
     let session = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
-    if session.chatExist {
-      let existingChatsView = ExistingPatientChatsView(patientName: patientSubtitle ?? "", viewModel: vm, oid: oid, userDocId: userDocId, userBId: userBId, sessions: session.sessionId, ctx: ctx, calledFromPatientContext: true)
-      docAssistView = AnyView(existingChatsView.modelContext(ctx))
+    if calledFromPatientContext, session.chatExist {
+        let existingChatsView = ExistingPatientChatsView(
+            patientName: patientSubtitle ?? "",
+            viewModel: vm,
+            oid: oid,
+            userDocId: userDocId,
+            userBId: userBId,
+            sessions: session.sessionId,
+            ctx: ctx,
+            calledFromPatientContext: true
+        )
+        docAssistView = AnyView(existingChatsView.modelContext(ctx))
     } else {
-      let newSession = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
-      let activeChatView = ActiveChatView(session: newSession, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
-      docAssistView = AnyView(activeChatView.modelContext(ctx))
+        let newSession = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+        let activeChatView = ActiveChatView(
+            session: newSession,
+            viewModel: vm,
+            backgroundColor: backgroundColor,
+            patientName: patientSubtitle ?? "",
+            calledFromPatientContext: true
+        )
+        docAssistView = AnyView(activeChatView.modelContext(ctx))
     }
-    super.init(nibName: nil, bundle: nil)
     
+    super.init(nibName: nil, bundle: nil)
   }
   
   required init?(coder: NSCoder) {

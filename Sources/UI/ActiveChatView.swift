@@ -25,7 +25,6 @@ public struct ActiveChatView: View {
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
-    print("#BB newSession is in activeview \(session)")
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
         message.sessionData?.sessionId == session

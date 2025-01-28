@@ -22,6 +22,8 @@ public struct ExistingPatientChatsView: View {
   var sessions: [String]
   var ctx: ModelContext
   var calledFromPatientContext: Bool
+  @State var chats: [SessionDataModel] = []
+  @State var path = NavigationPath()
   
   init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, sessions: [String], ctx: ModelContext, calledFromPatientContext: Bool) {
     self.patientName = patientName
@@ -36,7 +38,7 @@ public struct ExistingPatientChatsView: View {
   }
   
   public var body: some View {
-    NavigationStack {
+    NavigationStack(path: $path) {
       list
         .toolbarBackground(Color.white, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
@@ -57,8 +59,7 @@ public struct ExistingPatientChatsView: View {
           ToolbarItem(placement: .navigationBarTrailing) {
             Button {
               createNewSession = viewModel.createSession(subTitle: patientName, oid: oid, userDocId: userDocId, userBId: userBId)
-              print("#BB newSession is \(createNewSession)")
-              navigateToActiveChatView = true
+              path.append("ActiveView")
             }
             label: {
               Text("New chat")
@@ -68,7 +69,7 @@ public struct ExistingPatientChatsView: View {
         }
         .navigationTitle(patientName)
         .navigationBarTitleDisplayMode(.large)
-        .navigationDestination(isPresented: $navigateToActiveChatView) {
+        .navigationDestination(for: String.self) { view in
           ActiveChatView(
             session: createNewSession ?? "",
             viewModel: viewModel,
@@ -85,102 +86,34 @@ public struct ExistingPatientChatsView: View {
   var list: some View {
     ScrollView {
       VStack {
-//        VStack {
-//          HStack() {
-//            Text("Medical Document")
-//              .font(Font.custom("Lato-Regular", size: 14))
-//              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-//              .padding(.leading, 16)
-//            Spacer()
-//          }
-//          Button {
-//            
-//          } label: {
-//            VStack(alignment: .leading, spacing: 0) {
-//              HStack(spacing: 4) {
-//                
-//                Image(.fileWaveForm)
-//                  .padding(6)
-//                  .background(Color(red: 0.46, green: 0.46, blue: 0.46))
-//                  .cornerRadius(6)
-//                
-//                Text("Medical documents")
-//                  .font(Font.custom("Lato-Regular", size: 16))
-//                  .foregroundColor(Color(red: 0.1, green: 0.1, blue: 0.1))
-//                  .frame(maxWidth: .infinity, alignment: .leading)
-//                
-//                HStack(spacing: 16) {
-//                  Text("32")
-//                    .font(Font.custom("Lato-Regular", size: 16))
-//                    .foregroundColor(Color(red: 0.64, green: 0.64, blue: 0.64))
-//                  
-//                  Image(systemName: "chevron.right")
-//                    .foregroundColor(.gray)
-//                    .font(.system(size: 14))
-//                }
-//                .padding(.trailing, 16)
-//              }
-//              .padding(.horizontal, 16)
-//              .frame(maxWidth: .infinity, minHeight: 44, maxHeight: 44, alignment: .leading)
-//            }
-//            .background(Color.white)
-//            .cornerRadius(8)
-//          }
-//        }
-      //  .padding(.bottom, 5)
-        
         HStack {
-          Text("\(sessions.count) chats found")
+          Text("\(chats.count) chats found")
             .font(Font.custom("Lato-Regular", size: 14))
             .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
             .padding(.leading, 16)
           Spacer()
         }
         
-        Button {
-          
-        } label: {
-          VStack(spacing: 0) {
+        VStack {
+          ForEach(chats) { chat in
             ChatRow(
-              title: "Vital trends",
+              title: chat.title,
               subtitle: "Chat",
-              time: "2m ago"
+              time: "2m ago",
+              session: chat.sessionId,
+              vm: viewModel
             )
-            
             Divider()
-              .padding(.leading, 56)
-            
-            ChatRow(
-              title: "Vital trends",
-              subtitle: "Chat",
-              time: "2m ago"
-            )
-            
-            Divider()
-              .padding(.leading, 56)
-            
-            ChatRow(
-              title: "Vital trends",
-              subtitle: "Chat",
-              time: "2m ago"
-            )
-            
-            Divider()
-              .padding(.leading, 56)
-            
-            ChatRow(
-              title: "Vital trends",
-              subtitle: "Chat",
-              time: "2m ago"
-            )
-            
           }
-          .background(Color.white)
-          .cornerRadius(12)
         }
+        .background(Color.white)
+        .cornerRadius(12)
       }
     }
     .padding()
     .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+    .onAppear {
+      chats = DatabaseConfig.shared.fetchChatUsing(patientName: patientName)
+    }
   }
 }
