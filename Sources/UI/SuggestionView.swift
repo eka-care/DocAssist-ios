@@ -37,3 +37,4 @@ struct SuggestionView: View {
     .frame(width: 360, height: 40)
   }
 }
+

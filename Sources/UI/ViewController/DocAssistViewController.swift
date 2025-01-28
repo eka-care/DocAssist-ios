@@ -12,7 +12,7 @@ import SwiftData
 public class DocAssistViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
-  
+  private var patientDelegate: NavigateToPatientDirectory
   public init(
     backgroundColor: Color? = nil,
     emptyMessageColor: Color? = nil,
@@ -22,8 +22,10 @@ public class DocAssistViewController: UIViewController {
     deviceType: String? = "phone",
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    patientDelegate: NavigateToPatientDirectory
   ) {
+    self.patientDelegate = patientDelegate
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
     case "ipad":
@@ -35,7 +37,9 @@ public class DocAssistViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate
+        delegate: delegate,
+        patientDelegate: patientDelegate,
+        searchForPatient: searchForPatient
       )
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -48,7 +52,9 @@ public class DocAssistViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate
+        delegate: delegate,
+        patientDelegate: patientDelegate,
+        searchForPatient: searchForPatient
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -81,9 +87,13 @@ public class DocAssistViewController: UIViewController {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
   }
+  
+  private func searchForPatient() {
+    patientDelegate.navigateToPatientDirectory()
+  }
 }
 
-public class ViewControllerForIpadPatient: UIViewController {
+public class ActiveChatViewController: UIViewController {
   
   var docAssistView: AnyView
   var vm: ChatViewModel
@@ -94,14 +104,36 @@ public class ViewControllerForIpadPatient: UIViewController {
     oid: String,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    calledFromPatientContext: Bool
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
-    let session = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    let activeChatView = ActiveChatView(session: session, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
-    docAssistView = AnyView(activeChatView.modelContext(ctx))
-    super.init(nibName: nil, bundle: nil)
+    let session = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
+    if calledFromPatientContext, session.chatExist {
+        let existingChatsView = ExistingPatientChatsView(
+            patientName: patientSubtitle ?? "",
+            viewModel: vm,
+            oid: oid,
+            userDocId: userDocId,
+            userBId: userBId,
+            sessions: session.sessionId,
+            ctx: ctx,
+            calledFromPatientContext: true
+        )
+        docAssistView = AnyView(existingChatsView.modelContext(ctx))
+    } else {
+        let newSession = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+        let activeChatView = ActiveChatView(
+            session: newSession,
+            viewModel: vm,
+            backgroundColor: backgroundColor,
+            patientName: patientSubtitle ?? "",
+            calledFromPatientContext: true
+        )
+        docAssistView = AnyView(activeChatView.modelContext(ctx))
+    }
     
+    super.init(nibName: nil, bundle: nil)
   }
   
   required init?(coder: NSCoder) {

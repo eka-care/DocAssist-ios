@@ -19,6 +19,8 @@ public struct IpadChatView: View {
     var delegate: ConvertVoiceToText
     var userDocId: String
     var userBId: String
+    var patientDelegate: NavigateToPatientDirectory
+    var searchForPatient: (()->Void)
   
     public init(
       backgroundColor: Color? = nil,
@@ -28,7 +30,9 @@ public struct IpadChatView: View {
       ctx: ModelContext,
       userDocId: String,
       userBId: String,
-      delegate: ConvertVoiceToText
+      delegate: ConvertVoiceToText,
+      patientDelegate: NavigateToPatientDirectory,
+      searchForPatient: @escaping (()->Void)
     ) {
       self.backgroundColor = backgroundColor
       self.emptyMessageColor = emptyMessageColor
@@ -38,6 +42,8 @@ public struct IpadChatView: View {
       self.userDocId = userDocId
       self.userBId = userBId
       self.delegate = delegate
+      self.patientDelegate = patientDelegate
+      self.searchForPatient = searchForPatient
     }
   
   public var body: some View {
@@ -50,7 +56,9 @@ public struct IpadChatView: View {
               ctx: ctx,
               userDocId: userDocId,
               userBId: userBId,
-              delegate: delegate
+              delegate: delegate,
+              patientDelegate: patientDelegate,
+              searchForPatient: searchForPatient
             )
     } detail: {
       DetailEmptyView()

@@ -10,6 +10,11 @@ import SwiftData
 import SwiftUI
 import AVFAudio
 
+public struct ExistingChatResponse {
+  var chatExist: Bool
+  var sessionId: [String]
+}
+
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
@@ -25,6 +30,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var currentRecording: URL?
   @Published var voiceText: String?
   @Published var voiceProcessing: Bool = false
+  @Published var messageInput: Bool = true
   
   var audioRecorder: AVAudioRecorder?
   var audioPlayer: AVAudioPlayer?
@@ -94,7 +100,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           if let jsonData = jsonString.data(using: .utf8) {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              print("Message: \(message.text)")
               self.updateMessage(with: message)
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
@@ -159,20 +164,26 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
+  func isSessionsPresent(oid: String, userDocId: String, userBId: String) -> ExistingChatResponse {
+    do {
+      let sessions = try DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext)
+      if let sessions {
+        if sessions.count > 0 {
+          return .init(chatExist: true, sessionId: sessions)
+        }
+       else {
+        return .init(chatExist: false, sessionId: [])
+      }
+    }
+    } catch {
+      print("Can't fetch the sessions")
+    }
+    return .init(chatExist: false, sessionId: [])
+  }
+  
   func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {
     let currentDate = Date()
     let context = DatabaseConfig.shared.modelContext
-    if !oid.isEmpty {
-      do {
-        if let existingSessionId = try DatabaseConfig.shared.fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
-          switchToSession(existingSessionId)
-          return existingSessionId
-        }
-      } catch {
-        print("Error fetching session for oid: \(error)")
-      }
-    }
-    
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     context?.insert(createSessionModel)
@@ -180,6 +191,8 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     switchToSession(ssid)
     return ssid
   }
+
+
   
   func switchToSession(_ id: String) {
     vmssid = id
@@ -220,6 +233,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       guard let self = self else { return }
       self.voiceText = text
       self.voiceProcessing = false
+      self.messageInput = true
     })
   }
 }

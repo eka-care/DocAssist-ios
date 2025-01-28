@@ -1,5 +1,5 @@
 {
-  "originHash" : "d6d35dd0a7fce0255562aa48f7dc5eb8ecc0178e45d2b588b3b9246eb85b14b5",
+  "originHash" : "246613508ef7e1d16b0256da40f442d1894b780a777466592970bdfb2a44d2ac",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -17,6 +17,24 @@
       "state" : {
         "revision" : "3b62f154d00019ae29a71e9738800bb6f18b236d",
         "version" : "10.19.2"
+      }
+    },
+    {
+      "identity" : "ekamedicalrecordscore",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/eka-care/EkaMedicalRecordsCore.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "342e5db408fb5c75c3c130d2a0d2d0df6d3844ec"
+      }
+    },
+    {
+      "identity" : "ekamedicalrecordsui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/eka-care/EkaMedicalRecordsUI.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "52a41a2ebea42c6ac97c5afcce6759ce79e55f7f"
       }
     },
     {
@@ -92,6 +110,15 @@
       }
     },
     {
+      "identity" : "lottie-ios",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/airbnb/lottie-ios.git",
+      "state" : {
+        "revision" : "047aa81b77adcbf583a966dfef620d17650cc656",
+        "version" : "4.5.1"
+      }
+    },
+    {
       "identity" : "nanopb",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/nanopb.git",
@@ -116,6 +143,42 @@
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
+      }
+    },
+    {
+      "identity" : "proto-contracts",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/eka-care/proto-contracts.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "bac1201cc305c453e913940c601467004998576c"
+      }
+    },
+    {
+      "identity" : "sdwebimage",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SDWebImage/SDWebImage.git",
+      "state" : {
+        "revision" : "10d06f6a33bafae8c164fbfd1f03391f6d4692b3",
+        "version" : "5.20.0"
+      }
+    },
+    {
+      "identity" : "sdwebimageswiftui",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI.git",
+      "state" : {
+        "revision" : "53573d6dd017e354c0e7d8f1c86b77ef1383c996",
+        "version" : "2.2.7"
+      }
+    },
+    {
+      "identity" : "snapkit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SnapKit/SnapKit.git",
+      "state" : {
+        "revision" : "d458564516e5676af9c70b4f4b2a9178294f1bc6",
+        "version" : "5.0.1"
       }
     },
     {
