@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import MarkdownUI
+import EkaMedicalRecordsUI
 
 public struct ActiveChatView: View {
   @State var session: String
@@ -22,6 +23,7 @@ public struct ActiveChatView: View {
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
+  @State private var showRecordsView = false
   @State private var selectedImages: [UIImage] = [
       UIImage(systemName: "doc.fill")!,
       UIImage(systemName: "photo.fill")!,
@@ -285,10 +287,13 @@ public struct ActiveChatView: View {
       
       HStack(spacing: 10) {
         Button {
-          
+          showRecordsView = true
         } label: {
           Image(systemName: "paperclip")
             .foregroundStyle(Color.neutrals600)
+        }
+        .sheet(isPresented: $showRecordsView) {
+          RecordsView(recordPresentationState: .picker)
         }
         
         if let patientName = patientName , !patientName.isEmpty,
