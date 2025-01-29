@@ -84,7 +84,7 @@ public struct ExistingPatientChatsView: View {
     }
   }
   var list: some View {
-    ScrollView {
+    ScrollView() {
       VStack {
         HStack {
           Text("\(chats.count) chats found")
@@ -117,5 +117,6 @@ public struct ExistingPatientChatsView: View {
     .onAppear {
       chats = DatabaseConfig.shared.fetchChatUsing(patientName: patientName)
     }
+    .scrollIndicators(.hidden)
   }
 }

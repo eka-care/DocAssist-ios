@@ -41,12 +41,12 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String) {
-    addUserMessage(newMessage)
+  func sendMessage(newMessage: String, imageUrls: [URL]?) {
+    addUserMessage(newMessage, imageUrls)
     startStreamingPostRequest(query: newMessage)
   }
   
-  private func addUserMessage(_ query: String) {
+  private func addUserMessage(_ query: String, _ imageUrls: [URL]?) {
     let msgIddup = (DatabaseConfig.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
@@ -58,7 +58,8 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           messageText: query,
           htmlString: nil,
           createdAt: 0,
-          sessionData: fetchedSeesion
+          sessionData: fetchedSeesion,
+          imageUrls: imageUrls
         )
         fetchedSeesion.chatMessages.append(userData)
       }

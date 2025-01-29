@@ -24,11 +24,8 @@ public struct ActiveChatView: View {
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
   @State private var showRecordsView = false
-  @State private var selectedImages: [UIImage] = [
-      UIImage(systemName: "doc.fill")!,
-      UIImage(systemName: "photo.fill")!,
-      UIImage(systemName: "folder.fill")!
-  ]
+  @State private var selectedImages: [URL] = []
+  @State private var selectedRecords: [RecordPickerDataModel] = []
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -110,7 +107,7 @@ public struct ActiveChatView: View {
           ScrollView {
             VStack {
               ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "No message")
+                MessageBubble(message: message, m: message.messageText ?? "No message", url: message.imageUrls)
                   .padding(.horizontal)
                   .id(message.id)
               }
@@ -257,23 +254,21 @@ public struct ActiveChatView: View {
   
   var messageInputView: some View {
     VStack (spacing: 15) {
-      
-      VStack {
-        if !selectedImages.isEmpty {
+      if !selectedImages.isEmpty {
+        VStack {
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
               ForEach(selectedImages.indices, id: \.self) { index in
-                ImagePreviewCell(image: selectedImages[index]) {
+                ImagePreviewCell(imageUrl: selectedImages[index]) {
                   selectedImages.remove(at: index)
                 }
               }
             }
-            .padding(.horizontal)
           }
           .frame(height: 20)
         }
+        .padding()
       }
-      .padding()
       
       HStack {
         TextField(" Start typing...", text: $newMessage, axis: .vertical)
@@ -293,7 +288,13 @@ public struct ActiveChatView: View {
             .foregroundStyle(Color.neutrals600)
         }
         .sheet(isPresented: $showRecordsView) {
-          RecordsView(recordPresentationState: .picker)
+          RecordsView(recordPresentationState: .picker) { data in
+            selectedImages = data.compactMap { record in
+              guard let image = record.image else { return nil }
+              return image
+            }
+            showRecordsView = false
+          }
         }
         
         if let patientName = patientName , !patientName.isEmpty,
@@ -331,18 +332,18 @@ public struct ActiveChatView: View {
         
         Button {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-          guard !newMessage.isEmpty else { return }
-          sendMessage(newMessage)
+          guard !newMessage.isEmpty || !selectedImages.isEmpty else { return }
+          sendMessage(newMessage, selectedImages)
           isTextFieldFocused.toggle()
         } label: {
-          if newMessage.isEmpty {
-            Image(.voiceToRxButton)
+          if (newMessage.isEmpty && selectedImages.isEmpty) {
+              Image(.voiceToRxButton)
           } else {
-            Image(systemName: "arrow.up")
-              .foregroundStyle(Color.white)
-              .fontWeight(.bold)
-              .padding(4)
-              .background(Circle().fill(Color.blue))
+              Image(systemName: "arrow.up")
+                  .foregroundStyle(Color.white)
+                  .fontWeight(.bold)
+                  .padding(4)
+                  .background(Circle().fill(Color.blue))
           }
         }
       }
@@ -358,16 +359,18 @@ public struct ActiveChatView: View {
     .padding(8)
   }
   
-  private func sendMessage(_ message: String) {
-    viewModel.sendMessage(newMessage: message)
+  private func sendMessage(_ message: String, _ imageUrls: [URL]) {
+    viewModel.sendMessage(newMessage: message, imageUrls: imageUrls)
     newMessage = ""
+    selectedImages = []
   }
   
 }
 
 struct MessageBubble: View {
   let message: ChatMessageModel
-  let m: String
+  let m: String?
+  let url: [URL]?
   
   var body: some View {
     HStack(alignment: .top) {
@@ -379,8 +382,7 @@ struct MessageBubble: View {
         BotAvatarImage()
           .alignmentGuide(.top) { d in d[.top] }
       }
-      
-      MessageTextView(text: m, role: message.role)
+      MessageTextView(text: m, role: message.role, url: url)
         .alignmentGuide(.top) { d in d[.top] }
       
       if message.role == .Bot {
@@ -392,16 +394,37 @@ struct MessageBubble: View {
 }
 
 struct MessageTextView: View {
-  let text: String
+  let text: String?
   let role: MessageRole
+  let url: [URL]? 
   
   var body: some View {
-    Markdown(text)
-      .padding(8)
-      .background(backgroundColor)
-      .foregroundColor(foregroundColor)
-      .contentTransition(.numericText())
-      .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
+    VStack {
+      if let url = url {
+        HStack {
+          ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
+              AsyncImage(url: urlImage) { image in
+                  image
+                      .resizable()
+                      .aspectRatio(contentMode: .fill)
+                      .frame(width: 86, height: 86)
+                      .clipped()
+              } placeholder: {
+                  ProgressView()
+              }
+          }
+        }
+      }
+      
+      if let text, text != "" {
+        Markdown(text)
+          .padding(8)
+          .background(backgroundColor)
+          .foregroundColor(foregroundColor)
+          .contentTransition(.numericText())
+          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
+      }
+    }
   }
   
   private var backgroundColor: Color {

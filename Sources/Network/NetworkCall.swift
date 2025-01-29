@@ -7,11 +7,13 @@
 
 import Foundation
 import Network
+import Alamofire
 
 public final class NwConfig {
   public var baseUrl: String = ""
   public var queryParams: [String: String] = [:]
   public var httpMethod: String = ""
+  public var interceptor: RequestInterceptor?
   
   @MainActor public static let shared = NwConfig()
   private init() {}

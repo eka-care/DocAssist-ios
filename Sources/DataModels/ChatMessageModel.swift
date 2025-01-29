@@ -19,6 +19,7 @@ public class ChatMessageModel: Identifiable {
   public var htmlString: String?
   public var createdAt: Int
   public var sessionData: SessionDataModel?
+  public var imageUrls: [URL]?
   
   init(
     msgId: Int,
@@ -27,8 +28,8 @@ public class ChatMessageModel: Identifiable {
     messageText: String? = nil,
     htmlString: String? = nil,
     createdAt: Int,
-    sessionData: SessionDataModel
-    
+    sessionData: SessionDataModel,
+    imageUrls: [URL]? = nil
   ) {
     self.msgId = msgId
     self.role = role
@@ -37,6 +38,7 @@ public class ChatMessageModel: Identifiable {
     self.htmlString = htmlString
     self.createdAt = createdAt
     self.sessionData = sessionData
+    self.imageUrls = imageUrls
   }
 }
 

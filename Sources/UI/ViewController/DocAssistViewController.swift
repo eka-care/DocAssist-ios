@@ -8,6 +8,8 @@
 import UIKit
 import SwiftUI
 import SwiftData
+import EkaMedicalRecordsUI
+import EkaMedicalRecordsCore
 
 public class DocAssistViewController: UIViewController {
   private var docAssistView: UIView!
@@ -23,7 +25,10 @@ public class DocAssistViewController: UIViewController {
     userDocId: String,
     userBId: String,
     delegate: ConvertVoiceToText,
-    patientDelegate: NavigateToPatientDirectory
+    patientDelegate: NavigateToPatientDirectory,
+    authToken: String,
+    authRefreshToken: String
+    
   ) {
     self.patientDelegate = patientDelegate
     super.init(nibName: nil, bundle: nil)
@@ -105,7 +110,9 @@ public class ActiveChatViewController: UIViewController {
     userDocId: String,
     userBId: String,
     delegate: ConvertVoiceToText,
-    calledFromPatientContext: Bool
+    calledFromPatientContext: Bool,
+    authToken: String,
+    authRefreshToken: String
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
     let session = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
@@ -132,8 +139,9 @@ public class ActiveChatViewController: UIViewController {
         )
         docAssistView = AnyView(activeChatView.modelContext(ctx))
     }
-    
     super.init(nibName: nil, bundle: nil)
+    registerUISdk()
+    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid)
   }
   
   required init?(coder: NSCoder) {
@@ -160,5 +168,56 @@ public class ActiveChatViewController: UIViewController {
   public override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
+  }
+}
+
+extension ActiveChatViewController {
+  
+  func registerUISdk() {
+    registerFonts()
+  }
+  
+  private func registerFonts() {
+    do {
+      try Fonts.registerAllFonts()
+    } catch {
+      debugPrint("Failed to fetch fonts")
+    }
+  }
+  
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid)
+  }
+  
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String) {
+    CoreInitConfigurations.shared.authToken = authToken
+    CoreInitConfigurations.shared.refreshToken = refreshToken
+    CoreInitConfigurations.shared.oid = oid
+  }
+}
+
+
+extension DocAssistViewController {
+  
+  func registerUISdk() {
+    registerFonts()
+  }
+  
+  private func registerFonts() {
+    do {
+      try Fonts.registerAllFonts()
+    } catch {
+      debugPrint("Failed to fetch fonts")
+    }
+  }
+  
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid)
+  }
+  
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String) {
+    CoreInitConfigurations.shared.authToken = authToken
+    CoreInitConfigurations.shared.refreshToken = refreshToken
+    CoreInitConfigurations.shared.oid = oid
   }
 }
