@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import MarkdownUI
 import EkaMedicalRecordsUI
+import EkaMedicalRecordsCore
 
 public struct ActiveChatView: View {
   @State var session: String
@@ -26,6 +27,8 @@ public struct ActiveChatView: View {
   @State private var showRecordsView = false
   @State private var selectedImages: [URL] = []
   @State private var selectedDocumentId: [String] = []
+  
+  let recordsRepo = RecordsRepo()
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -281,14 +284,14 @@ public struct ActiveChatView: View {
               return image
             }
             selectedDocumentId = data.compactMap({ record in
-             // guard let docId = record.documentID else { return nil }
-            //  print("#BB docId is \(docId)")
-              return "3653d61f-944d-4e39-94e5-f9beb3013992"
+              guard let docId = record.documentID else { return nil }
+              print("#BB docId is \(docId)")
+              return docId
             }
                                                  
           )
             showRecordsView = false
-          }
+          }.environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
         }
         
         if let patientName = patientName , !patientName.isEmpty,
@@ -357,6 +360,7 @@ public struct ActiveChatView: View {
     viewModel.sendMessage(newMessage: message, imageUrls: imageUrls, vaultFiles: vaultFiles)
     newMessage = ""
     selectedImages = []
+    selectedDocumentId = []
   }
   
 }
