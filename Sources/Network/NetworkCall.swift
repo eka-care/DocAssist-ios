@@ -21,7 +21,7 @@ public final class NwConfig {
 
 final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
-  @MainActor func startStreamingPostRequest(query: String, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
+  @MainActor func startStreamingPostRequest(query: String, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
     
     let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
     
@@ -39,10 +39,14 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
     
+    var messageData: [String: Any] = ["role": "user", "text": query]
+    
+    if let vaultFiles = vault_files, !vaultFiles.isEmpty {
+      messageData["vault_files"] = vaultFiles
+    }
+    
     let jsonData: [String: Any] = [
-      "messages": [
-        ["role": "user", "text": query]
-      ]
+      "messages": [messageData]
     ]
     
     do {

@@ -41,9 +41,9 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String, imageUrls: [URL]?) {
+  func sendMessage(newMessage: String, imageUrls: [URL]?, vaultFiles: [String]?) {
     addUserMessage(newMessage, imageUrls)
-    startStreamingPostRequest(query: newMessage)
+    startStreamingPostRequest(query: newMessage, vaultFiles: vaultFiles)
   }
   
   private func addUserMessage(_ query: String, _ imageUrls: [URL]?) {
@@ -71,10 +71,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     setThreadTitle(with: query)
   }
   
-  func startStreamingPostRequest(query: String) {
+  func startStreamingPostRequest(query: String, vaultFiles: [String]?) {
     streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
-    networkCall.startStreamingPostRequest(query: query, onStreamComplete: { [weak self] in
+    networkCall.startStreamingPostRequest(query: query, vault_files: vaultFiles, onStreamComplete: { [weak self] in
       Task { @MainActor in
         self?.streamStarted = false
       }

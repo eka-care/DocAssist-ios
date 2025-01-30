@@ -25,7 +25,7 @@ public struct ActiveChatView: View {
   @State private var hasFocusedOnce = false
   @State private var showRecordsView = false
   @State private var selectedImages: [URL] = []
-  @State private var selectedRecords: [RecordPickerDataModel] = []
+  @State private var selectedDocumentId: [String] = []
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
     self.session = session
@@ -111,33 +111,19 @@ public struct ActiveChatView: View {
                   .padding(.horizontal)
                   .id(message.id)
               }
-              Color.clear
-                .frame(height: 1)
-                .id("bottomID")
+              Color.clear.frame(height: 1).id("bottomID")
             }
             .padding(.top, 10)
           }
-          .onChange(of: messages.count) { _, _ in
-            withAnimation(.easeOut(duration: 0.3)) {
+          .onChange(of: messages) { _ , _ in
+            withAnimation {
               proxy.scrollTo("bottomID", anchor: .bottom)
             }
           }
-          .onChange(of: isTextFieldFocused) { focused, _ in
-            if focused {
-              withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo("bottomID", anchor: .bottom)
-              }
-            }
-          }
-          .simultaneousGesture(
-            DragGesture().onChanged { _ in
-              if isTextFieldFocused {
-                isTextFieldFocused = false
-              }
-            }
-          )
           .onAppear {
-            proxy.scrollTo("bottomID", anchor: .bottom)
+            DispatchQueue.main.async {
+              proxy.scrollTo("bottomID", anchor: .bottom)
+            }
           }
         }
         chatInputView
@@ -289,10 +275,17 @@ public struct ActiveChatView: View {
         }
         .sheet(isPresented: $showRecordsView) {
           RecordsView(recordPresentationState: .picker) { data in
+            
             selectedImages = data.compactMap { record in
               guard let image = record.image else { return nil }
               return image
             }
+            selectedDocumentId = data.compactMap({ record in
+              guard let docId = record.documentID else { return nil }
+              return docId
+            }
+                                                 
+          )
             showRecordsView = false
           }
         }
@@ -333,7 +326,7 @@ public struct ActiveChatView: View {
         Button {
           newMessage = viewModel.trimLeadingSpaces(from: newMessage)
           guard !newMessage.isEmpty || !selectedImages.isEmpty else { return }
-          sendMessage(newMessage, selectedImages)
+          sendMessage(newMessage, selectedImages, selectedDocumentId)
           isTextFieldFocused.toggle()
         } label: {
           if (newMessage.isEmpty && selectedImages.isEmpty) {
@@ -359,8 +352,8 @@ public struct ActiveChatView: View {
     .padding(8)
   }
   
-  private func sendMessage(_ message: String, _ imageUrls: [URL]) {
-    viewModel.sendMessage(newMessage: message, imageUrls: imageUrls)
+  private func sendMessage(_ message: String, _ imageUrls: [URL], _ vaultFiles: [String]?) {
+    viewModel.sendMessage(newMessage: message, imageUrls: imageUrls, vaultFiles: vaultFiles)
     newMessage = ""
     selectedImages = []
   }
