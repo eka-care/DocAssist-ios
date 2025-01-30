@@ -21,7 +21,7 @@ public final class NwConfig {
 
 final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
-  @MainActor func startStreamingPostRequest(query: String, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
+  @MainActor func startStreamingPostRequest(query: String?, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
     
     let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
     
@@ -39,11 +39,29 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
     
-    var messageData: [String: Any] = ["role": "user", "text": query]
+//    var messageData: [String: Any] = ["role": "user", "text": query]
+//    
+//    if let vaultFiles = vault_files, !vaultFiles.isEmpty {
+//      messageData["vault_files"] = vaultFiles
+//    } else {
+//      print("#BB no doc id present")
+//    }
+    
+//    guard let query = query, !query.isEmpty || (vault_files != nil && !vault_files!.isEmpty) else {
+//      print("Error: Either text or vault files must be present to start the request.")
+//      return
+//    }
+    
+    var messageData: [String: Any] = ["role": "user"]
+    
+    if let text = query, !text.isEmpty {
+      messageData["text"] = text
+    }
     
     if let vaultFiles = vault_files, !vaultFiles.isEmpty {
       messageData["vault_files"] = vaultFiles
     }
+        
     
     let jsonData: [String: Any] = [
       "messages": [messageData]

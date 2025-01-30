@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  CommunicationProtocol.swift
 //  ChatBotAiPackage
 //
 //  Created by Brunda B on 21/01/25.

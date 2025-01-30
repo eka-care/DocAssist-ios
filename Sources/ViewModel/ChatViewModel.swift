@@ -41,12 +41,12 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String, imageUrls: [URL]?, vaultFiles: [String]?) {
+  func sendMessage(newMessage: String?, imageUrls: [URL]?, vaultFiles: [String]?) {
     addUserMessage(newMessage, imageUrls)
     startStreamingPostRequest(query: newMessage, vaultFiles: vaultFiles)
   }
   
-  private func addUserMessage(_ query: String, _ imageUrls: [URL]?) {
+  private func addUserMessage(_ query: String?, _ imageUrls: [URL]?) {
     let msgIddup = (DatabaseConfig.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
@@ -68,10 +68,10 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
     
     saveData()
-    setThreadTitle(with: query)
+    setThreadTitle(with: query ?? "New Chat")
   }
   
-  func startStreamingPostRequest(query: String, vaultFiles: [String]?) {
+  func startStreamingPostRequest(query: String?, vaultFiles: [String]?) {
     streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
     networkCall.startStreamingPostRequest(query: query, vault_files: vaultFiles, onStreamComplete: { [weak self] in
@@ -102,6 +102,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
               self.updateMessage(with: message)
+              print("#BB message is \(message)")
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
             }

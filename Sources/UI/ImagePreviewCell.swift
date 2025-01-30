@@ -17,7 +17,7 @@ struct ImagePreviewCell: View {
         image
           .resizable()
           .aspectRatio(contentMode: .fill)
-          .frame(width: 86, height: 86)
+          .frame(width: 66, height: 66)
           .clipped()
       } placeholder: {
         ProgressView()

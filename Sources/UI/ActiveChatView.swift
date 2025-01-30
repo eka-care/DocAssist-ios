@@ -275,14 +275,15 @@ public struct ActiveChatView: View {
         }
         .sheet(isPresented: $showRecordsView) {
           RecordsView(recordPresentationState: .picker) { data in
-            
+            print("#BB data is \(data)")
             selectedImages = data.compactMap { record in
               guard let image = record.image else { return nil }
               return image
             }
             selectedDocumentId = data.compactMap({ record in
-              guard let docId = record.documentID else { return nil }
-              return docId
+             // guard let docId = record.documentID else { return nil }
+            //  print("#BB docId is \(docId)")
+              return "3653d61f-944d-4e39-94e5-f9beb3013992"
             }
                                                  
           )
