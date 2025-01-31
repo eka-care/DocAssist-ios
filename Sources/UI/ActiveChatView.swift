@@ -27,7 +27,6 @@ public struct ActiveChatView: View {
   @State private var showRecordsView = false
   @State private var selectedImages: [URL] = []
   @State private var selectedDocumentId: [String] = []
-  @State private var isLoading: Bool = false
   var title: String?
   
   let recordsRepo = RecordsRepo()
@@ -206,8 +205,6 @@ public struct ActiveChatView: View {
         VStack(alignment: .center, spacing: 10) {
           Button {
             viewModel.stopRecording()
-            viewModel.messageInput = true
-            viewModel.voiceText = ""
           } label: {
             Image(.xmark)
           }
@@ -227,6 +224,7 @@ public struct ActiveChatView: View {
         VStack(alignment: .center, spacing: 10) {
           Button {
             viewModel.stopRecording()
+            viewModel.messageInput = true
           } label: {
             Image(.check)
           }
@@ -343,14 +341,18 @@ public struct ActiveChatView: View {
           sendMessage(newMessage, selectedImages, selectedDocumentId)
           isTextFieldFocused.toggle()
         } label: {
-          if (newMessage.isEmpty && selectedImages.isEmpty) {
-              Image(.voiceToRxButton)
+          if viewModel.isLoading {
+            ProgressView()
           } else {
+            if (newMessage.isEmpty && selectedImages.isEmpty) {
+              Image(.voiceToRxButton)
+            } else {
               Image(systemName: "arrow.up")
-                  .foregroundStyle(Color.white)
-                  .fontWeight(.bold)
-                  .padding(4)
-                  .background(Circle().fill(Color.blue))
+                .foregroundStyle(Color.white)
+                .fontWeight(.bold)
+                .padding(4)
+                .background(Circle().fill(Color.blue))
+            }
           }
         }
       }

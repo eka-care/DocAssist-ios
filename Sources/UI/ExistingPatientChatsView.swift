@@ -85,7 +85,7 @@ public struct ExistingPatientChatsView: View {
     ScrollView() {
       VStack {
         HStack {
-          Text("\(chats.count) chats found")
+          Text("\(chats.filter { !$0.chatMessages.isEmpty }.count) chats found")
             .font(Font.custom("Lato-Regular", size: 14))
             .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
             .padding(.leading, 16)

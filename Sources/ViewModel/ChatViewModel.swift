@@ -166,21 +166,19 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
-  func isSessionsPresent(oid: String, userDocId: String, userBId: String) -> ExistingChatResponse {
+  func isSessionsPresent(oid: String, userDocId: String, userBId: String) -> Bool {
     do {
       let sessions = try DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext)
-      if let sessions {
-        if sessions.count > 0 {
-          return .init(chatExist: true, sessionId: sessions)
-        }
-       else {
-        return .init(chatExist: false, sessionId: [])
+      
+      if sessions.filter({ !$0.chatMessages.isEmpty }).count > 0 {
+        return true
+      } else {
+        return false
       }
-    }
     } catch {
       print("Can't fetch the sessions")
     }
-    return .init(chatExist: false, sessionId: [])
+    return false
   }
   
   func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {

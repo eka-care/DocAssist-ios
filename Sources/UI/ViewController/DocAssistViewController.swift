@@ -115,8 +115,8 @@ public class ActiveChatViewController: UIViewController {
     authRefreshToken: String
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
-    let session = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
-    if calledFromPatientContext, session.chatExist {
+    let sessionPresent = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
+    if calledFromPatientContext, sessionPresent {
         let existingChatsView = ExistingPatientChatsView(
             patientName: patientSubtitle ?? "",
             viewModel: vm,
