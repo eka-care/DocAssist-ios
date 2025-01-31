@@ -123,7 +123,6 @@ public class ActiveChatViewController: UIViewController {
             oid: oid,
             userDocId: userDocId,
             userBId: userBId,
-            sessions: session.sessionId,
             ctx: ctx,
             calledFromPatientContext: true
         )
@@ -190,9 +189,10 @@ extension ActiveChatViewController {
   }
   
   private func registerAuthToken(authToken: String, refreshToken: String, oid: String) {
+    print("MR initialiser \(authToken), \(refreshToken), \(oid)")
     CoreInitConfigurations.shared.authToken = authToken
     CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.oid = oid
+    CoreInitConfigurations.shared.filterID = oid
   }
 }
 
@@ -216,8 +216,9 @@ extension DocAssistViewController {
   }
   
   private func registerAuthToken(authToken: String, refreshToken: String, oid: String) {
+    print("MR initialiser \(authToken), \(refreshToken), \(oid)")
     CoreInitConfigurations.shared.authToken = authToken
     CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.oid = oid
+    CoreInitConfigurations.shared.filterID = oid
   }
 }

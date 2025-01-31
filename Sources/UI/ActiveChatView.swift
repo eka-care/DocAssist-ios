@@ -27,10 +27,12 @@ public struct ActiveChatView: View {
   @State private var showRecordsView = false
   @State private var selectedImages: [URL] = []
   @State private var selectedDocumentId: [String] = []
+  @State private var isLoading: Bool = false
+  var title: String?
   
   let recordsRepo = RecordsRepo()
   
-  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
+  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -43,6 +45,7 @@ public struct ActiveChatView: View {
     self.backgroundColor = backgroundColor
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
+    self.title = title
   }
   
   public var body: some View {
@@ -67,6 +70,7 @@ public struct ActiveChatView: View {
     }
     .onAppear {
       print("#BB session Id in active chat \(session)")
+      viewModel.switchToSession(session)
     }
   }
   
@@ -133,7 +137,16 @@ public struct ActiveChatView: View {
           .padding(.bottom, 5)
       }
     }
-    .navigationTitle("New Chat")
+    .toolbarBackground(LinearGradient(
+      colors: [
+        Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
+        Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
+      ],
+      startPoint: .leading,
+      endPoint: .trailing
+    ), for: .navigationBar)
+    .toolbarBackground(.visible, for: .navigationBar)
+    .navigationTitle(title ?? "New Chat")
     .navigationBarTitleDisplayMode(.large)
   }
   
@@ -194,6 +207,7 @@ public struct ActiveChatView: View {
           Button {
             viewModel.stopRecording()
             viewModel.messageInput = true
+            viewModel.voiceText = ""
           } label: {
             Image(.xmark)
           }
@@ -214,11 +228,7 @@ public struct ActiveChatView: View {
           Button {
             viewModel.stopRecording()
           } label: {
-            if viewModel.voiceProcessing {
-              ProgressView()
-            } else {
-              Image(.check)
-            }
+            Image(.check)
           }
         }
         .padding(0)
@@ -277,7 +287,7 @@ public struct ActiveChatView: View {
             .foregroundStyle(Color.neutrals600)
         }
         .sheet(isPresented: $showRecordsView) {
-          RecordsView(recordPresentationState: .picker) { data in
+          RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
             print("#BB data is \(data)")
             selectedImages = data.compactMap { record in
               guard let image = record.image else { return nil }

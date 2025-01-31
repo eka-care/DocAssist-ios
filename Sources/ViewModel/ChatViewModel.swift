@@ -193,8 +193,6 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     switchToSession(ssid)
     return ssid
   }
-
-
   
   func switchToSession(_ id: String) {
     vmssid = id

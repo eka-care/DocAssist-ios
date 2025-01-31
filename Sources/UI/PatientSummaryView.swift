@@ -173,7 +173,6 @@ struct ChatRow: View {
     var draftCount: String? = nil
     let time: String
     let vm: ChatViewModel
-    let oid: String
     let sessionId: String
   let patientName: String
     
@@ -183,8 +182,9 @@ struct ChatRow: View {
               session: sessionId,
                 viewModel: vm,
                 backgroundColor: .white,
-              patientName: patientName,
-                calledFromPatientContext: false
+                patientName: patientName,
+                calledFromPatientContext: false,
+                title: title
             )
         } label: {
             HStack(spacing: 12) {
@@ -216,7 +216,11 @@ struct ChatRow: View {
                     }
                 }
             }
-            .padding()
+            .padding(.leading, 15)
+            .padding(.trailing, 15)
+            .padding(.top, 5)
+            .padding(.bottom, 5)
+
         }
     }
 }

@@ -19,20 +19,18 @@ public struct ExistingPatientChatsView: View {
   @State var createNewSession: String?
   @Environment(\.dismiss) var dismiss
   @Environment(\.modelContext) var modelContext
-  var sessions: [String]
   var ctx: ModelContext
   var calledFromPatientContext: Bool
   @State var chats: [SessionDataModel] = []
   @State var path = NavigationPath()
   
-  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, sessions: [String], ctx: ModelContext, calledFromPatientContext: Bool) {
+  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, ctx: ModelContext, calledFromPatientContext: Bool) {
     self.patientName = patientName
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
     self.oid = oid
     self.userDocId = userDocId
     self.userBId = userBId
-    self.sessions = sessions
     self.ctx = ctx
     self.calledFromPatientContext = calledFromPatientContext
   }
@@ -96,16 +94,17 @@ public struct ExistingPatientChatsView: View {
         
         VStack {
           ForEach(chats) { chat in
-            ChatRow(
-              title: chat.title,
-              subtitle: "Chat",
-              time: "2m ago",
-              vm: viewModel,
-              oid: chat.oid ?? "No oid present",
-              sessionId: chat.sessionId,
-              patientName: patientName
-            )
-            Divider()
+            if !chat.chatMessages.isEmpty {
+              ChatRow(
+                title: chat.title,
+                subtitle: "Chat",
+                time: viewModel.getFormatedDateToDDMMYYYY(date: chat.lastUpdatedAt),
+                vm: viewModel,
+                sessionId: chat.sessionId,
+                patientName: patientName
+              )
+              Divider()
+            }
           }
         }
         .background(Color.white)

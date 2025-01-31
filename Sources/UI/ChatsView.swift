@@ -292,7 +292,6 @@ struct ChatsView: View {
   
   private var destinationView: some View {
     if let sessionId = selectedSessionId {
-       
       if patientName == "General Chat" {
         return AnyView(
           ActiveChatView(
@@ -306,7 +305,7 @@ struct ChatsView: View {
       }
       else {
         return AnyView(
-          ExistingPatientChatsView(patientName: patientName ?? "", viewModel: viewModel, oid: "", userDocId: userDocId, userBId: userBId, sessions: ["",""], ctx: modelContext, calledFromPatientContext: false)
+          ExistingPatientChatsView(patientName: patientName ?? "", viewModel: viewModel, oid: "", userDocId: userDocId, userBId: userBId, ctx: modelContext, calledFromPatientContext: false)
             .modelContext(modelContext)
         )
       }

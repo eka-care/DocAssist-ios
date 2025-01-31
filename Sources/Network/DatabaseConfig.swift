@@ -132,7 +132,8 @@ final class DatabaseConfig {
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate<SessionDataModel> { session in
         session.subTitle == patientName
-      }
+      },
+      sortBy: [SortDescriptor(\SessionDataModel.lastUpdatedAt, order: .reverse)]
     )
     
     do {
