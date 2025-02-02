@@ -13,7 +13,7 @@ import EkaMedicalRecordsCore
 
 public struct ActiveChatView: View {
   @State var session: String
-  @State var newMessage: String = ""
+ // @State var newMessage: String = ""
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundColor: Color?
@@ -204,7 +204,7 @@ public struct ActiveChatView: View {
       HStack(alignment: .center, spacing: 10) {
         VStack(alignment: .center, spacing: 10) {
           Button {
-            viewModel.stopRecording()
+            viewModel.dontRecord()
           } label: {
             Image(.xmark)
           }
@@ -221,10 +221,15 @@ public struct ActiveChatView: View {
         
         TimerView()
         
+        if viewModel.voiceProcessing {
+          HStack {
+            ProgressView()
+          }
+        }
+        
         VStack(alignment: .center, spacing: 10) {
           Button {
             viewModel.stopRecording()
-            viewModel.messageInput = true
           } label: {
             Image(.check)
           }
@@ -268,13 +273,13 @@ public struct ActiveChatView: View {
       }
       
       HStack {
-        TextField(" Start typing...", text: $newMessage, axis: .vertical)
-          .onChange(of: viewModel.voiceText) { _, newVoiceText in
-            if let voiceText = newVoiceText, !voiceText.isEmpty {
-              newMessage = voiceText
-              viewModel.voiceText = ""
-            }
-          }
+        TextField(" Start typing...", text: $viewModel.inputString, axis: .vertical)
+//          .onChange(of: viewModel.voiceText) { _, newVoiceText in
+//            if let voiceText = newVoiceText, !voiceText.isEmpty {
+//              viewModel.inputString = voiceText
+//              viewModel.voiceText = ""
+//            }
+ //         }
       }
       
       HStack(spacing: 10) {
@@ -336,23 +341,19 @@ public struct ActiveChatView: View {
         }
         
         Button {
-          newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-          guard !newMessage.isEmpty || !selectedImages.isEmpty else { return }
-          sendMessage(newMessage, selectedImages, selectedDocumentId)
+          viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
+          guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty else { return }
+          sendMessage(viewModel.inputString, selectedImages, selectedDocumentId)
           isTextFieldFocused.toggle()
         } label: {
-          if viewModel.isLoading {
-            ProgressView()
+          if (viewModel.inputString.isEmpty && selectedImages.isEmpty) {
+            Image(.voiceToRxButton)
           } else {
-            if (newMessage.isEmpty && selectedImages.isEmpty) {
-              Image(.voiceToRxButton)
-            } else {
-              Image(systemName: "arrow.up")
-                .foregroundStyle(Color.white)
-                .fontWeight(.bold)
-                .padding(4)
-                .background(Circle().fill(Color.blue))
-            }
+            Image(systemName: "arrow.up")
+              .foregroundStyle(Color.white)
+              .fontWeight(.bold)
+              .padding(4)
+              .background(Circle().fill(Color.blue))
           }
         }
       }
@@ -370,7 +371,7 @@ public struct ActiveChatView: View {
   
   private func sendMessage(_ message: String, _ imageUrls: [URL], _ vaultFiles: [String]?) {
     viewModel.sendMessage(newMessage: message, imageUrls: imageUrls, vaultFiles: vaultFiles)
-    newMessage = ""
+    viewModel.inputString = ""
     selectedImages = []
     selectedDocumentId = []
   }

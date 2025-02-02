@@ -19,16 +19,14 @@ public struct ExistingChatResponse {
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   @Published var streamStarted: Bool = false
-  @Published var isLoading: Bool = false
   @Published private(set) var vmssid: String = ""
   private var dataStorage: String = ""
   private var context: ModelContext
   private var delegate : ConvertVoiceToText? = nil
   private let networkCall = NetworkCall()
-  
+  @Published var inputString = ""
   @Published var isRecording = false
   @Published var currentRecording: URL?
-  @Published var voiceText: String?
   @Published var voiceProcessing: Bool = false
   @Published var messageInput: Bool = true
   
@@ -229,7 +227,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     voiceProcessing = true
     delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] text in
       guard let self = self else { return }
-      self.voiceText = text
+      self.inputString = text
       self.voiceProcessing = false
       self.messageInput = true
     })
@@ -273,6 +271,10 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     recorder.stop()
     onTapOfAudioButton()
     isRecording = false
+  }
+  
+  func dontRecord() {
+    messageInput = true
   }
 }
 

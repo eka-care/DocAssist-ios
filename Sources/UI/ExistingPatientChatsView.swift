@@ -25,6 +25,7 @@ public struct ExistingPatientChatsView: View {
   @State var path = NavigationPath()
   
   init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, ctx: ModelContext, calledFromPatientContext: Bool) {
+    print("#BB existing patinet chat view patient name \(patientName), oid is \(oid)")
     self.patientName = patientName
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
@@ -60,7 +61,7 @@ public struct ExistingPatientChatsView: View {
               path.append("ActiveView")
             }
             label: {
-              Text("New chat")
+              Text("New chat \(patientName)")
                 .foregroundStyle(Color.primaryprimary)
             }
           }
