@@ -24,10 +24,7 @@ struct ChatsView: View {
   @State private var searchText: String = ""
   @State private var userDocId: String
   @State private var userBId: String
-  private var bgcolors: Color
   var backgroundColor: Color?
-  var emptyMessageColor: Color?
-  var editButtonColor: Color?
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
   @State private var selectedSegement: String = "Patients"
@@ -55,13 +52,18 @@ struct ChatsView: View {
     }
   }
   
-  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", userDocId: String, userBid: String, ctx: ModelContext, delegate: ConvertVoiceToText, patientDelegate: NavigateToPatientDirectory, searchForPatient: @escaping (() -> Void)) {
+  init(backgroundColor: Color? = nil,
+       subTitle: String? = "General Chat",
+       userDocId: String,
+       userBid: String,
+       ctx: ModelContext,
+       delegate: ConvertVoiceToText,
+       patientDelegate: NavigateToPatientDirectory,
+       searchForPatient: @escaping (() -> Void)
+  ) {
     self.backgroundColor = backgroundColor
-    self.emptyMessageColor = emptyMessageColor
-    self.editButtonColor = editButtonColor
     self.subTitle = subTitle
     self.viewModel = ChatViewModel(context: ctx, delegate: delegate)
-    self.bgcolors = SetUIComponents.shared.emptyHistoryBgColor ?? Color.gray
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate
@@ -90,15 +92,6 @@ struct ChatsView: View {
         }
         .navigationBarHidden(true)
       }
-      .background(
-        NavigationLink(
-          destination: ActiveChatView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
-            .modelContext(modelContext),
-          isActive: $isNavigatingToNewSession
-        ) {
-          EmptyView()
-        }
-      )
     } else {
       NavigationStack {
         ZStack {
@@ -121,16 +114,13 @@ struct ChatsView: View {
             
           }
           .navigationBarHidden(true)
-        }
-        .background(
-          NavigationLink(
-            destination: ActiveChatView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "General Chat", calledFromPatientContext: false)
-              .modelContext(modelContext),
-            isActive: $isNavigatingToNewSession
-          ) {
-            EmptyView()
+          .navigationDestination(for: SessionDataModel.self) { thread in
+            if isNavigating {
+              isNavigating = false
+            }
+            return destinationView(for: thread)
           }
-        )
+        }
       }
     }
   }
@@ -205,34 +195,35 @@ struct ChatsView: View {
     }
     
   }
-  
+
   private func threadListView(allChats: Bool) -> some View {
-    let filteredThreads: [SessionDataModel] = {
-            if allChats {
+      let filteredThreads: [SessionDataModel] = {
+          if allChats {
               return filteredSessions
-            } else {
-              return filteredSessions.filter { $0.subTitle != "General Chat"}
-            
-            }
-        }()
-    return VStack {
-      Divider()
-      ScrollView {
-        VStack() {
-          ForEach(Array(filteredThreads.enumerated()), id: \.element.id) { index, thread in
-            threadItemView(for: thread, allChats: allChats)
-              .onAppear {  
-                print("Thread at index  \(thread.oid)")
-              }
+          } else {
+              return filteredSessions.filter { $0.subTitle != "General Chat" }
           }
-        }
-        .padding(.horizontal)
+      }()
+      
+      return VStack {
+          Divider()
+          ScrollView {
+              VStack {
+                  ForEach(filteredThreads, id: \.sessionId) { thread in
+                      Button(action: {
+                          selectedSessionId = thread.sessionId
+                          isNavigating = true
+                      }) {
+                          threadItemView(for: thread, allChats: allChats)
+                      }
+                      .buttonStyle(PlainButtonStyle())
+                  }
+              }
+              .padding(.horizontal)
+          }
+          .contentMargins(.top, 0, for: .scrollContent)
       }
-      .background(navigationLinkToNewSession)
-      .contentMargins(.top, 0, for: .scrollContent)
-    }
   }
-  
   
   private func threadItemView(for thread: SessionDataModel, allChats: Bool) -> some View {
     return Button(action: {
@@ -247,14 +238,14 @@ struct ChatsView: View {
       } catch {
         print("No patient name found")
       }
-      isNavigating = true
     }) {
       MessageSubView(
         thread.title,
         viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
         thread.subTitle,
         foregroundColor: (newSessionId == thread.sessionId) ||
-        (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false
+        (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false,
+        allChats
       )
       .background(Color.clear)
       .background(
@@ -280,38 +271,32 @@ struct ChatsView: View {
     .buttonStyle(PlainButtonStyle())
   }
   
-  // MARK: - Navigation Link
-  private var navigationLinkToNewSession: some View {
-    NavigationLink(
-      destination: destinationView,
-      isActive: $isNavigating
-    ) {
-      EmptyView()
-    }
-  }
-  
-  private var destinationView: some View {
-    if let sessionId = selectedSessionId {
-      if patientName == "General Chat" {
-        return AnyView(
-          ActiveChatView(
-            session: sessionId,
-            viewModel: viewModel,
-            backgroundColor: backgroundColor, patientName: patientName ?? "",
-            calledFromPatientContext: false
+  private func destinationView(for thread: SessionDataModel) -> some View {
+      if thread.subTitle == "General Chat" {
+          return AnyView(
+              ActiveChatView(
+                  session: thread.sessionId,
+                  viewModel: viewModel,
+                  backgroundColor: backgroundColor,
+                  patientName: "General Chat",
+                  calledFromPatientContext: false
+              )
+              .modelContext(modelContext)
           )
-          .modelContext(modelContext)
-        )
+      } else {
+          return AnyView(
+              ExistingPatientChatsView(
+                  patientName: patientName ?? "",
+                  viewModel: viewModel,
+                  oid: thread.oid ?? "",
+                  userDocId: userDocId,
+                  userBId: userBId,
+                  ctx: modelContext,
+                  calledFromPatientContext: false
+              )
+              .modelContext(modelContext)
+          )
       }
-      else {
-        return AnyView(
-          ExistingPatientChatsView(patientName: patientName ?? "", viewModel: viewModel, oid: "", userDocId: userDocId, userBId: userBId, ctx: modelContext, calledFromPatientContext: false)
-            .modelContext(modelContext)
-        )
-      }
-    } else {
-      return AnyView(EmptyView())
-    }
   }
   
   private var NewChatButtonView: some View {
@@ -325,8 +310,6 @@ struct ChatsView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-          _ = viewModel.createSession(subTitle: "General Chat", userDocId: userDocId, userBId: userBId)
-          newSessionId = viewModel.vmssid
           patientDelegate.navigateToPatientDirectory()
           searchForPatient()
         }) {
@@ -353,14 +336,14 @@ struct ChatsView: View {
     }
   }
   
-  func MessageSubView(_ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool) -> some View {
+  func MessageSubView(_ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool, _ allChat: Bool) -> some View {
     
     VStack {
       HStack {
         nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
         VStack (spacing: 6) {
           HStack {
-            Text(subTitle ?? "GeneralChat")
+            Text(allChat ? title : subTitle ?? "General Chat")
               .font(.custom("Lato-Regular", size: 16))
               .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
               .lineLimit(2)
@@ -375,7 +358,7 @@ struct ChatsView: View {
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
           }
           HStack {
-            Text(title)
+            Text(allChat ? subTitle ?? "General Chat" : title)
               .font(.custom("Lato-Regular", size: 14))
               .fontWeight(.regular)
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)

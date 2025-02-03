@@ -47,7 +47,7 @@ public struct GeneralChatView: View {
   }
   
   public var body: some View {
-    ChatsView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate, patientDelegate: patientDelegate,searchForPatient: searchForPatient)
+   Chats2View(backgroundColor: backgroundColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate, patientDelegate: patientDelegate,searchForPatient: searchForPatient)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

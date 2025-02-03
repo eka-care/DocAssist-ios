@@ -13,7 +13,6 @@ import EkaMedicalRecordsCore
 
 public struct ActiveChatView: View {
   @State var session: String
- // @State var newMessage: String = ""
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundColor: Color?
@@ -274,12 +273,6 @@ public struct ActiveChatView: View {
       
       HStack {
         TextField(" Start typing...", text: $viewModel.inputString, axis: .vertical)
-//          .onChange(of: viewModel.voiceText) { _, newVoiceText in
-//            if let voiceText = newVoiceText, !voiceText.isEmpty {
-//              viewModel.inputString = voiceText
-//              viewModel.voiceText = ""
-//            }
- //         }
       }
       
       HStack(spacing: 10) {
@@ -336,14 +329,21 @@ public struct ActiveChatView: View {
           viewModel.messageInput = false
           viewModel.startRecording()
         } label: {
-          Image(systemName: "microphone")
+          Image(.mic)
             .foregroundStyle(Color.neutrals600)
         }
         
         Button {
           viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
-          guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty else { return }
-          sendMessage(viewModel.inputString, selectedImages, selectedDocumentId)
+          guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
+          else { return }
+          
+          
+          let urlStrings: [String] = selectedImages.map { $0.absoluteString }
+          print("urlString are \(urlStrings)")
+          sendMessage(viewModel.inputString, urlStrings, selectedDocumentId)
+          
+          
           isTextFieldFocused.toggle()
         } label: {
           if (viewModel.inputString.isEmpty && selectedImages.isEmpty) {
@@ -369,7 +369,7 @@ public struct ActiveChatView: View {
     .padding(8)
   }
   
-  private func sendMessage(_ message: String, _ imageUrls: [URL], _ vaultFiles: [String]?) {
+  private func sendMessage(_ message: String, _ imageUrls: [String], _ vaultFiles: [String]?) {
     viewModel.sendMessage(newMessage: message, imageUrls: imageUrls, vaultFiles: vaultFiles)
     viewModel.inputString = ""
     selectedImages = []
@@ -381,7 +381,7 @@ public struct ActiveChatView: View {
 struct MessageBubble: View {
   let message: ChatMessageModel
   let m: String?
-  let url: [URL]?
+  let url: [String]?
   
   var body: some View {
     HStack(alignment: .top) {
@@ -407,21 +407,32 @@ struct MessageBubble: View {
 struct MessageTextView: View {
   let text: String?
   let role: MessageRole
-  let url: [URL]? 
+  let url: [String]?
   
   var body: some View {
     VStack {
       if let url = url {
         HStack {
           ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
-              AsyncImage(url: urlImage) { image in
-                  image
-                      .resizable()
-                      .aspectRatio(contentMode: .fill)
-                      .frame(width: 86, height: 86)
-                      .clipped()
-              } placeholder: {
-                  ProgressView()
+            AsyncImage(url: URL(string: urlImage)) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 86, height: 86)
+                        .clipped()
+                case .failure(let error):
+                  Text("Image failed to load \(error.localizedDescription).")
+                   
+                @unknown default:
+                    ProgressView()
+                }
+            }
+              .onAppear {
+                print("#BB image url is \(urlImage)")
               }
           }
         }

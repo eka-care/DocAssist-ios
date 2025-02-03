@@ -19,7 +19,9 @@ public class ChatMessageModel: Identifiable {
   public var htmlString: String?
   public var createdAt: Int
   public var sessionData: SessionDataModel?
-  public var imageUrls: [URL]?
+  
+  // MARK: - Migration
+  public var imageUrls: [String]?
   
   init(
     msgId: Int,
@@ -29,7 +31,7 @@ public class ChatMessageModel: Identifiable {
     htmlString: String? = nil,
     createdAt: Int,
     sessionData: SessionDataModel,
-    imageUrls: [URL]? = nil
+    imageUrls: [String]? = nil
   ) {
     self.msgId = msgId
     self.role = role

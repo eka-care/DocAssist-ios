@@ -22,6 +22,9 @@ struct ImagePreviewCell: View {
       } placeholder: {
         ProgressView()
       }
+      .onAppear {
+        print("#BB image url is \(imageUrl)")
+      }
       Button(action: onDelete) {
         Image(systemName: "xmark.circle.fill")
           .foregroundColor(.white)
