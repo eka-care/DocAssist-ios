@@ -44,7 +44,9 @@ public class DocAssistViewController: UIViewController {
         userBId: userBId,
         delegate: delegate,
         patientDelegate: patientDelegate,
-        searchForPatient: searchForPatient
+        searchForPatient: searchForPatient,
+        authToken: authToken,
+        authRefreshToken: authRefreshToken
       )
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -59,7 +61,10 @@ public class DocAssistViewController: UIViewController {
         userBId: userBId,
         delegate: delegate,
         patientDelegate: patientDelegate,
-        searchForPatient: searchForPatient
+        searchForPatient: searchForPatient,
+        authToken: authToken,
+        authRefreshToken: authRefreshToken
+        
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -124,7 +129,9 @@ public class ActiveChatViewController: UIViewController {
             userDocId: userDocId,
             userBId: userBId,
             ctx: ctx,
-            calledFromPatientContext: true
+            calledFromPatientContext: true,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
         )
         docAssistView = AnyView(existingChatsView.modelContext(ctx))
     } else {
@@ -203,7 +210,7 @@ extension DocAssistViewController {
     registerFonts()
   }
   
-  private func registerFonts() {
+  func registerFonts() {
     do {
       try Fonts.registerAllFonts()
     } catch {

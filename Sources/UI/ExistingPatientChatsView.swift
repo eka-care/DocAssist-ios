@@ -7,6 +7,8 @@
 
 import SwiftUI
 import SwiftData
+import EkaMedicalRecordsCore
+import EkaMedicalRecordsUI
 
 public struct ExistingPatientChatsView: View {
   @State var patientName: String
@@ -23,8 +25,10 @@ public struct ExistingPatientChatsView: View {
   var calledFromPatientContext: Bool
   @State var chats: [SessionDataModel] = []
   @State var path = NavigationPath()
+  var authToken: String
+  var authRefreshToken: String
   
-  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, ctx: ModelContext, calledFromPatientContext: Bool) {
+  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, ctx: ModelContext, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String) {
     self.patientName = patientName
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
@@ -33,6 +37,9 @@ public struct ExistingPatientChatsView: View {
     self.userBId = userBId
     self.ctx = ctx
     self.calledFromPatientContext = calledFromPatientContext
+    self.authToken = authToken
+    self.authRefreshToken = authRefreshToken
+    
   }
   
   public var body: some View {
@@ -116,7 +123,40 @@ public struct ExistingPatientChatsView: View {
     .background(Color(red: 0.96, green: 0.96, blue: 0.96))
     .onAppear {
       chats = DatabaseConfig.shared.fetchChatUsing(oid: oid)
+      MRInitializer.singleTon.registerUISdk()
+      MRInitializer.singleTon.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
     }
     .scrollIndicators(.hidden)
   }
+}
+
+class MRInitializer {
+  
+  init() {}
+  
+  static var singleTon = MRInitializer()
+  
+  func registerUISdk() {
+    registerFonts()
+  }
+  
+  private func registerFonts() {
+    do {
+      try Fonts.registerAllFonts()
+    } catch {
+      debugPrint("Failed to fetch fonts")
+    }
+  }
+  
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  }
+  
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
+    CoreInitConfigurations.shared.authToken = authToken
+    CoreInitConfigurations.shared.refreshToken = refreshToken
+    CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.ownerID = bid
+  }
+  
 }

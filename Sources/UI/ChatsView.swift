@@ -272,7 +272,7 @@ struct ChatsView: View {
   }
   
   private func destinationView(for thread: SessionDataModel) -> some View {
-      if thread.subTitle == "General Chat" {
+
           return AnyView(
               ActiveChatView(
                   session: thread.sessionId,
@@ -283,20 +283,7 @@ struct ChatsView: View {
               )
               .modelContext(modelContext)
           )
-      } else {
-          return AnyView(
-              ExistingPatientChatsView(
-                  patientName: patientName ?? "",
-                  viewModel: viewModel,
-                  oid: thread.oid ?? "",
-                  userDocId: userDocId,
-                  userBId: userBId,
-                  ctx: modelContext,
-                  calledFromPatientContext: false
-              )
-              .modelContext(modelContext)
-          )
-      }
+
   }
   
   private var NewChatButtonView: some View {

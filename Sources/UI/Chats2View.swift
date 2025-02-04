@@ -30,6 +30,8 @@ struct Chats2View: View {
   @State private var selectedSegement: String = "Patients"
   var patientDelegate: NavigateToPatientDirectory
   var searchForPatient: (() -> Void)
+  var authToken: String
+  var authRefreshToken: String
   
   var thread: [SessionDataModel] {
     allSessions.filter { session in
@@ -59,7 +61,9 @@ struct Chats2View: View {
        ctx: ModelContext,
        delegate: ConvertVoiceToText,
        patientDelegate: NavigateToPatientDirectory,
-       searchForPatient: @escaping (() -> Void)
+       searchForPatient: @escaping (() -> Void),
+       authToken: String,
+       authRefreshToken: String
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
@@ -68,6 +72,8 @@ struct Chats2View: View {
     self.userBId = userBid
     self.patientDelegate = patientDelegate
     self.searchForPatient = searchForPatient
+    self.authToken = authToken
+    self.authRefreshToken = authRefreshToken
   }
   
   var body: some View {
@@ -174,7 +180,7 @@ struct Chats2View: View {
           ForEach(groupedThreads.keys.sorted(), id: \.self) { key in
             if let sessions = groupedThreads[key], let firstSession = sessions.first {
               
-              GroupPatientView(subTitle: firstSession.subTitle ?? "", count: " \(String(sessions.count)) chats", viewModel: viewModel, ctx: modelContext,oid: firstSession.oid ?? "" , bid: firstSession.userBId, docId: firstSession.userDocId,date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt))
+              GroupPatientView(subTitle: firstSession.subTitle ?? "", count: " \(String(sessions.count)) chats", viewModel: viewModel, ctx: modelContext,oid: firstSession.oid ?? "" , bid: firstSession.userBId, docId: firstSession.userDocId,date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt), authToken: authToken, authRefreshToken: authRefreshToken)
             }
           }
         }
@@ -191,10 +197,12 @@ struct Chats2View: View {
     var bid: String
     var docId: String
     var date: String
+    var authToken: String
+    var authRefreshToken: String
     
     var body: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, ctx: ctx, calledFromPatientContext: false)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, ctx: ctx, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
       } label: {
         MessageSubViewComponent(
           title: count,
@@ -328,18 +336,14 @@ struct Chats2View: View {
   func MessageSubView(_ thread: SessionDataModel, _ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool, _ allChat: Bool) -> some View {
     
     NavigationLink {
-      if allChat {
-        ActiveChatView(
-          session: thread.sessionId,
-          viewModel: viewModel,
-          backgroundColor: .white,
-          patientName: thread.subTitle ?? "General Chat",
-          calledFromPatientContext: false,
-          title: title
-        )
-      } else {
-        ExistingPatientChatsView(patientName: thread.subTitle ?? "General Chat", viewModel: viewModel, oid: thread.oid ?? "", userDocId: thread.userDocId, userBId: thread.userBId, ctx: modelContext, calledFromPatientContext: false)
-      }
+      ActiveChatView(
+        session: thread.sessionId,
+        viewModel: viewModel,
+        backgroundColor: .white,
+        patientName: thread.subTitle ?? "General Chat",
+        calledFromPatientContext: false,
+        title: title
+      )
     } label: {
       MessageSubViewComponent(
         title: title,
