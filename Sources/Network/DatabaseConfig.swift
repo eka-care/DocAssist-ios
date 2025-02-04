@@ -119,7 +119,7 @@ final class DatabaseConfig {
     return results
   }
    
-  func fetchPatientName (fromSessionId ssid: String, context: ModelContext) throws -> String {
+  func fetchPatientName(fromSessionId ssid: String, context: ModelContext) throws -> String {
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.sessionId == ssid }
     )
@@ -144,4 +144,22 @@ final class DatabaseConfig {
       return []
     }
   }
+  
+  func fetchChatUsing(oid: String) -> [SessionDataModel] {
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate<SessionDataModel> { session in
+        session.oid == oid
+      },
+      sortBy: [SortDescriptor(\SessionDataModel.lastUpdatedAt, order: .reverse)]
+    )
+    
+    do {
+      let results = try modelContext.fetch(fetchDescriptor)
+      return results
+    } catch {
+      print("Error fetching sessions for patient \(oid): \(error)")
+      return []
+    }
+  }
+  
 }

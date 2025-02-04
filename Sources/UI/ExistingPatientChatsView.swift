@@ -56,6 +56,7 @@ public struct ExistingPatientChatsView: View {
           }
           ToolbarItem(placement: .navigationBarTrailing) {
             Button {
+              print("The oid is \(oid)")
               createNewSession = viewModel.createSession(subTitle: patientName, oid: oid, userDocId: userDocId, userBId: userBId)
               path.append("ActiveView")
             }
@@ -114,7 +115,7 @@ public struct ExistingPatientChatsView: View {
     .padding()
     .background(Color(red: 0.96, green: 0.96, blue: 0.96))
     .onAppear {
-      chats = DatabaseConfig.shared.fetchChatUsing(patientName: patientName)
+      chats = DatabaseConfig.shared.fetchChatUsing(oid: oid)
     }
     .scrollIndicators(.hidden)
   }

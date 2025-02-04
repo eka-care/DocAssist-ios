@@ -340,7 +340,6 @@ public struct ActiveChatView: View {
           
           
           let urlStrings: [String] = selectedImages.map { $0.absoluteString }
-          print("urlString are \(urlStrings)")
           sendMessage(viewModel.inputString, urlStrings, selectedDocumentId)
           
           

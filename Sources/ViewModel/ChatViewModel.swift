@@ -69,6 +69,13 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     setThreadTitle(with: query ?? "New Chat")
   }
   
+  private func extractImageLastComponent(from imageurl: [String]) -> [String] {
+    let imageFiles: [String] = imageurl.compactMap { path in
+        URL(string: path)?.lastPathComponent
+    }
+    return imageFiles
+  }
+  
   func startStreamingPostRequest(query: String?, vaultFiles: [String]?) {
     streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
