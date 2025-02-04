@@ -70,6 +70,9 @@ public struct ActiveChatView: View {
       print("#BB session Id in active chat \(session)")
       viewModel.switchToSession(session)
     }
+    .onDisappear {
+      viewModel.stopStreaming()
+    }
   }
   
   private var content: some View {
@@ -135,14 +138,16 @@ public struct ActiveChatView: View {
           .padding(.bottom, 5)
       }
     }
-    .toolbarBackground(LinearGradient(
-      colors: [
-        Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
-        Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
-      ],
-      startPoint: .leading,
-      endPoint: .trailing
-    ), for: .navigationBar)
+    .toolbarBackground(
+      LinearGradient(
+          gradient: Gradient(colors: [
+              Color(red: 0.93, green: 0.91, blue: 0.98),
+              Color(red: 0.96, green: 0.94, blue: 1.0)
+          ]),
+          startPoint: .top,
+          endPoint: .bottom
+      ),
+  for: .navigationBar)
     .toolbarBackground(.visible, for: .navigationBar)
     .navigationTitle(title ?? "New Chat")
     .navigationBarTitleDisplayMode(.large)
@@ -199,58 +204,59 @@ public struct ActiveChatView: View {
   }
   
   var voiceInputView: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .center, spacing: 10) {
-        VStack(alignment: .center, spacing: 10) {
-          Button {
-            viewModel.dontRecord()
-          } label: {
-            Image(.xmark)
-          }
-        }
-        .padding(0)
-        .frame(width: 36, height: 36, alignment: .center)
-        .cornerRadius(50)
-        
-        if viewModel.isRecording {
-          AudioWaveformView()
-        } else {
-          Spacer()
-        }
-        
-        TimerView()
-        
-        if viewModel.voiceProcessing {
-          HStack {
-            ProgressView()
-          }
-        }
-        
-        VStack(alignment: .center, spacing: 10) {
-          Button {
-            viewModel.stopRecording()
-          } label: {
-            Image(.check)
-          }
-        }
-        .padding(0)
-        .frame(width: 36, height: 36, alignment: .center)
-        .cornerRadius(50)
+    HStack(alignment: .center, spacing: 10) {
+      Button {
+        viewModel.dontRecord()
+      } label: {
+        Image(.xmark)
+          .frame(width: 24, height: 24)
+          .padding(6)
       }
-      .padding(0)
-      .frame(maxWidth: .infinity, alignment: .center)
+      .frame(width: 36, height: 36)
+      .background(Color.white)
+      .cornerRadius(18)
+      
+      if viewModel.isRecording {
+        AudioWaveformView()
+          .frame(height: 36)
+          .layoutPriority(1)
+      } else {
+        Spacer()
+          .frame(height: 36)
+      }
+      
+      TimerView()
+        .frame(width: 60)
+      
+      if viewModel.voiceProcessing {
+        ProgressView()
+          .frame(width: 36, height: 36)
+      }
+      
+      if !viewModel.voiceProcessing {
+        Button {
+          viewModel.stopRecording()
+        } label: {
+          Image(.check)
+            .frame(width: 24, height: 24)
+            .padding(6)
+        }
+        .frame(width: 36, height: 36)
+        .background(Color.white)
+        .cornerRadius(18)
+      }
     }
-    .padding(.horizontal, 2)
-    .padding(.vertical, 4)
-    .frame(maxWidth: .infinity, alignment: .leading)
-    .background(.white)
+    .frame(maxWidth: .infinity, minHeight: 44)
+    .padding(.horizontal, 8)
+    .background(Color.white)
     .cornerRadius(16)
     .overlay(
       RoundedRectangle(cornerRadius: 16)
         .inset(by: -0.5)
         .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
     )
-    .padding(8)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 8)
   }
   
   var messageInputView: some View {
@@ -342,13 +348,14 @@ public struct ActiveChatView: View {
           sendMessage(viewModel.inputString, selectedImages, selectedDocumentId)
           isTextFieldFocused.toggle()
         } label: {
-          Image(systemName: "arrow.up")
+          Image(systemName: "paperplane.fill")
             .foregroundStyle(Color.white)
-            .fontWeight(.bold)
+            .fontWeight(.light)
             .padding(4)
-            .background(viewModel.inputString.isEmpty ? Circle().fill(Color.gray.opacity(0.7)) : Circle().fill(Color.blue))
+            .background(viewModel.inputString.isEmpty ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
         }
         .disabled(viewModel.inputString.isEmpty)
+        .disabled(viewModel.streamStarted)
       }
     }
     .focused($isTextFieldFocused)
