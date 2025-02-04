@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct ImagePreviewCell: View {
-  let imageUrl: URL
+  let imageUrl: String
   let onDelete: () -> Void
   
   var body: some View {
     ZStack(alignment: .topTrailing) {
-      AsyncImage(url: imageUrl) { image in
+      let completeUrl = ChatViewModel.getDocumentDirectoryURL().appendingPathComponent(imageUrl)
+      AsyncImage(url: completeUrl) { image in
         image
           .resizable()
           .aspectRatio(contentMode: .fill)

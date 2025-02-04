@@ -293,3 +293,13 @@ extension Date {
     return dateFormatter.string(from: self)
   }
 }
+
+extension ChatViewModel {
+  
+  public static func getDocumentDirectoryURL() -> URL {
+    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    let documentsDirectory = paths[0]
+    return documentsDirectory
+  }
+  
+}

@@ -388,8 +388,8 @@ func nameInitialsView(initials: String) -> some View {
         Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
         Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
       ],
-      startPoint: .top,
-      endPoint: .bottom
+      startPoint: .leading,
+      endPoint: .trailing
     )
     .frame(width: 38, height: 38)
     Group {

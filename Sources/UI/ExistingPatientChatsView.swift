@@ -61,7 +61,7 @@ public struct ExistingPatientChatsView: View {
               path.append("ActiveView")
             }
             label: {
-              Text("New chat \(patientName)")
+              Text("New chat")
                 .foregroundStyle(Color.primaryprimary)
             }
           }

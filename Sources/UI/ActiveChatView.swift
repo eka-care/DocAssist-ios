@@ -24,7 +24,7 @@ public struct ActiveChatView: View {
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
   @State private var showRecordsView = false
-  @State private var selectedImages: [URL] = []
+  @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
   var title: String?
   
@@ -283,21 +283,23 @@ public struct ActiveChatView: View {
             .foregroundStyle(Color.neutrals600)
         }
         .sheet(isPresented: $showRecordsView) {
-          RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-            print("#BB data is \(data)")
-            selectedImages = data.compactMap { record in
-              guard let image = record.image else { return nil }
-              return image
-            }
-            selectedDocumentId = data.compactMap({ record in
-              guard let docId = record.documentID else { return nil }
-              print("#BB docId is \(docId)")
-              return docId
-            }
-                                                 
-          )
-            showRecordsView = false
-          }.environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
+          NavigationStack {
+            RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
+              print("#BB data is \(data)")
+              selectedImages = data.compactMap { record in
+                guard let image = record.image else { return nil }
+                return image
+              }
+              selectedDocumentId = data.compactMap({ record in
+                guard let docId = record.documentID else { return nil }
+                print("#BB docId is \(docId)")
+                return docId
+              }
+                                      
+              )
+              showRecordsView = false
+            }.environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
+          }
         }
         
         if let patientName = patientName , !patientName.isEmpty,
@@ -337,24 +339,16 @@ public struct ActiveChatView: View {
           viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
           guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
           else { return }
-          
-          
-          let urlStrings: [String] = selectedImages.map { $0.absoluteString }
-          sendMessage(viewModel.inputString, urlStrings, selectedDocumentId)
-          
-          
+          sendMessage(viewModel.inputString, selectedImages, selectedDocumentId)
           isTextFieldFocused.toggle()
         } label: {
-          if (viewModel.inputString.isEmpty && selectedImages.isEmpty) {
-            Image(.voiceToRxButton)
-          } else {
-            Image(systemName: "arrow.up")
-              .foregroundStyle(Color.white)
-              .fontWeight(.bold)
-              .padding(4)
-              .background(Circle().fill(Color.blue))
-          }
+          Image(systemName: "arrow.up")
+            .foregroundStyle(Color.white)
+            .fontWeight(.bold)
+            .padding(4)
+            .background(viewModel.inputString.isEmpty ? Circle().fill(Color.gray.opacity(0.7)) : Circle().fill(Color.blue))
         }
+        .disabled(viewModel.inputString.isEmpty)
       }
     }
     .focused($isTextFieldFocused)
@@ -413,7 +407,8 @@ struct MessageTextView: View {
       if let url = url {
         HStack {
           ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
-            AsyncImage(url: URL(string: urlImage)) { phase in
+            let completeUrl = ChatViewModel.getDocumentDirectoryURL().appendingPathComponent(urlImage)
+            AsyncImage(url: completeUrl) { phase in
                 switch phase {
                 case .empty:
                     ProgressView()
@@ -424,15 +419,12 @@ struct MessageTextView: View {
                         .frame(width: 86, height: 86)
                         .clipped()
                 case .failure(let error):
-                  Text("Image failed to load \(error.localizedDescription).")
+                  ProgressView()
                    
                 @unknown default:
                     ProgressView()
                 }
             }
-              .onAppear {
-                print("#BB image url is \(urlImage)")
-              }
           }
         }
       }

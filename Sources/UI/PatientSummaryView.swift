@@ -188,7 +188,7 @@ struct ChatRow: View {
             )
         } label: {
             HStack(spacing: 12) {
-                Image(.circleWaveForm)
+                Image(.chat)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
                         .font(Font.custom("Lato-Regular", size: 16))

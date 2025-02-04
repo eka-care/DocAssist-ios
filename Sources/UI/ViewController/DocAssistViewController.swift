@@ -140,7 +140,7 @@ public class ActiveChatViewController: UIViewController {
     }
     super.init(nibName: nil, bundle: nil)
     registerUISdk()
-    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid)
+    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
   }
   
   required init?(coder: NSCoder) {
@@ -184,15 +184,15 @@ extension ActiveChatViewController {
     }
   }
   
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String) {
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid)
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
   }
   
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String) {
-    print("MR initialiser \(authToken), \(refreshToken), \(oid)")
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
     CoreInitConfigurations.shared.authToken = authToken
     CoreInitConfigurations.shared.refreshToken = refreshToken
     CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.ownerID = bid
   }
 }
 
@@ -211,14 +211,14 @@ extension DocAssistViewController {
     }
   }
   
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String) {
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid)
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
   }
   
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String) {
-    print("MR initialiser \(authToken), \(refreshToken), \(oid)")
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
     CoreInitConfigurations.shared.authToken = authToken
     CoreInitConfigurations.shared.refreshToken = refreshToken
     CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.ownerID = bid
   }
 }
