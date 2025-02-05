@@ -6,9 +6,7 @@
 //
 
 import Foundation
-#if canImport(SwiftData)
 import SwiftData
-#endif
 
 @Model
 public class ChatMessageModel: Identifiable {

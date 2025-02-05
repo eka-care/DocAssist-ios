@@ -66,7 +66,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
     
     saveData()
-    setThreadTitle(with: query ?? "New Chat")
+ //   setThreadTitle(with: query ?? "New Chat")
   }
   
   func startStreamingPostRequest(query: String?, vaultFiles: [String]?) {
@@ -292,7 +292,7 @@ extension Date {
   }
 }
 
-extension ChatViewModel {
+class DocAssistFileHelper {
   
   public static func getDocumentDirectoryURL() -> URL {
     let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)

@@ -13,7 +13,7 @@ struct ImagePreviewCell: View {
   
   var body: some View {
     ZStack(alignment: .topTrailing) {
-      let completeUrl = ChatViewModel.getDocumentDirectoryURL().appendingPathComponent(imageUrl)
+      let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(imageUrl)
       AsyncImage(url: completeUrl) { image in
         image
           .resizable()

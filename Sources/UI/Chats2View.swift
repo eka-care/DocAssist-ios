@@ -27,7 +27,7 @@ struct Chats2View: View {
   var backgroundColor: Color?
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
-  @State private var selectedSegement: String = "Patients"
+  @State private var selectedSegment: ChatSegment = .patients
   var patientDelegate: NavigateToPatientDirectory
   var searchForPatient: (() -> Void)
   var authToken: String
@@ -77,28 +77,50 @@ struct Chats2View: View {
   }
   
   var body: some View {
-    NavigationStack {
+    if UIDevice.current.userInterfaceIdiom == .pad {
       ZStack {
-        VStack {
-          Image(.bg)
+        if let backgroundColor = SetUIComponents.shared.userAllChatBackgroundColor {
+          Image(uiImage: backgroundColor)
             .resizable()
-            .frame(height: 180)
+            .scaledToFill()
             .edgesIgnoringSafeArea(.all)
-          Spacer()
         }
-        
         VStack {
           headerView
             .padding(.bottom, 15)
           ZStack {
             mainContentView
             NewChatButtonView
-              .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 18 : 0)
-              .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 10)
+              .padding(.trailing, 20)
+          }
+          
+        }
+        .navigationBarHidden(true)
+      }
+    } else {
+      NavigationStack {
+        ZStack {
+          VStack {
+            Image(.bg)
+              .resizable()
+              .frame(height: 180)
+              .edgesIgnoringSafeArea(.all)
+            Spacer()
+          }
+          
+          VStack {
+            headerView
+              .padding(.bottom, 15)
+            ZStack {
+              mainContentView
+              NewChatButtonView
+                .padding(.trailing,18)
+                .padding(.leading, 10)
+            }
           }
         }
+        .navigationBarHidden(true)
       }
-      .navigationBarHidden(true)
     }
   }
   private var headerView: some View {
@@ -113,9 +135,10 @@ struct Chats2View: View {
         Spacer()
       }
       
-      Picker("Select", selection: $selectedSegement) {
-        Text("Patients").tag("Patients")
-        Text("All Chats").tag("All Chats")
+      Picker("Select", selection: $selectedSegment) {
+          ForEach(ChatSegment.allCases, id: \.self) { segment in
+              Text(segment.rawValue).tag(segment)
+          }
       }
       .pickerStyle(SegmentedPickerStyle())
       .padding(.horizontal, 16)
@@ -129,7 +152,7 @@ struct Chats2View: View {
       if thread.isEmpty {
         emptyStateView
       } else {
-        if selectedSegement == "Patients" {
+        if selectedSegment == .patients {
           patientThreadListView()
         } else {
           threadListView(allChats: true)
@@ -368,10 +391,19 @@ struct Chats2View: View {
           nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
           VStack(spacing: 6) {
             HStack {
-              Text(allChat ? title : subTitle ?? "General Chat")
+              Text(title)
                 .font(.custom("Lato-Regular", size: 16))
                 .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
+                .multilineTextAlignment(.leading)
                 .lineLimit(2)
+              Spacer()
+            }
+            HStack {
+              Text(subTitle ?? "General Chat")
+                .font(.custom("Lato-Regular", size: 14))
+                .fontWeight(.regular)
+                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
+                .lineLimit(1)
               Spacer()
               Text(date)
                 .font(.caption)
@@ -381,14 +413,6 @@ struct Chats2View: View {
                 .scaledToFit()
                 .frame(width: 6)
                 .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-            }
-            HStack {
-              Text(allChat ? subTitle ?? "General Chat" : title)
-                .font(.custom("Lato-Regular", size: 14))
-                .fontWeight(.regular)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-                .lineLimit(1)
-              Spacer()
             }
             Divider()
           }

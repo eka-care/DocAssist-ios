@@ -414,7 +414,7 @@ struct MessageTextView: View {
       if let url = url {
         HStack {
           ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
-            let completeUrl = ChatViewModel.getDocumentDirectoryURL().appendingPathComponent(urlImage)
+            let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(urlImage)
             AsyncImage(url: completeUrl) { phase in
                 switch phase {
                 case .empty:
@@ -425,7 +425,7 @@ struct MessageTextView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 86, height: 86)
                         .clipped()
-                case .failure(let error):
+                case .failure(_):
                   ProgressView()
                    
                 @unknown default:
@@ -438,6 +438,7 @@ struct MessageTextView: View {
       
       if let text, text != "" {
         Markdown(text)
+          .font(.body)
           .padding(8)
           .background(backgroundColor)
           .foregroundColor(foregroundColor)
@@ -452,7 +453,7 @@ struct MessageTextView: View {
   }
   
   private var foregroundColor: Color {
-    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (Color(red: 0.28, green: 0.28, blue: 0.28))
+    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (.neutrals800)
   }
 }
 
@@ -532,4 +533,9 @@ struct DocSuggestion: View {
       Spacer()
     }
   }
+}
+
+enum ChatSegment: String, CaseIterable {
+    case patients = "Patients"
+    case allChats = "All Chats"
 }
