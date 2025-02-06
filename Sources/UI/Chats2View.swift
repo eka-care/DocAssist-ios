@@ -16,11 +16,9 @@ struct Chats2View: View {
   ) var allSessions: [SessionDataModel]
   @ObservedObject var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
-  @State private var isNavigatingToNewSession: Bool = false
   @Environment(\.modelContext) var modelContext
   @Environment(\.dismiss) var dismiss
   @State private var selectedSessionId: String? = nil
-  @State private var isNavigating: Bool = false
   @State private var searchText: String = ""
   @State private var userDocId: String
   @State private var userBId: String
@@ -77,29 +75,29 @@ struct Chats2View: View {
   }
   
   var body: some View {
-    if UIDevice.current.userInterfaceIdiom == .pad {
-      ZStack {
-        VStack {
-          Image(.bg)
-            .resizable()
-            .frame(height: 180)
-            .edgesIgnoringSafeArea(.all)
-          Spacer()
-        }
-        
-        VStack {
-          headerView
-            .padding(.bottom, 15)
-          ZStack {
-            mainContentView
-            NewChatButtonView
-              .padding(.trailing, 20)
-          }
-          
-        }
-        .navigationBarHidden(true)
-      }
-    } else {
+//    if UIDevice.current.userInterfaceIdiom == .pad {
+//      ZStack {
+//        VStack {
+//          Image(.bg)
+//            .resizable()
+//            .frame(height: 180)
+//            .edgesIgnoringSafeArea(.all)
+//          Spacer()
+//        }
+//        
+//        VStack {
+//          headerView
+//            .padding(.bottom, 15)
+//          ZStack {
+//            mainContentView
+//            NewChatButtonView
+//              .padding(.trailing, 20)
+//          }
+//          
+//        }
+//        .navigationBarHidden(true)
+//      }
+//    } else {
       NavigationStack {
         ZStack {
           VStack {
@@ -122,7 +120,7 @@ struct Chats2View: View {
           }
         }
         .navigationBarHidden(true)
-      }
+//      }
     }
   }
   private var headerView: some View {
@@ -263,9 +261,6 @@ struct Chats2View: View {
               handleThreadSelection(thread)
             }) {
               threadItemView(for: thread, allChats: allChats)
-                .onAppear {
-                  print("#BB oid is \(thread.oid ?? "")")
-                }
             }
             .buttonStyle(PlainButtonStyle())
           }

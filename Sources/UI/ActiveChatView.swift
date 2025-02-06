@@ -67,6 +67,7 @@ public struct ActiveChatView: View {
       isTextFieldFocused = false
     }
     .onAppear {
+      print("#BB navigating to active chat screen ")
       print("#BB session Id in active chat \(session)")
       viewModel.switchToSession(session)
     }
@@ -225,8 +226,8 @@ public struct ActiveChatView: View {
           .frame(height: 36)
       }
       
-      TimerView()
-        .frame(width: 60)
+      TimerView(isTimerRunning: !viewModel.voiceProcessing)
+          .frame(width: 60)
       
       if viewModel.voiceProcessing {
         ProgressView()
@@ -285,7 +286,7 @@ public struct ActiveChatView: View {
         Button {
           showRecordsView = true
         } label: {
-          Image(systemName: "paperclip")
+          Image(.paperClip)
             .foregroundStyle(Color.neutrals600)
         }
         .sheet(isPresented: $showRecordsView) {
@@ -327,8 +328,6 @@ public struct ActiveChatView: View {
           .padding(.vertical, 6)
           .background(Color(red: 0.91, green: 0.91, blue: 0.91))
           .cornerRadius(123)
-        } else {
-          Image(.user)
         }
         
         Spacer()
@@ -352,7 +351,7 @@ public struct ActiveChatView: View {
             .foregroundStyle(Color.white)
             .fontWeight(.light)
             .padding(4)
-            .background(viewModel.inputString.isEmpty ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
+            .background((viewModel.inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
         }
         .disabled(viewModel.inputString.isEmpty)
         .disabled(viewModel.streamStarted)
