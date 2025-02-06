@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PatientSummaryView: View {
   @State var patientName: String
@@ -174,7 +175,8 @@ struct ChatRow: View {
     let time: String
     let vm: ChatViewModel
     let sessionId: String
-  let patientName: String
+    let patientName: String
+    @Environment(\.modelContext) var modelContext
     
     var body: some View {
         NavigationLink {
@@ -185,7 +187,8 @@ struct ChatRow: View {
                 patientName: patientName,
                 calledFromPatientContext: false,
                 title: title
-            )
+            ).modelContext(modelContext)
+            
         } label: {
             HStack(spacing: 12) {
                 Image(.chat)

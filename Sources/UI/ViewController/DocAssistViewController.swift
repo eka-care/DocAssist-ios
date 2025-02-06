@@ -128,7 +128,7 @@ public class ActiveChatViewController: UIViewController {
             oid: oid,
             userDocId: userDocId,
             userBId: userBId,
-            ctx: ctx,
+            /*ctx: ctx*/
             calledFromPatientContext: true,
             authToken: authToken,
             authRefreshToken: authRefreshToken

@@ -79,12 +79,14 @@ struct Chats2View: View {
   var body: some View {
     if UIDevice.current.userInterfaceIdiom == .pad {
       ZStack {
-        if let backgroundColor = SetUIComponents.shared.userAllChatBackgroundColor {
-          Image(uiImage: backgroundColor)
+        VStack {
+          Image(.bg)
             .resizable()
-            .scaledToFill()
+            .frame(height: 180)
             .edgesIgnoringSafeArea(.all)
+          Spacer()
         }
+        
         VStack {
           headerView
             .padding(.bottom, 15)
@@ -225,13 +227,14 @@ struct Chats2View: View {
     
     var body: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, ctx: ctx, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
+          .modelContext(ctx)
       } label: {
         MessageSubViewComponent(
           title: count,
           date: date,
           subTitle: subTitle,
-          foregroundColor: true,
+          foregroundColor: false,
           allChat: false
         )
         .padding(.top, 2)
@@ -323,9 +326,7 @@ struct Chats2View: View {
     VStack {
       Spacer()
       HStack() {
-        if UIDevice.current.userInterfaceIdiom == .phone {
-          Spacer()
-        }
+        Spacer()
         Button(action: {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
@@ -367,6 +368,7 @@ struct Chats2View: View {
         calledFromPatientContext: false,
         title: title
       )
+      .modelContext(modelContext)
     } label: {
       MessageSubViewComponent(
         title: title,

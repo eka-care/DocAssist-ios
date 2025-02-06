@@ -21,21 +21,19 @@ public struct ExistingPatientChatsView: View {
   @State var createNewSession: String?
   @Environment(\.dismiss) var dismiss
   @Environment(\.modelContext) var modelContext
-  var ctx: ModelContext
   var calledFromPatientContext: Bool
   @State var chats: [SessionDataModel] = []
   @State var path = NavigationPath()
   var authToken: String
   var authRefreshToken: String
   
-  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, ctx: ModelContext, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String) {
+  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String) {
     self.patientName = patientName
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
     self.oid = oid
     self.userDocId = userDocId
     self.userBId = userBId
-    self.ctx = ctx
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
@@ -83,7 +81,7 @@ public struct ExistingPatientChatsView: View {
               backgroundColor: backgroundColor,
               patientName: patientName,
               calledFromPatientContext: false)
-            .modelContext(ctx)
+            .modelContext(modelContext)
           }
         }
       

@@ -66,7 +66,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
     
     saveData()
- //   setThreadTitle(with: query ?? "New Chat")
+    setThreadTitle(with: query ?? "New Chat")
   }
   
   func startStreamingPostRequest(query: String?, vaultFiles: [String]?) {

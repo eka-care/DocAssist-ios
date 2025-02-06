@@ -118,7 +118,7 @@ final class DatabaseConfig {
     let results = try context.fetch(fetchDescriptor)
     return results
   }
-   
+  
   func fetchPatientName(fromSessionId ssid: String, context: ModelContext) throws -> String {
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.sessionId == ssid }
