@@ -9,6 +9,7 @@ import Foundation
 import SwiftData
 import SwiftUI
 import AVFAudio
+import AVFoundation
 
 public struct ExistingChatResponse {
   var chatExist: Bool
@@ -29,6 +30,9 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   @Published var currentRecording: URL?
   @Published var voiceProcessing: Bool = false
   @Published var messageInput: Bool = true
+  @Published var showPermissionAlert = false
+  @Published var alertTitle = ""
+  @Published var alertMessage = ""
   
   var audioRecorder: AVAudioRecorder?
   var audioPlayer: AVAudioPlayer?
@@ -280,6 +284,40 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
   
   func dontRecord() {
     messageInput = true
+  }
+  
+  func handleMicrophoneTap() {
+          let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+          
+          switch micStatus {
+          case .authorized:
+              messageInput = false
+              startRecording()
+
+          case .denied:
+              alertTitle = "Microphone Access Denied"
+              alertMessage = "To record audio, please enable microphone access in Settings."
+              showPermissionAlert = true
+              
+          case .notDetermined:
+              print("Not determined")
+
+          case .restricted:
+              alertTitle = "Microphone Access Restricted"
+              alertMessage = "Microphone access is restricted and cannot be changed."
+              showPermissionAlert = true
+              
+          @unknown default:
+              break
+          }
+      }
+      
+
+  func openAppSettings() {
+      guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+      if UIApplication.shared.canOpenURL(settingsURL) {
+          UIApplication.shared.open(settingsURL)
+      }
   }
 }
 

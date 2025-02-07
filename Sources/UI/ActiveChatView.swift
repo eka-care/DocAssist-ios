@@ -333,12 +333,22 @@ public struct ActiveChatView: View {
         Spacer()
         
         Button {
-          viewModel.messageInput = false
-          viewModel.startRecording()
+          viewModel.handleMicrophoneTap()
         } label: {
           Image(.mic)
             .foregroundStyle(Color.neutrals600)
         }
+        .alert(isPresented: $viewModel.showPermissionAlert) {
+          Alert(
+            title: Text(viewModel.alertTitle),
+            message: Text(viewModel.alertMessage),
+            primaryButton: .default(Text("Go to Settings")) {
+              viewModel.openAppSettings()
+            },
+            secondaryButton: .cancel(Text("Cancel"))
+          )
+        }
+        
         
         Button {
           viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
