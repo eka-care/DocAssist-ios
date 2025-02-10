@@ -9,22 +9,30 @@ import Foundation
 import SwiftData
 import SwiftUI
 import AVFAudio
+import AVFoundation
+
+public struct ExistingChatResponse {
+  var chatExist: Bool
+  var sessionId: [String]
+}
 
 @MainActor
 final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
   
   @Published var streamStarted: Bool = false
-  @Published var isLoading: Bool = false
   @Published private(set) var vmssid: String = ""
   private var dataStorage: String = ""
   private var context: ModelContext
   private var delegate : ConvertVoiceToText? = nil
   private let networkCall = NetworkCall()
-  
+  @Published var inputString = ""
   @Published var isRecording = false
   @Published var currentRecording: URL?
-  @Published var voiceText: String?
   @Published var voiceProcessing: Bool = false
+  @Published var messageInput: Bool = true
+  @Published var showPermissionAlert = false
+  @Published var alertTitle = ""
+  @Published var alertMessage = ""
   
   var audioRecorder: AVAudioRecorder?
   var audioPlayer: AVAudioPlayer?
@@ -35,12 +43,12 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String) {
-    addUserMessage(newMessage)
-    startStreamingPostRequest(query: newMessage)
+  func sendMessage(newMessage: String?, imageUrls: [String]?, vaultFiles: [String]?) {
+    addUserMessage(newMessage, imageUrls)
+    startStreamingPostRequest(query: newMessage, vaultFiles: vaultFiles)
   }
   
-  private func addUserMessage(_ query: String) {
+  private func addUserMessage(_ query: String?, _ imageUrls: [String]?) {
     let msgIddup = (DatabaseConfig.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
@@ -52,7 +60,8 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           messageText: query,
           htmlString: nil,
           createdAt: 0,
-          sessionData: fetchedSeesion
+          sessionData: fetchedSeesion,
+          imageUrls: imageUrls
         )
         fetchedSeesion.chatMessages.append(userData)
       }
@@ -61,13 +70,13 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
     
     saveData()
-    setThreadTitle(with: query)
+    setThreadTitle(with: query ?? "New Chat")
   }
   
-  func startStreamingPostRequest(query: String) {
+  func startStreamingPostRequest(query: String?, vaultFiles: [String]?) {
     streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
-    networkCall.startStreamingPostRequest(query: query, onStreamComplete: { [weak self] in
+    networkCall.startStreamingPostRequest(query: query, vault_files: vaultFiles, onStreamComplete: { [weak self] in
       Task { @MainActor in
         self?.streamStarted = false
       }
@@ -83,6 +92,11 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
+  func stopStreaming() {
+    networkCall.cancelStreaming()
+    streamStarted = false
+  }
+  
   func handleStreamResponse(_ responseString: String) {
     let splitLines = responseString.split(separator: "\n")
     
@@ -94,8 +108,8 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           if let jsonData = jsonString.data(using: .utf8) {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              print("Message: \(message.text)")
               self.updateMessage(with: message)
+              print("#BB message is \(message)")
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
             }
@@ -159,20 +173,24 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     return try DatabaseConfig.shared.modelContext.fetch(descriptor).first
   }
   
+  func isSessionsPresent(oid: String, userDocId: String, userBId: String) -> Bool {
+    do {
+      let sessions = try DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext)
+      
+      if sessions.filter({ !$0.chatMessages.isEmpty }).count > 0 {
+        return true
+      } else {
+        return false
+      }
+    } catch {
+      print("Can't fetch the sessions")
+    }
+    return false
+  }
+  
   func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) -> String {
     let currentDate = Date()
     let context = DatabaseConfig.shared.modelContext
-    if !oid.isEmpty {
-      do {
-        if let existingSessionId = try DatabaseConfig.shared.fetchSessionId(fromOid: oid,userDocId: userDocId, userBId: userBId, context: DatabaseConfig.shared.modelContext) {
-          switchToSession(existingSessionId)
-          return existingSessionId
-        }
-      } catch {
-        print("Error fetching session for oid: \(error)")
-      }
-    }
-    
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     context?.insert(createSessionModel)
@@ -218,8 +236,9 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     voiceProcessing = true
     delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] text in
       guard let self = self else { return }
-      self.voiceText = text
+      self.inputString = text
       self.voiceProcessing = false
+      self.messageInput = true
     })
   }
 }
@@ -262,6 +281,44 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     onTapOfAudioButton()
     isRecording = false
   }
+  
+  func dontRecord() {
+    messageInput = true
+  }
+  
+  func handleMicrophoneTap() {
+          let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+          
+          switch micStatus {
+          case .authorized:
+              messageInput = false
+              startRecording()
+
+          case .denied:
+              alertTitle = "Microphone Access Denied"
+              alertMessage = "To record audio, please enable microphone access in Settings."
+              showPermissionAlert = true
+              
+          case .notDetermined:
+              print("Not determined")
+
+          case .restricted:
+              alertTitle = "Microphone Access Restricted"
+              alertMessage = "Microphone access is restricted and cannot be changed."
+              showPermissionAlert = true
+              
+          @unknown default:
+              break
+          }
+      }
+      
+
+  func openAppSettings() {
+      guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+      if UIApplication.shared.canOpenURL(settingsURL) {
+          UIApplication.shared.open(settingsURL)
+      }
+  }
 }
 
 
@@ -271,4 +328,14 @@ extension Date {
     dateFormatter.dateFormat = format
     return dateFormatter.string(from: self)
   }
+}
+
+class DocAssistFileHelper {
+  
+  public static func getDocumentDirectoryURL() -> URL {
+    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    let documentsDirectory = paths[0]
+    return documentsDirectory
+  }
+  
 }

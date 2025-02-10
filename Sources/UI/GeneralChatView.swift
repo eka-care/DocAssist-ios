@@ -18,6 +18,10 @@ public struct GeneralChatView: View {
   var delegate: ConvertVoiceToText
   var userDocId: String
   var userBId: String
+  var patientDelegate: NavigateToPatientDirectory
+  var searchForPatient: (() -> Void)
+  var authToken: String
+  var authRefreshToken: String
   
   public init(
     backgroundColor: Color? = .white,
@@ -27,7 +31,11 @@ public struct GeneralChatView: View {
     ctx: ModelContext,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    patientDelegate: NavigateToPatientDirectory,
+    searchForPatient: @escaping (() -> Void),
+    authToken: String,
+    authRefreshToken: String
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
@@ -37,12 +45,15 @@ public struct GeneralChatView: View {
     self.userDocId = userDocId
     self.userBId = userBId
     self.delegate = delegate
-    
+    self.patientDelegate = patientDelegate
+    self.searchForPatient = searchForPatient
+    self.authToken = authToken
+    self.authRefreshToken = authRefreshToken
     DatabaseConfig.shared.modelContext = ctx
   }
   
   public var body: some View {
-    ChatsView(backgroundColor: backgroundColor, emptyMessageColor: emptyMessageColor, editButtonColor: editButtonColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate)
+    Chats2View(backgroundColor: backgroundColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate, patientDelegate: patientDelegate,searchForPatient: searchForPatient, authToken: authToken, authRefreshToken: authRefreshToken)
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

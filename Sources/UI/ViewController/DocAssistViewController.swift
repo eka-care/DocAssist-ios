@@ -8,11 +8,13 @@
 import UIKit
 import SwiftUI
 import SwiftData
+import EkaMedicalRecordsUI
+import EkaMedicalRecordsCore
 
 public class DocAssistViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
-  
+  private var patientDelegate: NavigateToPatientDirectory
   public init(
     backgroundColor: Color? = nil,
     emptyMessageColor: Color? = nil,
@@ -22,8 +24,13 @@ public class DocAssistViewController: UIViewController {
     deviceType: String? = "phone",
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    patientDelegate: NavigateToPatientDirectory,
+    authToken: String,
+    authRefreshToken: String
+    
   ) {
+    self.patientDelegate = patientDelegate
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
     case "ipad":
@@ -35,7 +42,11 @@ public class DocAssistViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate
+        delegate: delegate,
+        patientDelegate: patientDelegate,
+        searchForPatient: searchForPatient,
+        authToken: authToken,
+        authRefreshToken: authRefreshToken
       )
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -48,7 +59,12 @@ public class DocAssistViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate
+        delegate: delegate,
+        patientDelegate: patientDelegate,
+        searchForPatient: searchForPatient,
+        authToken: authToken,
+        authRefreshToken: authRefreshToken
+        
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -81,9 +97,13 @@ public class DocAssistViewController: UIViewController {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
   }
+  
+  private func searchForPatient() {
+    patientDelegate.navigateToPatientDirectory()
+  }
 }
 
-public class ViewControllerForIpadPatient: UIViewController {
+public class ActiveChatViewController: UIViewController {
   
   var docAssistView: AnyView
   var vm: ChatViewModel
@@ -94,14 +114,40 @@ public class ViewControllerForIpadPatient: UIViewController {
     oid: String,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText
+    delegate: ConvertVoiceToText,
+    calledFromPatientContext: Bool,
+    authToken: String,
+    authRefreshToken: String
   ) {
     vm = ChatViewModel(context: ctx, delegate: delegate)
-    let session = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    let activeChatView = ActiveChatView(session: session, viewModel: vm, backgroundColor: backgroundColor, patientName: patientSubtitle ?? "", calledFromPatientContext: true)
-    docAssistView = AnyView(activeChatView.modelContext(ctx))
+    let sessionPresent = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
+    if calledFromPatientContext, sessionPresent {
+        let existingChatsView = ExistingPatientChatsView(
+            patientName: patientSubtitle ?? "",
+            viewModel: vm,
+            oid: oid,
+            userDocId: userDocId,
+            userBId: userBId,
+            /*ctx: ctx*/
+            calledFromPatientContext: true,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
+        )
+        docAssistView = AnyView(existingChatsView.modelContext(ctx))
+    } else {
+        let newSession = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+        let activeChatView = ActiveChatView(
+            session: newSession,
+            viewModel: vm,
+            backgroundColor: backgroundColor,
+            patientName: patientSubtitle ?? "",
+            calledFromPatientContext: true
+        )
+        docAssistView = AnyView(activeChatView.modelContext(ctx))
+    }
     super.init(nibName: nil, bundle: nil)
-    
+    registerUISdk()
+    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
   }
   
   required init?(coder: NSCoder) {
@@ -128,5 +174,58 @@ public class ViewControllerForIpadPatient: UIViewController {
   public override func viewWillAppear(_ animated: Bool) {
     super.viewWillAppear(animated)
     navigationController?.setNavigationBarHidden(true, animated: false)
+  }
+}
+
+extension ActiveChatViewController {
+  
+  func registerUISdk() {
+    registerFonts()
+  }
+  
+  private func registerFonts() {
+    do {
+      try Fonts.registerAllFonts()
+    } catch {
+      debugPrint("Failed to fetch fonts")
+    }
+  }
+  
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  }
+  
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
+    CoreInitConfigurations.shared.authToken = authToken
+    CoreInitConfigurations.shared.refreshToken = refreshToken
+    CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.ownerID = bid
+  }
+}
+
+
+extension DocAssistViewController {
+  
+  func registerUISdk() {
+    registerFonts()
+  }
+  
+  func registerFonts() {
+    do {
+      try Fonts.registerAllFonts()
+    } catch {
+      debugPrint("Failed to fetch fonts")
+    }
+  }
+  
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  }
+  
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
+    CoreInitConfigurations.shared.authToken = authToken
+    CoreInitConfigurations.shared.refreshToken = refreshToken
+    CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.ownerID = bid
   }
 }

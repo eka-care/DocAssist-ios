@@ -8,10 +8,11 @@
 import SwiftUI
 import SwiftData
 import MarkdownUI
+import EkaMedicalRecordsUI
+import EkaMedicalRecordsCore
 
 public struct ActiveChatView: View {
   @State var session: String
-  @State var newMessage: String = ""
   @Query private var messages: [ChatMessageModel]
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundColor: Color?
@@ -22,9 +23,14 @@ public struct ActiveChatView: View {
   private var calledFromPatientContext: Bool
   private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
-  private var suggestionsTextForGeneralChat: [String] = ["💊 What are Ozempic contraindications?","🥬 Diet for hyperuricemia","📄 List of Pregnancy-safe antibiotics?","👨🏻‍⚖️ How can I minimise medico-legal risks?"]
+  @State private var showRecordsView = false
+  @State private var selectedImages: [String] = []
+  @State private var selectedDocumentId: [String] = []
+  var title: String?
   
-  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool) {
+  let recordsRepo = RecordsRepo()
+  
+  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -37,129 +43,117 @@ public struct ActiveChatView: View {
     self.backgroundColor = backgroundColor
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
+    self.title = title
   }
   
-  public  var body: some View {
+  public var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      if let backgroundColor {
+      ZStack {
         VStack {
-          if calledFromPatientContext {
-            headerView
-          }
-          newView
+          Image(.bg)
+            .resizable()
+            .frame(height: 120)
+            .edgesIgnoringSafeArea(.all)
+          Spacer()
         }
-        .background(backgroundColor)
-      } else {
-        newView
+        VStack {
+          ZStack {
+            content
+          }
+        }
       }
+    }
+    .onTapGesture {
+      isTextFieldFocused = false
+    }
+    .onAppear {
+      print("#BB navigating to active chat screen ")
+      print("#BB session Id in active chat \(session)")
+      viewModel.switchToSession(session)
+    }
+    .onDisappear {
+      viewModel.stopStreaming()
+    }
+  }
+  
+  private var content: some View {
+    VStack {
+      if calledFromPatientContext {
+        headerView
+      }
+      newView
+        .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+    }
+  }
+  
+  var EmptyChatView: some View {
+    VStack {
+      VStack {
+        Spacer()
+        if let image = SetUIComponents.shared.emptyChatImage {
+          Image(uiImage: image)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 40)
+        }
+        DocSuggestion(image: UIImage(resource: .chatMsgGray), title: "Ask anything from DocAssist AI", subTitle: "Medical fact checks, prescriptions and more..")
+          .padding()
+        DocSuggestion(image: UIImage(resource: .voiceToRxBW), title: "Create medical document", subTitle: "DocAssist AI can either listen to your live consultation or your dictation to create a medical document")
+        Spacer()
+      }
+      chatInputView
+        .padding(.bottom, 5)
     }
   }
   
   var newView: some View {
     VStack {
       if messages.isEmpty {
-        VStack {
-          Spacer()
-          
-          if let image = SetUIComponents.shared.emptyChatImage {
-            Image(uiImage: image)
-              .resizable()
-              .scaledToFit()
-              .frame(width: 60)
-          }
-          
-          Text((calledFromPatientContext ? "Ask anything about \(patientName ?? "User")" : SetUIComponents.shared.emptyChatTitle) ?? "No chats yet")
-            .foregroundColor(.black)
-            .font(.custom("Lato-Bold", size: 20))
-            .fontWeight(.medium)
-            .padding(.top, 5)
-          
-          if calledFromPatientContext {
-            Group {
-              Text("DocAssist uses patient's available medical")
-              Text("data to generate responses")
-            }
-            .foregroundStyle(.secondary)
-            .font(.subheadline)
-          }
-          
-          let suggestions = calledFromPatientContext ? SetUIComponents.shared.patientChatDefaultSuggestion : SetUIComponents.shared.generalChatDefaultSuggestion
-          
-          ScrollView {
-            LazyVStack(spacing: 4) {
-              ForEach(suggestions ?? suggestionsTextForGeneralChat, id: \.self) { suggestion in
-                SuggestionView(suggestionText: suggestion, viewModel: viewModel)
-                  .padding(.all, 4)
-              }
-            }
-          }
-          .frame(maxHeight: 200)
-          
-          Spacer()
-          
-          textfieldView
-            .padding(.bottom, 5)
-          
-        }
-        .onAppear {
-          if !hasFocusedOnce {
-            isTextFieldFocused = true
-            hasFocusedOnce = true
-          }
-        }
-      } else {
+        EmptyChatView
+      }
+      else {
         ScrollViewReader { proxy in
           ScrollView {
             VStack {
               ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "No message")
+                MessageBubble(message: message, m: message.messageText ?? "No message", url: message.imageUrls)
                   .padding(.horizontal)
                   .id(message.id)
               }
-              Color.clear
-                .frame(height: 1)
-                .id("bottomID")
+              Color.clear.frame(height: 1).id("bottomID")
             }
             .padding(.top, 10)
           }
-          .onChange(of: messages.count) { _, _ in
-            withAnimation(.easeOut(duration: 0.3)) {
+          .onChange(of: messages) { _ , _ in
+            withAnimation {
               proxy.scrollTo("bottomID", anchor: .bottom)
             }
           }
-          .onChange(of: isTextFieldFocused) { focused, _ in
-            if focused {
-              withAnimation(.easeOut(duration: 0.3)) {
-                proxy.scrollTo("bottomID", anchor: .bottom)
-              }
-            }
-          }
-          .simultaneousGesture(
-            DragGesture().onChanged { _ in
-              if isTextFieldFocused {
-                isTextFieldFocused = false
-              }
-            }
-          )
           .onAppear {
-            proxy.scrollTo("bottomID", anchor: .bottom)
+            DispatchQueue.main.async {
+              proxy.scrollTo("bottomID", anchor: .bottom)
+            }
           }
         }
-        textfieldView
+        chatInputView
           .padding(.bottom, 5)
       }
     }
-    .navigationBarTitleDisplayMode(.inline)
-    .toolbar {
-      ToolbarItem(placement: .principal) {
-        VStack {
-          Text(patientName?.isEmpty ?? true ? "General Chat" : patientName ?? "General Chat")
-            .font(.headline)
-            .foregroundColor(.primary)
-        }
-      }
-    }
+    .toolbarBackground(
+      LinearGradient(
+          gradient: Gradient(colors: [
+              Color(red: 0.93, green: 0.91, blue: 0.98),
+              Color(red: 0.96, green: 0.94, blue: 1.0)
+          ]),
+          startPoint: .top,
+          endPoint: .bottom
+      ),
+  for: .navigationBar)
+    .toolbarBackground(.visible, for: .navigationBar)
+    .navigationTitle(title ?? "New Chat")
+    .navigationBarTitleDisplayMode(.large)
   }
+  
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack {
@@ -170,12 +164,9 @@ public struct ActiveChatView: View {
             Image(systemName: "chevron.left")
               .font(.system(size: 21, weight: .medium))
               .foregroundColor(.blue)
-            Spacer()
-            VStack {
-              Text(patientName ?? "General Chat")
-                .font(.headline)
-                .foregroundColor(.primary)
-            }
+            Text("Back")
+              .font(Font.custom("Lato-Regular", size: 16))
+              .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
             Spacer()
           }
         }
@@ -184,93 +175,222 @@ public struct ActiveChatView: View {
       }
       .padding(.leading, 10)
       .padding(.top, 9)
+      
+      VStack(alignment: .leading, spacing: 0) {
+        Text("New chat")
+          .font(
+            Font.custom("Lato-Bold", size: 34)
+          )
+          .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
+        
+        Text("Parrotlet Lite")
+          .font(Font.custom("Lato-Regular", size: 14))
+          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .padding(.horizontal, 16)
+      .padding(.top, 3)
+      .padding(.bottom, 8)
+      .frame(maxWidth: .infinity, alignment: .topLeading)
     }
     .padding(.bottom, 5)
-    .background(Color.white)
   }
   
-  var textfieldView: some View {
-    ZStack {
+  var chatInputView : some View {
+    if viewModel.messageInput {
+      AnyView(messageInputView)
+    } else {
+      AnyView(voiceInputView)
+    }
+  }
+  
+  var voiceInputView: some View {
+    HStack(alignment: .center, spacing: 10) {
+      Button {
+        viewModel.dontRecord()
+      } label: {
+        Image(.xmark)
+          .frame(width: 24, height: 24)
+          .padding(6)
+      }
+      .frame(width: 36, height: 36)
+      .background(Color.white)
+      .cornerRadius(18)
+      
+      if viewModel.isRecording {
+        AudioWaveformView()
+          .frame(height: 36)
+          .layoutPriority(1)
+      } else {
+        Spacer()
+          .frame(height: 36)
+      }
+      
+      TimerView(isTimerRunning: !viewModel.voiceProcessing)
+          .frame(width: 60)
+      
+      if viewModel.voiceProcessing {
+        ProgressView()
+          .frame(width: 36, height: 36)
+      }
+      
+      if !viewModel.voiceProcessing {
+        Button {
+          viewModel.stopRecording()
+        } label: {
+          Image(.check)
+            .frame(width: 24, height: 24)
+            .padding(6)
+        }
+        .frame(width: 36, height: 36)
+        .background(Color.white)
+        .cornerRadius(18)
+      }
+    }
+    .frame(maxWidth: .infinity, minHeight: 44)
+    .padding(.horizontal, 8)
+    .background(Color.white)
+    .cornerRadius(16)
+    .overlay(
+      RoundedRectangle(cornerRadius: 16)
+        .inset(by: -0.5)
+        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+    )
+    .padding(.horizontal, 16)
+    .padding(.vertical, 8)
+  }
+  
+  var messageInputView: some View {
+    VStack (spacing: 15) {
+      if !selectedImages.isEmpty {
+        VStack {
+          ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+              ForEach(selectedImages.indices, id: \.self) { index in
+                ImagePreviewCell(imageUrl: selectedImages[index]) {
+                  selectedImages.remove(at: index)
+                }
+              }
+            }
+          }
+          .frame(height: 20)
+        }
+        .padding()
+      }
+      
       HStack {
-        TextField(
-          viewModel.isRecording
-          ? "Tap to stop recording"
-          : (viewModel.voiceProcessing ? "Processing..." : "Tap on mic to speak..."),
-          text: $newMessage,
-          axis: .vertical
-        )
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .font(.body)
-        .focused($isTextFieldFocused)
-        .onChange(of: viewModel.voiceText) { _, newVoiceText in
-          if let voiceText = newVoiceText, !voiceText.isEmpty {
-            newMessage = voiceText
-            viewModel.voiceText = ""
+        TextField(" Start typing...", text: $viewModel.inputString, axis: .vertical)
+      }
+      
+      HStack(spacing: 10) {
+        Button {
+          showRecordsView = true
+        } label: {
+          Image(.paperClip)
+            .foregroundStyle(Color.neutrals600)
+        }
+        .sheet(isPresented: $showRecordsView) {
+          NavigationStack {
+            RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
+              print("#BB data is \(data)")
+              selectedImages = data.compactMap { record in
+                guard let image = record.image else { return nil }
+                return image
+              }
+              selectedDocumentId = data.compactMap({ record in
+                guard let docId = record.documentID else { return nil }
+                print("#BB docId is \(docId)")
+                return docId
+              }
+                                      
+              )
+              showRecordsView = false
+            }.environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
           }
         }
         
-        if !newMessage.isEmpty {
-          Button(action: {
-            newMessage = viewModel.trimLeadingSpaces(from: newMessage)
-            guard !newMessage.isEmpty else { return }
-            sendMessage(newMessage)
-            isTextFieldFocused.toggle()
-          }) {
-            Image(systemName: "arrow.up")
-              .foregroundStyle(Color.white)
-              .fontWeight(.bold)
-              .frame(width: 30, height: 30)
-              .background(
-                Circle().fill(
-                  (viewModel.streamStarted)
-                  ? Color.gray.opacity(0.4)
-                  : Color.blue
-                )
+        if let patientName = patientName , !patientName.isEmpty,
+           patientName != "General Chat" {
+          HStack(alignment: .center, spacing: 4) {
+            VStack(alignment: .center, spacing: 10) {
+              Image(systemName: "person.fill")
+            }
+            .padding(4)
+            .frame(width: 16, height: 16, alignment: .center)
+            
+            Text(patientName)
+              .font(
+                Font.custom("Lato-Bold", size: 12)
               )
+              .foregroundColor(Color(red: 0.28, green: 0.28, blue: 0.28))
           }
-          .disabled(viewModel.streamStarted)
-        } else {
-          Button(action: {
-            viewModel.isRecording ? viewModel.stopRecording() : viewModel.startRecording()
-          }) {
-            Image(systemName: viewModel.isRecording ? "stop.fill" : "mic.fill")
-              .foregroundStyle(viewModel.isRecording ? Color.white : Color.gray.opacity(0.5))
-              .fontWeight(.bold)
-              .frame(width: 30, height: 30)
-              .background(
-                Circle().fill(
-                  viewModel.isRecording ? Color.red : Color.clear
-                )
-              )
-          }
-          .animation(.default, value: viewModel.isRecording)
+          .padding(.horizontal, 8)
+          .padding(.vertical, 6)
+          .background(Color(red: 0.91, green: 0.91, blue: 0.91))
+          .cornerRadius(123)
         }
-      }
-      .padding(.horizontal, 12)
-      .background(RoundedRectangle(cornerRadius: 30).fill(Color.white))
-      .overlay {
-        RoundedRectangle(cornerRadius: 30)
-          .stroke(
-            isTextFieldFocused ? Color.blue : Color.clear,
-            lineWidth: 1
+        
+        Spacer()
+        
+        Button {
+          viewModel.handleMicrophoneTap()
+        } label: {
+          Image(.mic)
+            .foregroundStyle(Color.neutrals600)
+        }
+        .alert(isPresented: $viewModel.showPermissionAlert) {
+          Alert(
+            title: Text(viewModel.alertTitle),
+            message: Text(viewModel.alertMessage),
+            primaryButton: .default(Text("Go to Settings")) {
+              viewModel.openAppSettings()
+            },
+            secondaryButton: .cancel(Text("Cancel"))
           )
+        }
+        
+        
+        Button {
+          viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
+          guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
+          else { return }
+          sendMessage(viewModel.inputString, selectedImages, selectedDocumentId)
+          isTextFieldFocused.toggle()
+        } label: {
+          Image(systemName: "paperplane.fill")
+            .foregroundStyle(Color.white)
+            .fontWeight(.light)
+            .padding(4)
+            .background((viewModel.inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
+        }
+        .disabled(viewModel.inputString.isEmpty)
+        .disabled(viewModel.streamStarted)
       }
     }
-    .padding(.horizontal, 16)
-    .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
+    .focused($isTextFieldFocused)
+    .padding(8)
+    .background(Color(.white))
+    .cornerRadius(20)
+    .overlay(content: {
+      RoundedRectangle(cornerRadius:20)
+        .stroke(Color.gray, lineWidth: 0.5)
+    })
+    .padding(8)
   }
   
-  private func sendMessage(_ message: String) {
-    viewModel.sendMessage(newMessage: message)
-    newMessage = ""
+  private func sendMessage(_ message: String, _ imageUrls: [String], _ vaultFiles: [String]?) {
+    viewModel.sendMessage(newMessage: message, imageUrls: imageUrls, vaultFiles: vaultFiles)
+    viewModel.inputString = ""
+    selectedImages = []
+    selectedDocumentId = []
   }
   
 }
 
 struct MessageBubble: View {
   let message: ChatMessageModel
-  let m: String
+  let m: String?
+  let url: [String]?
   
   var body: some View {
     HStack(alignment: .top) {
@@ -282,8 +402,7 @@ struct MessageBubble: View {
         BotAvatarImage()
           .alignmentGuide(.top) { d in d[.top] }
       }
-      
-      MessageTextView(text: m, role: message.role)
+      MessageTextView(text: m, role: message.role, url: url)
         .alignmentGuide(.top) { d in d[.top] }
       
       if message.role == .Bot {
@@ -295,24 +414,55 @@ struct MessageBubble: View {
 }
 
 struct MessageTextView: View {
-  let text: String
+  let text: String?
   let role: MessageRole
+  let url: [String]?
   
   var body: some View {
-    Markdown(text)
-      .padding(8)
-      .background(backgroundColor)
-      .foregroundColor(foregroundColor)
-      .contentTransition(.numericText())
-      .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
+    VStack {
+      if let url = url {
+        HStack {
+          ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
+            let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(urlImage)
+            AsyncImage(url: completeUrl) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .frame(width: 86, height: 86)
+                        .clipped()
+                case .failure(_):
+                  ProgressView()
+                   
+                @unknown default:
+                    ProgressView()
+                }
+            }
+          }
+        }
+      }
+      
+      if let text, text != "" {
+        Markdown(text)
+          .font(.body)
+          .padding(8)
+          .background(backgroundColor)
+          .foregroundColor(foregroundColor)
+          .contentTransition(.numericText())
+          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
+      }
+    }
   }
   
   private var backgroundColor: Color {
-    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .blue) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
+    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .white) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
   }
   
   private var foregroundColor: Color {
-    role == .user ? (SetUIComponents.shared.usertextColor ?? .black) : (SetUIComponents.shared.botTextColor ?? .white)
+    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (.neutrals800)
   }
 }
 
@@ -358,4 +508,43 @@ struct CustomCornerShape: Shape {
     )
     return Path(path.cgPath)
   }
+}
+
+struct DocSuggestion: View {
+  
+  var image: UIImage
+  var title: String
+  var subTitle: String
+  
+  init(image: UIImage, title: String, subTitle: String) {
+    self.image = image
+    self.title = title
+    self.subTitle = subTitle
+  }
+  
+  var body: some View {
+    
+    HStack(alignment: .top, spacing: 12) {
+      Spacer()
+      Image(uiImage: image)
+        .frame(width: 24)
+      VStack(alignment: .leading, spacing: 4) {
+        Text(title)
+          .foregroundStyle(Color.neutrals600)
+          .font(.custom("Lato-Bold", size: 16))
+          .frame(maxWidth: .infinity, alignment: .leading)
+        Text(subTitle)
+          .foregroundStyle(Color.neutrals600)
+          .font(.custom("Lato-Regular", size: 13))
+          .frame(maxWidth: .infinity, alignment: .leading)
+      }
+      .frame(width: 260)
+      Spacer()
+    }
+  }
+}
+
+enum ChatSegment: String, CaseIterable {
+    case patients = "Patients"
+    case allChats = "All Chats"
 }

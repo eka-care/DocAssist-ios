@@ -1,4 +1,4 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
@@ -20,7 +20,9 @@ let package = Package(
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
    // Lottie dependency
-    .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.1")
+    .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.1"),
+    // Medical Record
+    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", branch: "main")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -33,7 +35,9 @@ let package = Package(
         // FireBase
         .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
         // Lottie dependency
-        .product(name: "Lottie", package: "lottie-ios")
+        .product(name: "Lottie", package: "lottie-ios"),
+        // Medical Record
+        .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI")
       ],
       resources: [
         .process("Resources")

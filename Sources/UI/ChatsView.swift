@@ -24,12 +24,12 @@ struct ChatsView: View {
   @State private var searchText: String = ""
   @State private var userDocId: String
   @State private var userBId: String
-  private var bgcolors: Color
   var backgroundColor: Color?
-  var emptyMessageColor: Color?
-  var editButtonColor: Color?
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
+  @State private var selectedSegement: String = "Patients"
+  var patientDelegate: NavigateToPatientDirectory
+  var searchForPatient: (() -> Void)
   
   var thread: [SessionDataModel] {
     allSessions.filter { session in
@@ -52,15 +52,22 @@ struct ChatsView: View {
     }
   }
   
-  init(backgroundColor: Color? = nil, emptyMessageColor: Color? = .white, editButtonColor: Color? = .blue, subTitle: String? = "General Chat", userDocId: String, userBid: String, ctx: ModelContext, delegate: ConvertVoiceToText) {
+  init(backgroundColor: Color? = nil,
+       subTitle: String? = "General Chat",
+       userDocId: String,
+       userBid: String,
+       ctx: ModelContext,
+       delegate: ConvertVoiceToText,
+       patientDelegate: NavigateToPatientDirectory,
+       searchForPatient: @escaping (() -> Void)
+  ) {
     self.backgroundColor = backgroundColor
-    self.emptyMessageColor = emptyMessageColor
-    self.editButtonColor = editButtonColor
     self.subTitle = subTitle
     self.viewModel = ChatViewModel(context: ctx, delegate: delegate)
-    self.bgcolors = SetUIComponents.shared.emptyHistoryBgColor ?? Color.gray
     self.userDocId = userDocId
     self.userBId = userBid
+    self.patientDelegate = patientDelegate
+    self.searchForPatient = searchForPatient
   }
   
   public var body: some View {
@@ -85,46 +92,35 @@ struct ChatsView: View {
         }
         .navigationBarHidden(true)
       }
-      .background(
-        NavigationLink(
-          destination: ActiveChatView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: subTitle ?? "General Chat", calledFromPatientContext: false)
-            .modelContext(modelContext),
-          isActive: $isNavigatingToNewSession
-        ) {
-          EmptyView()
-        }
-      )
     } else {
-      NavigationView {
+      NavigationStack {
         ZStack {
-          if let backgroundColor = SetUIComponents.shared.userAllChatBackgroundColor {
-            Image(uiImage: backgroundColor)
-              .resizable()
-              .scaledToFill()
-              .edgesIgnoringSafeArea(.all)
-          }
+          VStack {
+            Image(.bg)
+                .resizable()
+                .frame(height: 180)
+                .edgesIgnoringSafeArea(.all)
+              Spacer()
+              }
           VStack {
             headerView
               .padding(.bottom, 15)
             ZStack {
               mainContentView
               NewChatButtonView
-                .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 20 : 0)
+                .padding(.trailing, UIDevice.current.userInterfaceIdiom == .phone ? 18 : 0)
                 .padding(.leading, UIDevice.current.userInterfaceIdiom == .pad ? 20 : 10)
             }
             
           }
           .navigationBarHidden(true)
-        }
-        .background(
-          NavigationLink(
-            destination: ActiveChatView(session: newSessionId ?? "", viewModel: viewModel, backgroundColor: backgroundColor, patientName: patientName ?? "General Chat", calledFromPatientContext: false)
-              .modelContext(modelContext),
-            isActive: $isNavigatingToNewSession
-          ) {
-            EmptyView()
+          .navigationDestination(for: SessionDataModel.self) { thread in
+            if isNavigating {
+              isNavigating = false
+            }
+            return destinationView(for: thread)
           }
-        )
+        }
       }
     }
   }
@@ -134,32 +130,22 @@ struct ChatsView: View {
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack {
-        Button(action: {
-          dismiss()
-        }) {
-          HStack(spacing: 6) {
-            Image(systemName: "chevron.left")
-              .font(.system(size: 21, weight: .medium))
-              .foregroundColor(.blue)
-            Text("Back")
-              .font(.system(size: 18))
-              .foregroundColor(.blue)
-          }
-        }
-        .contentShape(Rectangle())
-        Spacer()
-      }
-      .padding(.leading, 10)
-      .padding(.top, 9)
-      HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-          .foregroundColor(.black)
+          .foregroundColor(.titleColor)
           .font(.custom("Lato-Bold", size: 34))
           .padding(.leading, 16)
           .padding(.top, 16)
           .padding(.bottom, 4)
         Spacer()
       }
+      
+      Picker("Select", selection: $selectedSegement) {
+        Text("Patients").tag("Patients")
+        Text("All Chats").tag("All Chats")
+      }
+      .pickerStyle(SegmentedPickerStyle())
+      .padding(.horizontal, 16)
+      
       SearchBar(text: $searchText)
     }
   }
@@ -169,7 +155,11 @@ struct ChatsView: View {
       if thread.isEmpty {
         emptyStateView
       } else {
-        threadListView
+        if selectedSegement == "Patients" {
+          threadListView(allChats: false)
+        } else {
+          threadListView(allChats: true)
+        }
       }
     }
   }
@@ -205,25 +195,38 @@ struct ChatsView: View {
     }
     
   }
-  
-  private var threadListView: some View {
-    VStack {
-      Divider()
-      ScrollView {
-        VStack() {
-          ForEach(Array(filteredSessions.enumerated()), id: \.element.id) { index, thread in
-            threadItemView(for: thread)
+
+  private func threadListView(allChats: Bool) -> some View {
+      let filteredThreads: [SessionDataModel] = {
+          if allChats {
+              return filteredSessions
+          } else {
+              return filteredSessions.filter { $0.subTitle != "General Chat" }
           }
-        }
-        .padding(.horizontal)
+      }()
+      
+      return VStack {
+          Divider()
+          ScrollView {
+              VStack {
+                  ForEach(filteredThreads, id: \.sessionId) { thread in
+                      Button(action: {
+                          selectedSessionId = thread.sessionId
+                          isNavigating = true
+                      }) {
+                          threadItemView(for: thread, allChats: allChats)
+                      }
+                      .buttonStyle(PlainButtonStyle())
+                  }
+              }
+              .padding(.horizontal)
+          }
+          .contentMargins(.top, 0, for: .scrollContent)
       }
-      .background(navigationLinkToNewSession)
-      .contentMargins(.top, 0, for: .scrollContent)
-    }
   }
   
-  private func threadItemView(for thread: SessionDataModel) -> some View {
-    Button(action: {
+  private func threadItemView(for thread: SessionDataModel, allChats: Bool) -> some View {
+    return Button(action: {
       if selectedSessionId != thread.sessionId {
         newSessionId = nil
       }
@@ -235,14 +238,14 @@ struct ChatsView: View {
       } catch {
         print("No patient name found")
       }
-      isNavigating = true
     }) {
       MessageSubView(
         thread.title,
         viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
         thread.subTitle,
         foregroundColor: (newSessionId == thread.sessionId) ||
-        (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false
+        (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false,
+        allChats
       )
       .background(Color.clear)
       .background(
@@ -268,30 +271,19 @@ struct ChatsView: View {
     .buttonStyle(PlainButtonStyle())
   }
   
-  // MARK: - Navigation Link
-  private var navigationLinkToNewSession: some View {
-    NavigationLink(
-      destination: destinationView,
-      isActive: $isNavigating
-    ) {
-      EmptyView()
-    }
-  }
-  
-  private var destinationView: some View {
-    if let sessionId = selectedSessionId {
-      return AnyView(
-        ActiveChatView(
-          session: sessionId,
-          viewModel: viewModel,
-          backgroundColor: backgroundColor, patientName: patientName ?? "",
-          calledFromPatientContext: false
-        )
-        .modelContext(modelContext)
-      )
-    } else {
-      return AnyView(EmptyView())
-    }
+  private func destinationView(for thread: SessionDataModel) -> some View {
+
+          return AnyView(
+              ActiveChatView(
+                  session: thread.sessionId,
+                  viewModel: viewModel,
+                  backgroundColor: backgroundColor,
+                  patientName: "General Chat",
+                  calledFromPatientContext: false
+              )
+              .modelContext(modelContext)
+          )
+
   }
   
   private var NewChatButtonView: some View {
@@ -305,60 +297,40 @@ struct ChatsView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-          _ = viewModel.createSession(subTitle: "General Chat", userDocId: userDocId, userBId: userBId)
-          newSessionId = viewModel.vmssid
-          isNavigatingToNewSession = true
+          patientDelegate.navigateToPatientDirectory()
+          searchForPatient()
         }) {
-          if let newChatButtonImage = SetUIComponents.shared.newChatButtonImage {
-            Image(uiImage: newChatButtonImage)
-              .resizable()
-              .scaledToFit()
-              .frame(width: 18)
-          } else {
-            Image(systemName: "square.and.pencil")
-              .resizable()
-              .font(.title2)
-              .foregroundColor(.white)
-              .background(editButtonColor)
-              .clipShape(Circle())
-              .shadow(radius: 10)
-              .scaledToFit()
-              .frame(width: 18)
-          }
-          
+          Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
             Text(newChatButtonText)
-              .foregroundColor(Color.blue)
-              .font(.custom("Lato-Bold", size: 18))
+              .foregroundColor(Color.primaryprimary)
+              .font(.custom("Lato-Regular", size: 16))
           }
         }
-        .frame(maxWidth: thread.isEmpty ? .infinity : 160)
-        .padding(.vertical, 14)
-        .padding(.horizontal, 5)
+        .padding(.top, 14)
+        .padding(.bottom, 14)
+        .padding(.leading, 28)
+        .padding(.trailing, 28)
         .background(Color.white)
         .cornerRadius(10)
         .overlay {
           RoundedRectangle(cornerRadius: 10)
-            .stroke(LinearGradient(colors: [.purple, .blue], startPoint: .leading, endPoint: .trailing))
+            .stroke(Color.primaryprimary)
         }
         .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
-        
-        if UIDevice.current.userInterfaceIdiom == .pad {
-          Spacer()
-        }
       }
       .padding(.bottom, 20)
     }
   }
   
-  // MARK: - Message SubView
-  func MessageSubView(_ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool) -> some View {
+  func MessageSubView(_ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool, _ allChat: Bool) -> some View {
+    
     VStack {
       HStack {
         nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
         VStack (spacing: 6) {
           HStack {
-            Text(title)
+            Text(allChat ? title : subTitle ?? "General Chat")
               .font(.custom("Lato-Regular", size: 16))
               .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
               .lineLimit(2)
@@ -373,7 +345,7 @@ struct ChatsView: View {
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
           }
           HStack {
-            Text(subTitle ?? "GeneralChat")
+            Text(allChat ? subTitle ?? "General Chat" : title)
               .font(.custom("Lato-Regular", size: 14))
               .fontWeight(.regular)
               .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
@@ -386,31 +358,6 @@ struct ChatsView: View {
     }
     .padding(UIDevice.current.userInterfaceIdiom == .pad ? 3 : 0)
   }
-  
-  private func nameInitialsView(initials: String) -> some View {
-    ZStack {
-      LinearGradient(
-        colors: [
-          Color(red: 186/255, green: 186/255, blue: 186/255, opacity: 1.0),
-          Color(red: 161/255, green: 161/255, blue: 161/255, opacity: 1.0)
-        ],
-        startPoint: .top,
-        endPoint: .bottom
-      )
-      .frame(width: 38, height: 38)
-      Group {
-        if initials == "GeneralChat" {
-          Image(.chatBotBW)
-        } else {
-          Text(initials)
-        }
-      }
-      .foregroundStyle(.white)
-      .font(.custom("Lato-Bold", size: 16))
-      .fontWeight(.bold)
-    }
-    .clipShape(Circle())
-  }
 }
 
 func getInitials(name: String?) -> String? {
@@ -421,6 +368,35 @@ func getInitials(name: String?) -> String? {
   }
 }
 
-public protocol ConvertVoiceToText {
-  func convertVoiceToText(audioFileURL: URL, completion: @escaping (String) -> Void)
+func nameInitialsView(initials: String) -> some View {
+  ZStack {
+    LinearGradient(
+      colors: [
+        Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
+        Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
+      ],
+      startPoint: .leading,
+      endPoint: .trailing
+    )
+    .frame(width: 38, height: 38)
+    Group {
+      if initials == "GeneralChat" {
+        Image(.chatMsgs)
+      } else {
+        Text(initials)
+      }
+    }
+    .foregroundStyle(LinearGradient(
+      colors: [
+        Color(red: 32/255, green: 92/255, blue: 255/255, opacity: 1.0),
+        Color(red: 174/255, green: 113/255, blue: 210/255, opacity: 1.0)
+      ],
+      startPoint: .leading,
+      endPoint: .trailing
+    ))
+    .font(.custom("Lato-Bold", size: 16))
+    .fontWeight(.bold)
+  }
+  .clipShape(Circle())
 }
+

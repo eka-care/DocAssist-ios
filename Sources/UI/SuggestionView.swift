@@ -23,7 +23,7 @@ struct SuggestionView: View {
         .frame(width: 360, height: 40)
         .foregroundStyle(Color.nuetralWhite)
       Button(action: {
-        viewModel.sendMessage(newMessage: suggestionText)
+       // viewModel.sendMessage(newMessage: suggestionText)
       }) {
         HStack {
           Text(suggestionText)
@@ -37,3 +37,4 @@ struct SuggestionView: View {
     .frame(width: 360, height: 40)
   }
 }
+

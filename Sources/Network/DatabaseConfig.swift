@@ -111,19 +111,55 @@ final class DatabaseConfig {
     }
   }
   
-  func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String, context: ModelContext) throws -> String? {
-      let fetchDescriptor = FetchDescriptor<SessionDataModel>(
-        predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
-      )
-      let results = try context.fetch(fetchDescriptor)
-      return results.first?.sessionId
+  func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String, context: ModelContext) throws -> [SessionDataModel] {
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
+    )
+    let results = try context.fetch(fetchDescriptor)
+    return results
   }
-   
-  func fetchPatientName (fromSessionId ssid: String, context: ModelContext) throws -> String {
+  
+  func fetchPatientName(fromSessionId ssid: String, context: ModelContext) throws -> String {
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.sessionId == ssid }
     )
     let results = try context.fetch(fetchDescriptor)
     return results.first?.subTitle ?? ""
   }
+  
+  func fetchChatUsing(patientName: String) -> [SessionDataModel] {
+    
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate<SessionDataModel> { session in
+        session.subTitle == patientName
+      },
+      sortBy: [SortDescriptor(\SessionDataModel.lastUpdatedAt, order: .reverse)]
+    )
+    
+    do {
+      let results = try modelContext.fetch(fetchDescriptor)
+      return results
+    } catch {
+      print("Error fetching sessions for patient \(patientName): \(error)")
+      return []
+    }
+  }
+  
+  func fetchChatUsing(oid: String) -> [SessionDataModel] {
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate<SessionDataModel> { session in
+        session.oid == oid
+      },
+      sortBy: [SortDescriptor(\SessionDataModel.lastUpdatedAt, order: .reverse)]
+    )
+    
+    do {
+      let results = try modelContext.fetch(fetchDescriptor)
+      return results
+    } catch {
+      print("Error fetching sessions for patient \(oid): \(error)")
+      return []
+    }
+  }
+  
 }

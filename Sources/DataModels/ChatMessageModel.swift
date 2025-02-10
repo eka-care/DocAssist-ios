@@ -6,9 +6,7 @@
 //
 
 import Foundation
-#if canImport(SwiftData)
 import SwiftData
-#endif
 
 @Model
 public class ChatMessageModel: Identifiable {
@@ -20,6 +18,9 @@ public class ChatMessageModel: Identifiable {
   public var createdAt: Int
   public var sessionData: SessionDataModel?
   
+  // MARK: - Migration
+  public var imageUrls: [String]?
+  
   init(
     msgId: Int,
     role: MessageRole,
@@ -27,8 +28,8 @@ public class ChatMessageModel: Identifiable {
     messageText: String? = nil,
     htmlString: String? = nil,
     createdAt: Int,
-    sessionData: SessionDataModel
-    
+    sessionData: SessionDataModel,
+    imageUrls: [String]? = nil
   ) {
     self.msgId = msgId
     self.role = role
@@ -37,6 +38,7 @@ public class ChatMessageModel: Identifiable {
     self.htmlString = htmlString
     self.createdAt = createdAt
     self.sessionData = sessionData
+    self.imageUrls = imageUrls
   }
 }
 
