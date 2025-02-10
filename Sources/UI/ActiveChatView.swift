@@ -151,14 +151,13 @@ public struct ActiveChatView: View {
     }
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      ToolbarItem(placement: .principal) {
-        VStack {
-          Text(patientName?.isEmpty ?? true ? "General Chat" : patientName ?? "General Chat")
-            .font(.headline)
-            .foregroundColor(.primary)
-        }
+      ToolbarItem(placement: UIDevice.current.userInterfaceIdiom == .phone ? .principal : .topBarTrailing) {
+        Text(patientName?.isEmpty ?? true ? "General Chat" : patientName ?? "General Chat")
+          .font(.headline)
+          .foregroundColor(.primary)
       }
     }
+    .navigationTitle("")
   }
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
@@ -214,7 +213,7 @@ public struct ActiveChatView: View {
           Button(action: {
             newMessage = viewModel.trimLeadingSpaces(from: newMessage)
             guard !newMessage.isEmpty else { return }
-            sendMessage(newMessage,session)
+            sendMessage(newMessage,viewModel.vmssid)
             isTextFieldFocused.toggle()
           }) {
             Image(systemName: "arrow.up")
