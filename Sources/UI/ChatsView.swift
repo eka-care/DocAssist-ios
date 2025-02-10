@@ -133,24 +133,24 @@ struct ChatsView: View {
   
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
-      HStack {
-        Button(action: {
-          dismiss()
-        }) {
-          HStack(spacing: 6) {
-            Image(systemName: "chevron.left")
-              .font(.system(size: 21, weight: .medium))
-              .foregroundColor(.blue)
-            Text("Back")
-              .font(.system(size: 18))
-              .foregroundColor(.blue)
-          }
-        }
-        .contentShape(Rectangle())
-        Spacer()
-      }
-      .padding(.leading, 10)
-      .padding(.top, 9)
+//      HStack {
+//        Button(action: {
+//          dismiss()
+//        }) {
+//          HStack(spacing: 6) {
+//            Image(systemName: "chevron.left")
+//              .font(.system(size: 21, weight: .medium))
+//              .foregroundColor(.blue)
+//            Text("Back")
+//              .font(.system(size: 18))
+//              .foregroundColor(.blue)
+//          }
+//        }
+//        .contentShape(Rectangle())
+//        Spacer()
+//      }
+//      .padding(.leading, 10)
+//      .padding(.top, 9)
       HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
           .foregroundColor(.black)
