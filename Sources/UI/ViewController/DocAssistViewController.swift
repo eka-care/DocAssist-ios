@@ -11,7 +11,7 @@ import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 
-public class DocAssistViewController: UIViewController {
+public class ChatsVeiwController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory
@@ -208,7 +208,7 @@ extension ActiveChatViewController {
 }
 
 
-extension DocAssistViewController {
+extension ChatsVeiwController {
   
   func registerUISdk() {
     registerFonts()
