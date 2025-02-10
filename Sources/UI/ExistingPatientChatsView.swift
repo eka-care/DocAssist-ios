@@ -12,7 +12,6 @@ import EkaMedicalRecordsUI
 
 public struct ExistingPatientChatsView: View {
   @State var patientName: String
-  @State private var navigateToActiveChatView: Bool = false
   @ObservedObject private var viewModel: ChatViewModel
   var backgroundColor: Color?
   var oid: String

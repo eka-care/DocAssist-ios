@@ -44,6 +44,7 @@ public struct ActiveChatView: View {
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
+    print("#BB init is being called")
   }
   
   public var body: some View {
@@ -72,7 +73,7 @@ public struct ActiveChatView: View {
       viewModel.switchToSession(session)
     }
     .onDisappear {
-      //viewModel.stopStreaming()
+      viewModel.inputString = ""
     }
   }
   
@@ -357,7 +358,7 @@ public struct ActiveChatView: View {
           viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
           guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
           else { return }
-          viewModel.sendMessage(newMessage: viewModel.inputString, imageUrls: selectedImages, vaultFiles: selectedDocumentId)
+          viewModel.sendMessage(newMessage: viewModel.inputString, imageUrls: selectedImages, vaultFiles: selectedDocumentId, sessionId: viewModel.vmssid)
           viewModel.inputString = ""
           selectedImages = []
           selectedDocumentId = []

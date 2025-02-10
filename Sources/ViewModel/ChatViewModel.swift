@@ -43,16 +43,16 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String?, imageUrls: [String]?, vaultFiles: [String]?) {
-    addUserMessage(newMessage, imageUrls)
-    startStreamingPostRequest(query: newMessage, vaultFiles: vaultFiles)
+  func sendMessage(newMessage: String?, imageUrls: [String]?, vaultFiles: [String]?, sessionId: String) {
+    addUserMessage(newMessage, imageUrls, sessionId)
+    startStreamingPostRequest(query: newMessage, vaultFiles: vaultFiles, sessionId: sessionId)
   }
   
-  private func addUserMessage(_ query: String?, _ imageUrls: [String]?) {
+  private func addUserMessage(_ query: String?, _ imageUrls: [String]?, _ sessionId: String) {
     let msgIddup = (DatabaseConfig.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
     
     do {
-      if let fetchedSeesion = try fetchSession(bySessionId: vmssid) {
+      if let fetchedSeesion = try fetchSession(bySessionId: sessionId) {
         let userData = ChatMessageModel(
           msgId: msgIddup,
           role: .user,
@@ -73,7 +73,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     setThreadTitle(with: query ?? "New Chat")
   }
   
-  func startStreamingPostRequest(query: String?, vaultFiles: [String]?) {
+  func startStreamingPostRequest(query: String?, vaultFiles: [String]?, sessionId: String) {
     streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
     networkCall.startStreamingPostRequest(query: query, vault_files: vaultFiles, onStreamComplete: { [weak self] in
@@ -84,7 +84,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       switch result {
       case .success(let responseString):
         Task {
-          await self?.handleStreamResponse(responseString)
+          await self?.handleStreamResponse(responseString, sessionId)
         }
       case .failure(let error):
         print("Error streaming: \(error)")
@@ -92,12 +92,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  func stopStreaming() {
-    networkCall.cancelStreaming()
-    streamStarted = false
-  }
-  
-  func handleStreamResponse(_ responseString: String) {
+  func handleStreamResponse(_ responseString: String,_ sessionId: String) {
     let splitLines = responseString.split(separator: "\n")
     
     for line in splitLines {
@@ -108,7 +103,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
           if let jsonData = jsonString.data(using: .utf8) {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              self.updateMessage(with: message)
+              self.updateMessage(with: message, sessionId: sessionId)
               print("#BB message is \(message)")
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
@@ -119,26 +114,26 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  private func updateMessage(with message: Message) {
+  private func updateMessage(with message: Message, sessionId: String) {
     let descriptor = FetchDescriptor<ChatMessageModel>()
     let allMessage = try? DatabaseConfig.shared.modelContext.fetch(descriptor)
     
     if let existingItem = allMessage?.first(where: {
-      $0.sessionData?.sessionId == vmssid &&
+      $0.sessionData?.sessionId == sessionId &&
       $0.msgId == message.msgId
     }) {
       existingItem.messageText = message.text
       saveData()
       print("SESSION DATA SAVED")
     } else { 
-      createNewChatMessage(from: message)
+      createNewChatMessage(from: message, sessionId: sessionId)
     }
   }
   
   
-  private func createNewChatMessage(from message: Message) {
+  private func createNewChatMessage(from message: Message, sessionId: String) {
     do {
-      if let fetchedSeesion = try fetchSession(bySessionId: vmssid) {
+      if let fetchedSeesion = try fetchSession(bySessionId: sessionId) {
         let chat = ChatMessageModel(
           msgId: message.msgId,
           role: .Bot,
