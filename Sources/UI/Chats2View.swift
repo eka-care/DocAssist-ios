@@ -80,54 +80,45 @@ struct Chats2View: View {
   }
   
   var body: some View {
-//    if UIDevice.current.userInterfaceIdiom == .pad {
-//      ZStack {
-//        VStack {
-//          Image(.bg)
-//            .resizable()
-//            .frame(height: 180)
-//            .edgesIgnoringSafeArea(.all)
-//          Spacer()
-//        }
-//        
-//        VStack {
-//          headerView
-//            .padding(.bottom, 15)
-//          ZStack {
-//            mainContentView
-//            NewChatButtonView
-//              .padding(.trailing, 20)
-//          }
-//          
-//        }
-//        .navigationBarHidden(true)
-//      }
-//    } else {
+    
+    switch currentDevice {
+    case .pad:
+      chatView
+       
+    default:
       NavigationStack {
-        ZStack {
-          VStack {
-            Image(.bg)
-              .resizable()
-              .frame(height: 180)
-              .edgesIgnoringSafeArea(.all)
-            Spacer()
-          }
-          
-          VStack {
-            headerView
-              .padding(.bottom, 15)
-            ZStack {
-              mainContentView
-              NewChatButtonView
-                .padding(.trailing,18)
-                .padding(.leading, 10)
-            }
-          }
-        }
-        .navigationBarHidden(true)
-//      }
+        chatView
+      }
     }
   }
+  
+  private var chatView: some View {
+    ZStack {
+      VStack {
+        Image(.bg)
+          .resizable()
+          .frame(height: 180)
+          .edgesIgnoringSafeArea(.all)
+        Spacer()
+      }
+      
+      VStack {
+        headerView
+          .padding(.bottom, 15)
+        ZStack {
+          VStack {
+            mainContentView
+            Spacer()
+          }
+          NewChatButtonView
+            .padding(.trailing,18)
+            .padding(.leading, 10)
+        }
+      }
+    }
+    .navigationBarHidden(true)
+  }
+  
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack {
@@ -155,7 +146,7 @@ struct Chats2View: View {
   var mainContentView: some View {
     Group {
       if thread.isEmpty {
-        emptyStateView
+        EmptyStateView()
       } else {
         if selectedSegment == .patients {
           patientThreadListView()
@@ -164,37 +155,6 @@ struct Chats2View: View {
         }
       }
     }
-  }
-  
-  var emptyStateView: some View {
-    VStack {
-      Divider()
-      HStack {
-        Text("Start a new chat with Doc Assist to-")
-          .fontWeight(.bold)
-          .font(.custom("Lato-Bold", size: 18))
-          .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
-          .padding(.leading, 20)
-          .padding(.top, 16)
-        Spacer()
-      }
-      HStack {
-        VStack(alignment: .leading, spacing: 12) {
-          Text("💊 Confirm drug interactions")
-          Text("🥬 Generate diet charts")
-          Text("🏋️‍♀️ Get lifestyle advice for a patient")
-          Text("📃 Generate medical certificate templates")
-          Text("and much more..")
-        }
-        .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)
-        .padding(.leading, 20)
-        .padding(.top, 10)
-        .font(.custom("Lato-Regular", size: 15))
-        Spacer()
-      }
-      Spacer()
-    }
-    
   }
   
   func patientThreadListView() -> some View {
@@ -423,4 +383,8 @@ struct Chats2View: View {
       .padding(UIDevice.current.userInterfaceIdiom == .pad ? 3 : 0)
     }
   }
+}
+
+var currentDevice: UIUserInterfaceIdiom {
+  UIDevice.current.userInterfaceIdiom
 }

@@ -8,7 +8,6 @@
 import Foundation
 import SwiftUI
 
-@MainActor
 public class SetUIComponents {
   
   public var userBackGroundColor: Color?

@@ -93,11 +93,6 @@ public class ChatsVeiwController: UIViewController {
     uiHostingController.didMove(toParent: self)
   }
   
-  public override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-    navigationController?.setNavigationBarHidden(true, animated: false)
-  }
-  
   private func searchForPatient() {
     patientDelegate.navigateToPatientDirectory()
   }
@@ -168,11 +163,6 @@ public class ActiveChatViewController: UIViewController {
       uiHostingViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       uiHostingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
     ])
-  }
-  
-  public override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-    navigationController?.setNavigationBarHidden(true, animated: false)
   }
 }
 

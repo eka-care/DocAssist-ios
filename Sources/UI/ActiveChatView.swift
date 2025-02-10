@@ -72,7 +72,7 @@ public struct ActiveChatView: View {
       viewModel.switchToSession(session)
     }
     .onDisappear {
-      viewModel.stopStreaming()
+      //viewModel.stopStreaming()
     }
   }
   
