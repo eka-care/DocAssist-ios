@@ -128,7 +128,6 @@ public class ActiveChatViewController: UIViewController {
             oid: oid,
             userDocId: userDocId,
             userBId: userBId,
-            /*ctx: ctx*/
             calledFromPatientContext: true,
             authToken: authToken,
             authRefreshToken: authRefreshToken
@@ -147,7 +146,7 @@ public class ActiveChatViewController: UIViewController {
     }
     super.init(nibName: nil, bundle: nil)
     registerUISdk()
-    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
+    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId)
   }
   
   required init?(coder: NSCoder) {
@@ -191,8 +190,13 @@ extension ActiveChatViewController {
     }
   }
   
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
+    var ownerId: String = oid
+    if oid == "" {
+      ownerId = userDocId
+    }
+    print("#BB \(ownerId)")
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
   }
   
   private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
@@ -218,8 +222,12 @@ extension DocAssistViewController {
     }
   }
   
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
+    var ownerId: String = oid
+    if oid.isEmpty {
+      ownerId = userDocId
+    }
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
   }
   
   private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {

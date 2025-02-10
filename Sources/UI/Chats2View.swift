@@ -8,6 +8,11 @@
 import SwiftUI
 import SwiftData
 
+enum ChatSegment: String, CaseIterable {
+    case patients = "Patients"
+    case allChats = "All Chats"
+}
+
 struct Chats2View: View {
   @Query(
     filter: #Predicate<SessionDataModel> { !$0.chatMessages.isEmpty },
@@ -229,9 +234,9 @@ struct Chats2View: View {
           .modelContext(ctx)
       } label: {
         MessageSubViewComponent(
-          title: count,
+          title: subTitle,
           date: date,
-          subTitle: subTitle,
+          subTitle: count,
           foregroundColor: false,
           allChat: false
         )
@@ -385,7 +390,7 @@ struct Chats2View: View {
     var body: some View {
       VStack {
         HStack {
-          nameInitialsView(initials: getInitials(name: subTitle ?? "GeneralChat") ?? "GC")
+          nameInitialsView(initials: getInitials(name: title ?? "GeneralChat") ?? "GC")
           VStack(spacing: 6) {
             HStack {
               Text(title)

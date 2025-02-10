@@ -123,6 +123,7 @@ public struct ExistingPatientChatsView: View {
       chats = DatabaseConfig.shared.fetchChatUsing(oid: oid)
       MRInitializer.singleTon.registerUISdk()
       MRInitializer.singleTon.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
+      viewModel.updateQueryParamsIfNeeded(oid)
     }
     .scrollIndicators(.hidden)
   }

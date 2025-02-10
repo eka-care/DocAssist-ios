@@ -141,14 +141,14 @@ public struct ActiveChatView: View {
     }
     .toolbarBackground(
       LinearGradient(
-          gradient: Gradient(colors: [
-              Color(red: 0.93, green: 0.91, blue: 0.98),
-              Color(red: 0.96, green: 0.94, blue: 1.0)
-          ]),
-          startPoint: .top,
-          endPoint: .bottom
+        gradient: Gradient(colors: [
+          Color(red: 0.93, green: 0.91, blue: 0.98),
+          Color(red: 0.96, green: 0.94, blue: 1.0)
+        ]),
+        startPoint: .top,
+        endPoint: .bottom
       ),
-  for: .navigationBar)
+      for: .navigationBar)
     .toolbarBackground(.visible, for: .navigationBar)
     .navigationTitle(title ?? "New Chat")
     .navigationBarTitleDisplayMode(.large)
@@ -227,7 +227,7 @@ public struct ActiveChatView: View {
       }
       
       TimerView(isTimerRunning: !viewModel.voiceProcessing)
-          .frame(width: 60)
+        .frame(width: 60)
       
       if viewModel.voiceProcessing {
         ProgressView()
@@ -302,7 +302,7 @@ public struct ActiveChatView: View {
                 print("#BB docId is \(docId)")
                 return docId
               }
-                                      
+                                                   
               )
               showRecordsView = false
             }.environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
@@ -336,6 +336,9 @@ public struct ActiveChatView: View {
           viewModel.handleMicrophoneTap()
         } label: {
           Image(.mic)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 14)
             .foregroundStyle(Color.neutrals600)
         }
         .alert(isPresented: $viewModel.showPermissionAlert) {
@@ -354,12 +357,15 @@ public struct ActiveChatView: View {
           viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
           guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
           else { return }
-          sendMessage(viewModel.inputString, selectedImages, selectedDocumentId)
+          viewModel.sendMessage(newMessage: viewModel.inputString, imageUrls: selectedImages, vaultFiles: selectedDocumentId)
+          viewModel.inputString = ""
+          selectedImages = []
+          selectedDocumentId = []
           isTextFieldFocused.toggle()
         } label: {
-          Image(systemName: "paperplane.fill")
+          Image(systemName: "arrow.up")
             .foregroundStyle(Color.white)
-            .fontWeight(.light)
+            .fontWeight(.semibold)
             .padding(4)
             .background((viewModel.inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
         }
@@ -377,14 +383,6 @@ public struct ActiveChatView: View {
     })
     .padding(8)
   }
-  
-  private func sendMessage(_ message: String, _ imageUrls: [String], _ vaultFiles: [String]?) {
-    viewModel.sendMessage(newMessage: message, imageUrls: imageUrls, vaultFiles: vaultFiles)
-    viewModel.inputString = ""
-    selectedImages = []
-    selectedDocumentId = []
-  }
-  
 }
 
 struct MessageBubble: View {
@@ -544,7 +542,3 @@ struct DocSuggestion: View {
   }
 }
 
-enum ChatSegment: String, CaseIterable {
-    case patients = "Patients"
-    case allChats = "All Chats"
-}
