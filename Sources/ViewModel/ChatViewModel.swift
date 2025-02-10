@@ -35,9 +35,9 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String) {
+  func sendMessage(newMessage: String, sessionId: String) {
     addUserMessage(newMessage)
-    startStreamingPostRequest(query: newMessage)
+    startStreamingPostRequest(query: newMessage, sessionId: sessionId)
   }
   
   private func addUserMessage(_ query: String) {
@@ -64,7 +64,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     setThreadTitle(with: query)
   }
   
-  func startStreamingPostRequest(query: String) {
+  func startStreamingPostRequest(query: String, sessionId: String) {
     streamStarted = true
     NwConfig.shared.queryParams["session_id"] = vmssid
     networkCall.startStreamingPostRequest(query: query, onStreamComplete: { [weak self] in
@@ -75,7 +75,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
       switch result {
       case .success(let responseString):
         Task {
-          await self?.handleStreamResponse(responseString)
+          await self?.handleStreamResponse(responseString, sessionId: sessionId)
         }
       case .failure(let error):
         print("Error streaming: \(error)")
@@ -83,7 +83,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  func handleStreamResponse(_ responseString: String) {
+  func handleStreamResponse(_ responseString: String, sessionId: String) {
     let splitLines = responseString.split(separator: "\n")
     
     for line in splitLines {
@@ -95,7 +95,7 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
             do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
               print("Message: \(message.text)")
-              self.updateMessage(with: message)
+              self.updateMessage(with: message, sessionId: sessionId)
             } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
             }
@@ -105,26 +105,26 @@ final class ChatViewModel: NSObject, ObservableObject, URLSessionDataDelegate {
     }
   }
   
-  private func updateMessage(with message: Message) {
+  private func updateMessage(with message: Message, sessionId: String) {
     let descriptor = FetchDescriptor<ChatMessageModel>()
     let allMessage = try? DatabaseConfig.shared.modelContext.fetch(descriptor)
     
     if let existingItem = allMessage?.first(where: {
-      $0.sessionData?.sessionId == vmssid &&
+      $0.sessionData?.sessionId == sessionId &&
       $0.msgId == message.msgId
     }) {
       existingItem.messageText = message.text
       saveData()
       print("SESSION DATA SAVED")
     } else { 
-      createNewChatMessage(from: message)
+      createNewChatMessage(from: message, sessionId: sessionId)
     }
   }
   
   
-  private func createNewChatMessage(from message: Message) {
+  private func createNewChatMessage(from message: Message, sessionId: String) {
     do {
-      if let fetchedSeesion = try fetchSession(bySessionId: vmssid) {
+      if let fetchedSeesion = try fetchSession(bySessionId: sessionId) {
         let chat = ChatMessageModel(
           msgId: message.msgId,
           role: .Bot,

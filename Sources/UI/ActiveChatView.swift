@@ -214,7 +214,7 @@ public struct ActiveChatView: View {
           Button(action: {
             newMessage = viewModel.trimLeadingSpaces(from: newMessage)
             guard !newMessage.isEmpty else { return }
-            sendMessage(newMessage)
+            sendMessage(newMessage,session)
             isTextFieldFocused.toggle()
           }) {
             Image(systemName: "arrow.up")
@@ -261,8 +261,8 @@ public struct ActiveChatView: View {
     .padding(.bottom, UIDevice.current.userInterfaceIdiom == .pad ? 16 : 0)
   }
   
-  private func sendMessage(_ message: String) {
-    viewModel.sendMessage(newMessage: message)
+  private func sendMessage(_ message: String, _ sessionId: String) {
+    viewModel.sendMessage(newMessage: message, sessionId: sessionId)
     newMessage = ""
   }
   
