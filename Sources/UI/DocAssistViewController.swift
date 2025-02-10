@@ -60,7 +60,6 @@ public class DocAssistViewController: UIViewController {
   
   public override func viewDidLoad() {
     super.viewDidLoad()
-    
     guard let uiHostingController = uiHostingController else { return }
     
     addChild(uiHostingController)
@@ -68,7 +67,7 @@ public class DocAssistViewController: UIViewController {
     
     uiHostingController.view.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
-      uiHostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+      uiHostingController.view.topAnchor.constraint(equalTo: view.topAnchor, constant: UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0),
       uiHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
       uiHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       uiHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)

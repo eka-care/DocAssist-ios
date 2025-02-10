@@ -151,7 +151,7 @@ public struct ActiveChatView: View {
     }
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
-      ToolbarItem(placement: UIDevice.current.userInterfaceIdiom == .phone ? .principal : .topBarTrailing) {
+      ToolbarItem(placement: .principal) {
         Text(patientName?.isEmpty ?? true ? "General Chat" : patientName ?? "General Chat")
           .font(.headline)
           .foregroundColor(.primary)
