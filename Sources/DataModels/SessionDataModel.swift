@@ -19,7 +19,7 @@ public enum SessionDataV1: VersionedSchema {
   }
   
   @Model
-  public class SessionDataModelV1 {
+  public final class SessionDataModelV1: Sendable {
     public var userId = UUID()
     @Attribute(.unique) public var sessionId: String
     public var createdAt: Date

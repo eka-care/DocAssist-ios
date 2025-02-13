@@ -22,6 +22,7 @@ public struct GeneralChatView: View {
   var searchForPatient: (() -> Void)
   var authToken: String
   var authRefreshToken: String
+  @Binding var selectedScreen: SelectedScreen?
   
   public init(
     backgroundColor: Color? = .white,
@@ -35,7 +36,8 @@ public struct GeneralChatView: View {
     patientDelegate: NavigateToPatientDirectory,
     searchForPatient: @escaping (() -> Void),
     authToken: String,
-    authRefreshToken: String
+    authRefreshToken: String,
+    selectedScreen: Binding<SelectedScreen?>
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
@@ -49,11 +51,23 @@ public struct GeneralChatView: View {
     self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    DatabaseConfig.shared.modelContext = ctx
+    _selectedScreen = selectedScreen
   }
   
   public var body: some View {
-    Chats2View(backgroundColor: backgroundColor, subTitle: subTitle,userDocId: userDocId, userBid: userBId, ctx: ctx, delegate: delegate, patientDelegate: patientDelegate,searchForPatient: searchForPatient, authToken: authToken, authRefreshToken: authRefreshToken)
+    Chats2View(
+      backgroundColor: backgroundColor,
+      subTitle: subTitle,
+      userDocId: userDocId,
+      userBid: userBId,
+      ctx: ctx,
+      delegate: delegate,
+      patientDelegate: patientDelegate,
+      searchForPatient: searchForPatient,
+      authToken: authToken,
+      authRefreshToken: authRefreshToken,
+      selectedScreen: $selectedScreen
+    )
       .modelContext(ctx)
       .navigationBarHidden(true)
   }

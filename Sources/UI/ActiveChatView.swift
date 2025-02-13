@@ -14,7 +14,7 @@ import EkaMedicalRecordsCore
 public struct ActiveChatView: View {
   @State var session: String
   @Query private var messages: [ChatMessageModel]
-  @ObservedObject private var viewModel: ChatViewModel
+  private var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
@@ -44,7 +44,7 @@ public struct ActiveChatView: View {
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
-    print("#BB init is being called")
+    print("#BB active chat init is getting called")
   }
   
   public var body: some View {
@@ -280,7 +280,7 @@ public struct ActiveChatView: View {
       }
       
       HStack {
-        TextField(" Start typing...", text: $viewModel.inputString, axis: .vertical)
+        TextField(" Start typing...", text: viewModel.inputStringBinding, axis: .vertical)
       }
       
       HStack(spacing: 10) {
@@ -342,7 +342,7 @@ public struct ActiveChatView: View {
             .frame(width: 14)
             .foregroundStyle(Color.neutrals600)
         }
-        .alert(isPresented: $viewModel.showPermissionAlert) {
+        .alert(isPresented: viewModel.showPermissionAlertBinding) {
           Alert(
             title: Text(viewModel.alertTitle),
             message: Text(viewModel.alertMessage),
@@ -355,14 +355,17 @@ public struct ActiveChatView: View {
         
         
         Button {
-          viewModel.inputString = viewModel.trimLeadingSpaces(from: viewModel.inputString)
+          viewModel.inputString = viewModel.inputString.trimmingCharacters(in: .whitespacesAndNewlines)
+          
           guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
           else { return }
-          viewModel.sendMessage(newMessage: viewModel.inputString, imageUrls: selectedImages, vaultFiles: selectedDocumentId, sessionId: viewModel.vmssid)
-          viewModel.inputString = ""
-          selectedImages = []
-          selectedDocumentId = []
-          isTextFieldFocused.toggle()
+          Task {
+            await viewModel.sendMessage(newMessage: viewModel.inputString, imageUrls: selectedImages, vaultFiles: selectedDocumentId, sessionId: session)
+            viewModel.inputString = ""
+            selectedImages = []
+            selectedDocumentId = []
+            isTextFieldFocused.toggle()
+          }
         } label: {
           Image(systemName: "arrow.up")
             .foregroundStyle(Color.white)

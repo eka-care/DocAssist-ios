@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @Model
-public class ChatMessageModel: Identifiable {
+public final class ChatMessageModel: Identifiable, Sendable {
   public var msgId: Int
   public var role: MessageRole
   public var messageFiles: [Int]?

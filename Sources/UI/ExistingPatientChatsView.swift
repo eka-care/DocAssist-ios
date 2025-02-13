@@ -11,20 +11,21 @@ import EkaMedicalRecordsCore
 import EkaMedicalRecordsUI
 
 public struct ExistingPatientChatsView: View {
-  @State var patientName: String
-  @ObservedObject private var viewModel: ChatViewModel
-  var backgroundColor: Color?
-  var oid: String
-  var userDocId: String
-  var userBId: String
-  @State var createNewSession: String?
+  private let patientName: String
+  private let viewModel: ChatViewModel
+  private let backgroundColor: Color?
+  private let oid: String
+  private let userDocId: String
+  private let userBId: String
+  @State private var createNewSession: String? = "createNewSession"
   @Environment(\.dismiss) var dismiss
-  @Environment(\.modelContext) var modelContext
-  var calledFromPatientContext: Bool
-  @State var chats: [SessionDataModel] = []
-  @State var path = NavigationPath()
-  var authToken: String
-  var authRefreshToken: String
+  private let calledFromPatientContext: Bool
+  
+  @Query private var chats: [SessionDataModel] = []
+  
+  @State private var path = NavigationPath()
+  private let authToken: String
+  private let authRefreshToken: String
   
   init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String) {
     self.patientName = patientName
@@ -36,55 +37,74 @@ public struct ExistingPatientChatsView: View {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
+    print("#BB this is existing screen view getting called")
     
+    _chats = Query(
+      filter: #Predicate<SessionDataModel> { eachChat in
+        eachChat.oid == oid
+      },
+      sort: \.lastUpdatedAt,
+      order: .reverse
+    )
+    
+    setupView(oid: oid)
   }
   
   public var body: some View {
-    NavigationStack(path: $path) {
-      list
-        .toolbarBackground(Color.white, for: .navigationBar)
-        .toolbarBackground(.visible, for: .navigationBar)
-        .toolbar {
-          if calledFromPatientContext {
-            ToolbarItem(placement: .navigationBarLeading) {
-              Button {
-                dismiss()
-              } label: {
-                Image(systemName: "chevron.left")
-                  .font(.system(size: 21, weight: .medium))
-                  .foregroundColor(Color.primaryprimary)
-                Text("Back")
-                  .foregroundStyle(Color.primaryprimary)
-              }
-            }
-          }
-          ToolbarItem(placement: .navigationBarTrailing) {
+   NavigationStack(path: $path) {
+    list
+      .toolbarBackground(Color.white, for: .navigationBar)
+      .toolbarBackground(.visible, for: .navigationBar)
+      .toolbar {
+        if calledFromPatientContext {
+          ToolbarItem(placement: .navigationBarLeading) {
             Button {
-              print("The oid is \(oid)")
-              createNewSession = viewModel.createSession(subTitle: patientName, oid: oid, userDocId: userDocId, userBId: userBId)
-              path.append("ActiveView")
-            }
-            label: {
-              Text("New chat")
+              dismiss()
+            } label: {
+              Image(systemName: "chevron.left")
+                .font(.system(size: 21, weight: .medium))
+                .foregroundColor(Color.primaryprimary)
+              Text("Back")
                 .foregroundStyle(Color.primaryprimary)
             }
           }
         }
-        .navigationTitle(patientName)
-        .navigationBarTitleDisplayMode(.large)
-        .navigationDestination(for: String.self) { str in
-          if str == "ActiveView" {
-            ActiveChatView(
-              session: createNewSession ?? "",
-              viewModel: viewModel,
-              backgroundColor: backgroundColor,
-              patientName: patientName,
-              calledFromPatientContext: false)
-            .modelContext(modelContext)
+        ToolbarItem(placement: .navigationBarTrailing) {
+          Button {
+            Task {
+              let newSession = await viewModel.createSession(
+                subTitle: patientName,
+                oid: oid,
+                userDocId: userDocId,
+                userBId: userBId
+              )
+              createNewSession = newSession
+              viewModel.switchToSession(newSession)
+              
+              DispatchQueue.main.async {
+                print("#BB session Id in button is \(newSession)")
+                path.append("ActiveView")
+              }
+            }
+          }
+          label: {
+            Text("New chat")
+              .foregroundStyle(Color.primaryprimary)
           }
         }
-      
-    }
+      }
+      .navigationTitle(patientName)
+      .navigationBarTitleDisplayMode(.large)
+      .navigationDestination(for: String.self) { _ in
+        ActiveChatView(
+          session: viewModel.vmssid,
+          viewModel: viewModel,
+          backgroundColor: backgroundColor,
+          patientName: patientName,
+          calledFromPatientContext: false)
+        .modelContext(DatabaseConfig.shared.modelContext)
+      }
+        }
   }
   var list: some View {
     ScrollView() {
@@ -118,13 +138,13 @@ public struct ExistingPatientChatsView: View {
     }
     .padding()
     .background(Color(red: 0.96, green: 0.96, blue: 0.96))
-    .onAppear {
-      chats = DatabaseConfig.shared.fetchChatUsing(oid: oid)
-      MRInitializer.singleTon.registerUISdk()
-      MRInitializer.singleTon.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
-      viewModel.updateQueryParamsIfNeeded(oid)
-    }
     .scrollIndicators(.hidden)
+  }
+  
+  private func setupView(oid: String) {
+    MRInitializer.shared.registerUISdk()
+    MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
+    viewModel.updateQueryParamsIfNeeded(oid)
   }
 }
 
@@ -132,7 +152,7 @@ class MRInitializer {
   
   init() {}
   
-  static var singleTon = MRInitializer()
+  static var shared = MRInitializer()
   
   func registerUISdk() {
     registerFonts()

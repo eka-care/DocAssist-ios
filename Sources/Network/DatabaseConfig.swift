@@ -8,12 +8,15 @@
 import Foundation
 import SwiftData
 
-@MainActor
-final class DatabaseConfig {
-  var modelContext: ModelContext!
+@ModelActor
+final actor DatabaseConfig: Sendable {
+  static var shared: DatabaseConfig!
   
-  static let shared = DatabaseConfig()
-  private init() { }
+  public static func setup(modelContainer: ModelContainer) {
+    shared = DatabaseConfig(modelContainer: modelContainer)
+    //print the location of modelcontainer
+    
+  }
   
   func getLastMessageIdUsingSessionId(sessionId: String) -> Int? {
     
@@ -111,11 +114,11 @@ final class DatabaseConfig {
     }
   }
   
-  func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String, context: ModelContext) throws -> [SessionDataModel] {
+  func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String) throws -> [SessionDataModel] {
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
     )
-    let results = try context.fetch(fetchDescriptor)
+    let results = try modelContext.fetch(fetchDescriptor)
     return results
   }
   
@@ -127,8 +130,9 @@ final class DatabaseConfig {
     return results.first?.subTitle ?? ""
   }
   
+  
   func fetchChatUsing(patientName: String) -> [SessionDataModel] {
-    
+
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate<SessionDataModel> { session in
         session.subTitle == patientName
@@ -162,4 +166,48 @@ final class DatabaseConfig {
     }
   }
   
+  func fetchAllChatMessageFromSession(session: String) -> [ChatMessageModel] {
+    debugPrint("#BB: fetchchat")
+    let descriptor = FetchDescriptor<ChatMessageModel>(predicate: #Predicate{ $0.sessionData?.sessionId == session })
+    do {
+      let allMessages = try modelContext.fetch(descriptor)
+      return allMessages
+    } catch {
+      print("Error fetching all chats: \(error.localizedDescription)")
+      return []
+    }
+  }
+    
+  func fetchAllChatMessage() -> [ChatMessageModel] {
+    debugPrint("#BB: fetchchat")
+    let descriptor = FetchDescriptor<ChatMessageModel>()
+    do {
+      let allMessages = try modelContext.fetch(descriptor)
+      return allMessages
+    } catch {
+      print("Error fetching all chats: \(error.localizedDescription)")
+      return []
+    }
+  }
+  
+  func insertSession(session: SessionDataModel) {
+    modelContext.insert(session)
+  }
+  
+  func fetchSession(bySessionId sessionId: String) throws -> SessionDataModel? {
+    let descriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate<SessionDataModel> { session in
+        session.sessionId == sessionId
+      }
+    )
+    return try modelContext.fetch(descriptor).first
+  }
+  
+  func saveChatMessage() {
+    do {
+      try modelContext.save()
+    } catch {
+      print("Error saving data: \(error)")
+    }
+  }
 }

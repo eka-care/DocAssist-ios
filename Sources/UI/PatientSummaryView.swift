@@ -176,7 +176,6 @@ struct ChatRow: View {
     let vm: ChatViewModel
     let sessionId: String
     let patientName: String
-    @Environment(\.modelContext) var modelContext
     
     var body: some View {
         NavigationLink {
@@ -187,7 +186,7 @@ struct ChatRow: View {
                 patientName: patientName,
                 calledFromPatientContext: false,
                 title: title
-            ).modelContext(modelContext)
+            ).modelContext(DatabaseConfig.shared.modelContext)
             
         } label: {
             HStack(spacing: 12) {

@@ -19,7 +19,7 @@ struct Chats2View: View {
     sort: \SessionDataModel.lastUpdatedAt,
     order: .reverse
   ) var allSessions: [SessionDataModel]
-  @ObservedObject var viewModel: ChatViewModel
+  var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
   @Environment(\.modelContext) var modelContext
   @Environment(\.dismiss) var dismiss
@@ -31,6 +31,10 @@ struct Chats2View: View {
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
   @State private var selectedSegment: ChatSegment = .patients
+  @State private var selectedPatient: String?
+  @Binding var selectedScreen: SelectedScreen?
+  @State var selectedPatientThread: SessionDataModel?
+  
   var patientDelegate: NavigateToPatientDirectory
   var searchForPatient: (() -> Void)
   var authToken: String
@@ -66,7 +70,8 @@ struct Chats2View: View {
        patientDelegate: NavigateToPatientDirectory,
        searchForPatient: @escaping (() -> Void),
        authToken: String,
-       authRefreshToken: String
+       authRefreshToken: String,
+       selectedScreen: Binding<SelectedScreen?>
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
@@ -77,6 +82,7 @@ struct Chats2View: View {
     self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
+    _selectedScreen = selectedScreen
   }
   
   var body: some View {
@@ -84,10 +90,19 @@ struct Chats2View: View {
     switch currentDevice {
     case .pad:
       chatView
-       
+      
     default:
       NavigationStack {
         chatView
+          .navigationDestination(item: $selectedPatientThread) { _ in
+            ActiveChatView(session: selectedPatientThread?.sessionId ?? "",
+                           viewModel: viewModel,
+                           backgroundColor: .white,
+                           patientName: selectedPatientThread?.subTitle ?? "General Chat",
+                           calledFromPatientContext: false,
+                           title: selectedPatientThread?.title
+            )
+          }
       }
     }
   }
@@ -167,8 +182,23 @@ struct Chats2View: View {
         VStack {
           ForEach(groupedThreads.keys.sorted(), id: \.self) { key in
             if let sessions = groupedThreads[key], let firstSession = sessions.first {
-              
-              GroupPatientView(subTitle: firstSession.subTitle ?? "", count: " \(String(sessions.count)) chats", viewModel: viewModel, ctx: modelContext,oid: firstSession.oid ?? "" , bid: firstSession.userBId, docId: firstSession.userDocId,date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt), authToken: authToken, authRefreshToken: authRefreshToken)
+              Button {
+                selectedScreen = .selectedPatient(viewModel, firstSession.oid ?? "", firstSession.userBId, firstSession.userDocId, firstSession.subTitle ?? "")
+                
+              } label: {
+                GroupPatientView(
+                  subTitle: firstSession.subTitle ?? "",
+                  count: " \(String(sessions.count)) chats",
+                  viewModel: viewModel,
+                  ctx: modelContext,
+                  oid: firstSession.oid ?? "" ,
+                  bid: firstSession.userBId,
+                  docId: firstSession.userDocId,
+                  date:viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
+                  authToken: authToken,
+                  authRefreshToken: authRefreshToken
+                )
+              }
             }
           }
         }
@@ -189,21 +219,36 @@ struct Chats2View: View {
     var authRefreshToken: String
     
     var body: some View {
+      switch currentDevice {
+      case .phone:
+        messageSubViewIPhone
+        
+      default:
+          messageSubView
+        
+      }
+    }
+    
+    private var messageSubViewIPhone: some View {
       NavigationLink {
         ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
-          .modelContext(ctx)
+          .modelContext(DatabaseConfig.shared.modelContext)
       } label: {
-        MessageSubViewComponent(
-          title: subTitle,
-          date: date,
-          subTitle: count,
-          foregroundColor: false,
-          allChat: false
-        )
-        .padding(.top, 2)
-        .padding(.leading, 8)
-        .padding(.trailing, 8)
+        messageSubView
       }
+    }
+    
+    private var messageSubView: some View {
+      MessageSubViewComponent(
+        title: subTitle,
+        date: date,
+        subTitle: count,
+        foregroundColor: false,
+        allChat: false
+      )
+      .padding(.top, 2)
+      .padding(.leading, 8)
+      .padding(.trailing, 8)
     }
   }
   
@@ -238,16 +283,8 @@ struct Chats2View: View {
   func handleThreadSelection(_ thread: SessionDataModel) {
     selectedSessionId = thread.sessionId
     viewModel.switchToSession(thread.sessionId)
-    
-    do {
-      let patient = try DatabaseConfig.shared.fetchPatientName(
-        fromSessionId: thread.sessionId,
-        context: DatabaseConfig.shared.modelContext
-      )
-      patientName = patient
-    } catch {
-      print("No patient name found")
-    }
+    selectedPatientThread = thread
+    selectedScreen = .allPatient(thread, viewModel)
   }
   
   private func threadItemView(for thread: SessionDataModel, allChats: Bool) -> some View {
@@ -318,18 +355,17 @@ struct Chats2View: View {
   }
   
   func MessageSubView(_ thread: SessionDataModel, _ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool, _ allChat: Bool) -> some View {
-    
-    NavigationLink {
-      ActiveChatView(
-        session: thread.sessionId,
-        viewModel: viewModel,
-        backgroundColor: .white,
-        patientName: thread.subTitle ?? "General Chat",
-        calledFromPatientContext: false,
-        title: title
-      )
-      .modelContext(modelContext)
-    } label: {
+//    NavigationLink {
+//      ActiveChatView(
+//        session: thread.sessionId,
+//        viewModel: viewModel,
+//        backgroundColor: .white,
+//        patientName: thread.subTitle ?? "General Chat",
+//        calledFromPatientContext: false,
+//        title: title
+//      )
+//      .modelContext(DatabaseConfig.shared.modelContext)
+//    } label: {
       MessageSubViewComponent(
         title: title,
         date: date,
@@ -337,7 +373,7 @@ struct Chats2View: View {
         foregroundColor: foregroundColor,
         allChat: allChat
       )
-    }
+  //  }
   }
   
   struct MessageSubViewComponent: View {

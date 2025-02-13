@@ -15,6 +15,8 @@ public class ChatsVeiwController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory
+  let ctx: ModelContext
+  
   public init(
     backgroundColor: Color? = nil,
     emptyMessageColor: Color? = nil,
@@ -31,6 +33,7 @@ public class ChatsVeiwController: UIViewController {
     
   ) {
     self.patientDelegate = patientDelegate
+    self.ctx = ctx
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
     case "ipad":
@@ -63,8 +66,8 @@ public class ChatsVeiwController: UIViewController {
         patientDelegate: patientDelegate,
         searchForPatient: searchForPatient,
         authToken: authToken,
-        authRefreshToken: authRefreshToken
-        
+        authRefreshToken: authRefreshToken,
+        selectedScreen: Binding.constant(nil)
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -91,6 +94,8 @@ public class ChatsVeiwController: UIViewController {
     ])
     
     uiHostingController.didMove(toParent: self)
+    
+    DatabaseConfig.setup(modelContainer: ctx.container)
   }
   
   private func searchForPatient() {
@@ -100,8 +105,19 @@ public class ChatsVeiwController: UIViewController {
 
 public class ActiveChatViewController: UIViewController {
   
-  var docAssistView: AnyView
+  private let backgroundColor: Color?
+  private let ctx: ModelContext
+  private let patientSubtitle: String?
+  private let oid: String
+  private let userDocId: String
+  private let userBId: String
+  private let calledFromPatientContext: Bool
+  private let authToken: String
+  private let authRefreshToken: String
+  
+  var docAssistView: AnyView?
   var vm: ChatViewModel
+  
   public init(
     backgroundColor: Color? = nil,
     ctx: ModelContext,
@@ -114,31 +130,17 @@ public class ActiveChatViewController: UIViewController {
     authToken: String,
     authRefreshToken: String
   ) {
-    vm = ChatViewModel(context: ctx, delegate: delegate)
-    let sessionPresent = vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
-    if calledFromPatientContext, sessionPresent {
-        let existingChatsView = ExistingPatientChatsView(
-            patientName: patientSubtitle ?? "",
-            viewModel: vm,
-            oid: oid,
-            userDocId: userDocId,
-            userBId: userBId,
-            calledFromPatientContext: true,
-            authToken: authToken,
-            authRefreshToken: authRefreshToken
-        )
-        docAssistView = AnyView(existingChatsView.modelContext(ctx))
-    } else {
-        let newSession = vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
-        let activeChatView = ActiveChatView(
-            session: newSession,
-            viewModel: vm,
-            backgroundColor: backgroundColor,
-            patientName: patientSubtitle ?? "",
-            calledFromPatientContext: true
-        )
-        docAssistView = AnyView(activeChatView.modelContext(ctx))
-    }
+    self.vm = ChatViewModel(context: ctx, delegate: delegate)
+    self.backgroundColor = backgroundColor
+    self.ctx = ctx
+    self.patientSubtitle = patientSubtitle
+    self.oid = oid
+    self.userDocId = userDocId
+    self.userBId = userBId
+    self.calledFromPatientContext = calledFromPatientContext
+    self.authToken = authToken
+    self.authRefreshToken = authRefreshToken
+    
     super.init(nibName: nil, bundle: nil)
     registerUISdk()
     registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId)
@@ -151,18 +153,58 @@ public class ActiveChatViewController: UIViewController {
   public override func viewDidLoad() {
     super.viewDidLoad()
     
-    let uiHostingViewController = UIHostingController(rootView: docAssistView)
+    setupSubViews()
     
-    addChild(uiHostingViewController)
-    view.addSubview(uiHostingViewController.view)
-    
-    uiHostingViewController.view.translatesAutoresizingMaskIntoConstraints = false
-    NSLayoutConstraint.activate([
-      uiHostingViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-      uiHostingViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-      uiHostingViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      uiHostingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-    ])
+    DatabaseConfig.setup(modelContainer: ctx.container)
+  }
+  
+  private func setupSwiftUIView() async {
+    let sessionPresent = await vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
+    if calledFromPatientContext, sessionPresent {
+        let existingChatsView = ExistingPatientChatsView(
+            patientName: patientSubtitle ?? "",
+            viewModel: vm,
+            oid: oid,
+            userDocId: userDocId,
+            userBId: userBId,
+            calledFromPatientContext: true,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
+        )
+      docAssistView = AnyView(existingChatsView.modelContext(DatabaseConfig.shared.modelContext))
+    } else {
+      let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+        let activeChatView = ActiveChatView(
+            session: newSession,
+            viewModel: vm,
+            backgroundColor: backgroundColor,
+            patientName: patientSubtitle ?? "",
+            calledFromPatientContext: true
+        )
+      docAssistView = await AnyView(activeChatView.modelContext(DatabaseConfig.shared.modelContext))
+    }
+  }
+  
+  private func setupSubViews() {
+    Task {
+      await setupSwiftUIView()
+      
+      DispatchQueue.main.async { [weak self] in
+        guard let self else { return }
+        let uiHostingViewController = UIHostingController(rootView: docAssistView)
+        
+        addChild(uiHostingViewController)
+        view.addSubview(uiHostingViewController.view)
+        
+        uiHostingViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+          uiHostingViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+          uiHostingViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+          uiHostingViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+          uiHostingViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
+      }
+    }
   }
 }
 

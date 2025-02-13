@@ -13,7 +13,7 @@ public final class NwConfig {
   public var queryParams: [String: String] = [:]
   public var httpMethod: String = ""
   
-  @MainActor public static let shared = NwConfig()
+  public static let shared = NwConfig()
   private init() {}
 }
 
@@ -21,7 +21,7 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
   private var dataTask: URLSessionDataTask?
   
-  @MainActor func startStreamingPostRequest(query: String?, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
+  func startStreamingPostRequest(query: String?, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
     
     let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
     
@@ -103,7 +103,10 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
     } else {
       print("Streaming complete")
     }
-    onStreamComplete()
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      onStreamComplete()
+    }
   }
 }
 
