@@ -118,45 +118,28 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       }
     }
   }
-
-//  func handleStreamResponse(responseString: String, userChat: ChatMessageModel)  {
-//    debugPrint("#LD \(responseString)")
-//    let splitLines = responseString.split(separator: "\n")
-//    for line in splitLines {
-//      if line.contains("data:") {
-//        if let jsonRange = line.range(of: "{") {
-//          let jsonString = String(line[jsonRange.lowerBound...])
-//          if let jsonData = jsonString.data(using: .utf8) {
-//            do {
-//              let message = try JSONDecoder().decode(Message.self, from: jsonData)
-//              print("#BB message id in api : \(message.msgId), \(message.text)")
-//              upsertMessage(responseMessage: message.text, userChat: userChat)
-//            } catch {
-//              print("Failed to decode JSON: \(error.localizedDescription)")
-//            }
-//          }
-//        }
-//      }
-//    }
-//  }
   
   func handleStreamResponse(responseString: String, userChat: ChatMessageModel) {
       debugPrint("#LDD \(responseString)")
       let splitLines = responseString.split(separator: "\n")
+
+      var message: Message?
+
       for line in splitLines {
           guard line.contains("data:") else { continue }
-          guard let jsonRange = line.range(of: "{") else { continue }
+          guard let jsonRange = line.range(of: "{") else { return }
 
           let jsonString = String(line[jsonRange.lowerBound...])
-          guard let jsonData = jsonString.data(using: .utf8) else { continue }
+          guard let jsonData = jsonString.data(using: .utf8) else { return }
 
           do {
-              let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              upsertMessage(responseMessage: message.text, userChat: userChat)
+              message = try JSONDecoder().decode(Message.self, from: jsonData)
           } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
           }
       }
+
+      upsertMessage(responseMessage: message?.text ?? "", userChat: userChat)
   }
 
   private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) {

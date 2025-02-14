@@ -341,7 +341,7 @@ extension DatabaseConfig {
     messageID: Int,
     currentSessionID: String,
     messageText: String? = nil
-  ) {
+  ) async {
        
     let fetchDescriptor = QueryHelper.fetchMessage(
       messageID: messageID,
@@ -350,11 +350,12 @@ extension DatabaseConfig {
     do {
       let messages = try modelContext.fetch(fetchDescriptor)
       print("Message ")
-      messages.first?.msgId = messageID
-      if let messageText {
-        messages.first?.messageText = messageText
+      await MainActor.run {
+        messages.first?.msgId = messageID
+        if let messageText {
+          messages.first?.messageText = messageText
+        }
       }
-      saveData()
     } catch {
       debugPrint("Error updating message \(error.localizedDescription)")
     }
