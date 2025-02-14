@@ -13,7 +13,6 @@ import EkaMedicalRecordsCore
 
 public struct ActiveChatView: View {
   @State var session: String
-  @Environment(\.modelContext) var modelContext
   @Query private var messages: [ChatMessageModel]
   private var viewModel: ChatViewModel
   var backgroundColor: Color?
@@ -27,11 +26,18 @@ public struct ActiveChatView: View {
   @State private var showRecordsView = false
   @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
-  var title: String?
+  private var title: String?
   
   let recordsRepo = RecordsRepo()
   
-  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
+  init(
+    session: String,
+    viewModel: ChatViewModel,
+    backgroundColor: Color?,
+    patientName: String,
+    calledFromPatientContext: Bool,
+    title: String? = "New Chat"
+  ) {
     print("#BB \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first)")
     self.session = session
     _messages = Query(

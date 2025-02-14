@@ -92,10 +92,10 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
     print("#AV Received data in did receive")
     receivedData.append(data)
-    if let receivedString = String(data: receivedData, encoding: .utf8) {
-      print("#AV Received string is \(receivedString)")
-      completion(.success(receivedString))
-    }
+    guard let receivedString = String(data: receivedData, encoding: .utf8) else { return }
+    
+    print("#AV Received string is \(receivedString)")
+    completion(.success(receivedString))
   }
   
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {

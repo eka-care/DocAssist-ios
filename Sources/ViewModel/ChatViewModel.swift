@@ -108,16 +108,26 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       DispatchQueue.main.async { [weak self] in
         self?.streamStarted = false
       }
-    }) { [weak self] result in
+    }) { [unowned self] result in
       switch result {
       case .success(let responseString):
         print("#AV response was hit")
-        self?.handleStreamResponse(responseString: responseString, userChat: userChat)
+        debugPrint("#LD semaphore wait started")
+        ChatViewModel.semaphore.wait()
+        debugPrint("#LD semaphore wait entered")
+        Task {
+          debugPrint("#LD semaphore task started")
+//          await withTaskGroup(of: Void.self) { group in
+//            group.addTask {
+              await handleStreamResponse(responseString: responseString, userChat: userChat)
+//            }
+        }
       case .failure(let error):
         print("Error streaming: \(error)")
       }
     }
   }
+  static let semaphore = DispatchSemaphore(value: 1)
 
 //  func handleStreamResponse(responseString: String, userChat: ChatMessageModel)  {
 //    debugPrint("#LD \(responseString)")
@@ -140,53 +150,73 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 //    }
 //  }
   
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) {
+  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
+//    Task {
       debugPrint("#LDD \(responseString)")
       let splitLines = responseString.split(separator: "\n")
       for line in splitLines {
-          guard line.contains("data:") else { continue }
-          guard let jsonRange = line.range(of: "{") else { continue }
-
-          let jsonString = String(line[jsonRange.lowerBound...])
-          guard let jsonData = jsonString.data(using: .utf8) else { continue }
-
-          do {
-              let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              upsertMessage(responseMessage: message.text, userChat: userChat)
-          } catch {
-              print("Failed to decode JSON: \(error.localizedDescription)")
-          }
+        guard line.contains("data:") else { continue }
+        guard let jsonRange = line.range(of: "{") else { continue }
+        
+        let jsonString = String(line[jsonRange.lowerBound...])
+        guard let jsonData = jsonString.data(using: .utf8) else { continue }
+        
+        if let message = try? JSONDecoder().decode(Message.self, from: jsonData) {
+          await upsertMessage(responseMessage: message.text, userChat: userChat)
+        }
       }
+    debugPrint("#LD semaphore going to release")
+//          }
+    ChatViewModel.semaphore.signal()
+    debugPrint("#LD semaphore released")
+    //    }
   }
 
-  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) {
-    guard let sessionId = userChat.sessionData?.sessionId else { return }
+  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) async {
+    guard let sessionId = userChat.sessionData?.sessionId else {
+      debugPrint("#LD semaphore no session ID")
+      debugPrint("#LD semaphore going to release")
+  //          }
+      ChatViewModel.semaphore.signal()
+      debugPrint("#LD semaphore released")
+      return
+    }
+    
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
-    Task {
-      let chatMessages = await DatabaseConfig.shared
-        .fetchMessages(
-          fetchDescriptor: QueryHelper.fetchMessage(
-            messageID: streamMessageId,
-            sessionID: sessionId
-          )
-        )
-      print("#BB chatMessages in upsertMessage : \(chatMessages.description)")
-      if chatMessages.isEmpty {
-        let _ = await DatabaseConfig.shared.createMessage(
-          message: responseMessage,
-          sessionId: sessionId,
-          messageId: streamMessageId,
-          role: .Bot,
-          imageUrls: nil
-        )
-      } else {
-        await DatabaseConfig.shared.updateMessage(
+    
+    let chatMessages = await DatabaseConfig.shared
+      .fetchMessages(
+        fetchDescriptor: QueryHelper.fetchMessage(
           messageID: streamMessageId,
-          currentSessionID: sessionId,
-          messageText: responseMessage
+          sessionID: sessionId
         )
-      }
+      )
+    print("#BB chatMessages in upsertMessage : \(chatMessages.description)")
+    if chatMessages.isEmpty {
+      let _ = await DatabaseConfig.shared.createMessage(
+        message: responseMessage,
+        sessionId: sessionId,
+        messageId: streamMessageId,
+        role: .Bot,
+        imageUrls: nil
+      )
+      debugPrint("#LD semaphore going to release")
+  //          }
+      ChatViewModel.semaphore.signal()
+      debugPrint("#LD semaphore released")
+      
+    } else {
+      await DatabaseConfig.shared.updateMessage(
+        messageID: streamMessageId,
+        currentSessionID: sessionId,
+        messageText: responseMessage
+      )
+      
+      debugPrint("#LD semaphore going to release")
+      //          }
+      ChatViewModel.semaphore.signal()
+      debugPrint("#LD semaphore released")
     }
   }
   

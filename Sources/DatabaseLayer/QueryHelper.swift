@@ -26,8 +26,7 @@ extension QueryHelper {
     var fetchDescriptor = FetchDescriptor<ChatMessageModel>(
       predicate: #Predicate{
         (($0.sessionData?.sessionId == sessionID) && ($0.msgId == messageID))
-      },
-      sortBy: [SortDescriptor(\ChatMessageModel.msgId, order: .reverse)]
+      }
     )
     fetchDescriptor.fetchLimit = 1
     return fetchDescriptor
