@@ -18,8 +18,8 @@ public struct ExistingChatResponse {
 
 @Observable
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
-  
   var streamStarted: Bool = false
+  
   private(set) var vmssid: String = ""
   private var context: ModelContext
   private var delegate : ConvertVoiceToText? = nil
@@ -56,109 +56,137 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.delegate = delegate
   }
   
-  func sendMessage(newMessage: String?, imageUrls: [String]?, vaultFiles: [String]?, sessionId: String) async {
-    await addUserMessage(newMessage, imageUrls, sessionId)
+  func sendMessage(
+    newMessage: String,
+    imageUrls: [String]?,
+    vaultFiles: [String]?,
+    sessionId: String,
+    lastMesssageId: Int?
+  ) async {
+    /// Create user message
+    print("#BB message id in viewModel : \(lastMesssageId)")
+    let userMessage =  await addUserMessage(
+      newMessage,
+      imageUrls,
+      sessionId,
+      lastMesssageId
+    )
+    /// Start streaming post request
+    startStreamingPostRequest(
+      vaultFiles: vaultFiles,
+      userChat: userMessage
+    )
+  }
+  
+  private func addUserMessage(
+    _ query: String,
+    _ imageUrls: [String]?,
+    _ sessionId: String,
+    _ lastMessageId: Int?
+  ) async -> ChatMessageModel? {
+    var messageId: Int = 1
+    if let lastMessageId = lastMessageId {
+      messageId = lastMessageId + 1
+    }
+      return await DatabaseConfig.shared.createMessage(
+      message: query,
+      sessionId: sessionId,
+      messageId: messageId,
+      role: .user,
+      imageUrls: imageUrls
+    )
+  }
+  
+  func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
+    guard let userChat else { return }
     DispatchQueue.main.async { [weak self] in
-      guard let self else { return }
-      print("#BB sessionId is \(sessionId)")
-      startStreamingPostRequest(query: newMessage, vaultFiles: vaultFiles, sessionId: sessionId)
+      self?.streamStarted = true
     }
-  }
-  
-  private func addUserMessage(_ query: String?, _ imageUrls: [String]?, _ sessionId: String) async {
-    let msgIddup = await (DatabaseConfig.shared.getLastMessageIdUsingSessionId(sessionId: vmssid) ?? -1) + 1
-    
-    do {
-      if let fetchedSeesion = try await DatabaseConfig.shared.fetchSession(bySessionId: sessionId) {
-        let userData = ChatMessageModel(
-          msgId: msgIddup,
-          role: .user,
-          messageFiles: nil,
-          messageText: query,
-          htmlString: nil,
-          createdAt: 0,
-          sessionData: fetchedSeesion,
-          imageUrls: imageUrls
-        )
-        fetchedSeesion.chatMessages.append(userData)
+    NetworkConfig.shared.queryParams["session_id"] = userChat.sessionData?.sessionId
+    networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
+      
+      DispatchQueue.main.async { [weak self] in
+        self?.streamStarted = false
       }
-    } catch {
-      print("Unable to fetch data")
-    }
-    
-    await DatabaseConfig.shared.saveData()
-    await setThreadTitle(with: query ?? "New Chat")
-  }
-  
-  func startStreamingPostRequest(query: String?, vaultFiles: [String]?, sessionId: String) {
-    streamStarted = true
-    NwConfig.shared.queryParams["session_id"] = sessionId
-    networkCall.startStreamingPostRequest(query: query, vault_files: vaultFiles, onStreamComplete: {
-      self.streamStarted = false
     }) { [weak self] result in
       switch result {
       case .success(let responseString):
-        Task {
-          await self?.handleStreamResponse(responseString, sessionId)
-        }
+        print("#AV response was hit")
+        self?.handleStreamResponse(responseString: responseString, userChat: userChat)
       case .failure(let error):
         print("Error streaming: \(error)")
       }
     }
   }
+
+//  func handleStreamResponse(responseString: String, userChat: ChatMessageModel)  {
+//    debugPrint("#LD \(responseString)")
+//    let splitLines = responseString.split(separator: "\n")
+//    for line in splitLines {
+//      if line.contains("data:") {
+//        if let jsonRange = line.range(of: "{") {
+//          let jsonString = String(line[jsonRange.lowerBound...])
+//          if let jsonData = jsonString.data(using: .utf8) {
+//            do {
+//              let message = try JSONDecoder().decode(Message.self, from: jsonData)
+//              print("#BB message id in api : \(message.msgId), \(message.text)")
+//              upsertMessage(responseMessage: message.text, userChat: userChat)
+//            } catch {
+//              print("Failed to decode JSON: \(error.localizedDescription)")
+//            }
+//          }
+//        }
+//      }
+//    }
+//  }
   
-  func handleStreamResponse(_ responseString: String,_ sessionId: String) async {
-    let splitLines = responseString.split(separator: "\n")
-    
-    for line in splitLines {
-      if line.contains("data:") {
-        let jsonRange = line.range(of: "{")
-        if let jsonRange = jsonRange {
+  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) {
+      debugPrint("#LDD \(responseString)")
+      let splitLines = responseString.split(separator: "\n")
+      for line in splitLines {
+          guard line.contains("data:") else { continue }
+          guard let jsonRange = line.range(of: "{") else { continue }
+
           let jsonString = String(line[jsonRange.lowerBound...])
-          if let jsonData = jsonString.data(using: .utf8) {
-            do {
+          guard let jsonData = jsonString.data(using: .utf8) else { continue }
+
+          do {
               let message = try JSONDecoder().decode(Message.self, from: jsonData)
-              await updateMessage(with: message, sessionId: sessionId)
-            } catch {
+              upsertMessage(responseMessage: message.text, userChat: userChat)
+          } catch {
               print("Failed to decode JSON: \(error.localizedDescription)")
-            }
           }
-        }
       }
-    }
   }
-  
-  private func updateMessage(with message: Message, sessionId: String) async {
-   
-    let allMessage = await DatabaseConfig.shared.fetchAllChatMessageFromSession(session: sessionId)
-    
-    if let existingItem = allMessage.first(where: {
-      $0.msgId == message.msgId
-    }) {
-      DispatchQueue.main.async {
-        existingItem.messageText = message.text
-        DatabaseConfig.shared.saveData()
+
+  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) {
+    guard let sessionId = userChat.sessionData?.sessionId else { return }
+    let streamMessageId = userChat.msgId + 1
+    /// Check if message already exists
+    Task {
+      let chatMessages = await DatabaseConfig.shared
+        .fetchMessages(
+          fetchDescriptor: QueryHelper.fetchMessage(
+            messageID: streamMessageId,
+            sessionID: sessionId
+          )
+        )
+      print("#BB chatMessages in upsertMessage : \(chatMessages.description)")
+      if chatMessages.isEmpty {
+        let _ = await DatabaseConfig.shared.createMessage(
+          message: responseMessage,
+          sessionId: sessionId,
+          messageId: streamMessageId,
+          role: .Bot,
+          imageUrls: nil
+        )
+      } else {
+        await DatabaseConfig.shared.updateMessage(
+          messageID: streamMessageId,
+          currentSessionID: sessionId,
+          messageText: responseMessage
+        )
       }
-    } else {
-        await createNewChatMessage(from: message, sessionId: sessionId)
-    }
-  }
-  
-  private func createNewChatMessage(from message: Message, sessionId: String) async {
-    if let fetchedSeesion = try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId) {
-      let chat = ChatMessageModel(
-        msgId: message.msgId,
-        role: .Bot,
-        messageFiles: nil,
-        messageText: message.text,
-        htmlString: nil,
-        createdAt: 0,
-        sessionData: fetchedSeesion
-      )
-      DispatchQueue.main.async {
-        fetchedSeesion.chatMessages.append(chat)
-      }
-      await DatabaseConfig.shared.saveData()
     }
   }
   
@@ -181,7 +209,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     let currentDate = Date()
     let ssid = UUID().uuidString
     print("#BB session Id in viewModel is \(ssid)")
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Session", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
+    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     await DatabaseConfig.shared.insertSession(session: createSessionModel)
     await DatabaseConfig.shared.saveData()
     switchToSession(ssid)
@@ -317,8 +345,8 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
-    if let ptOid = NwConfig.shared.queryParams["pt_oid"], ptOid.isEmpty {
-      NwConfig.shared.queryParams["pt_oid"] = oid
+    if let ptOid = NetworkConfig.shared.queryParams["pt_oid"], ptOid.isEmpty {
+      NetworkConfig.shared.queryParams["pt_oid"] = oid
     }
   }
 }
