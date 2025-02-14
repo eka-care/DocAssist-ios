@@ -20,6 +20,7 @@ public struct ExistingChatResponse {
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var streamStarted: Bool = false
   
+  private let databaseManager = DocAssistDatabaseManager.shared
   private(set) var vmssid: String = ""
   private var context: ModelContext
   private var delegate : ConvertVoiceToText? = nil
@@ -83,27 +84,21 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     _ imageUrls: [String]?,
     _ sessionId: String,
     _ lastMessageId: Int?
-  ) async -> ChatMessageModel? {
+  ) async -> ChatData? {
     var messageId: Int = 1
     if let lastMessageId = lastMessageId {
       messageId = lastMessageId + 1
     }
-      return await DatabaseConfig.shared.createMessage(
-      message: query,
-      sessionId: sessionId,
-      messageId: messageId,
-      role: .user,
-      imageUrls: imageUrls
-    )
+    return DocAssistDatabaseManager.shared.createChat(text: query, messageID: messageId, role: .user, sessionID: sessionId, imageURIs: imageUrls)
   }
   
-  func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
+  func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatData?) {
     guard let userChat else { return }
     DispatchQueue.main.async { [weak self] in
       self?.streamStarted = true
     }
-    NetworkConfig.shared.queryParams["session_id"] = userChat.sessionData?.sessionId
-    networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
+    NetworkConfig.shared.queryParams["session_id"] = userChat.toSessionData?.sessionID
+    networkCall.startStreamingPostRequest(query: userChat.toSessionData?.description, vault_files: vaultFiles, onStreamComplete: { [weak self] in
       
       DispatchQueue.main.async { [weak self] in
         self?.streamStarted = false
@@ -119,8 +114,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
 
-//  func handleStreamResponse(responseString: String, userChat: ChatMessageModel)  {
-//    debugPrint("#LD \(responseString)")
+//  func handleStreamResponse(responseString: String, userChat: ChatData)  {
 //    let splitLines = responseString.split(separator: "\n")
 //    for line in splitLines {
 //      if line.contains("data:") {
@@ -129,7 +123,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 //          if let jsonData = jsonString.data(using: .utf8) {
 //            do {
 //              let message = try JSONDecoder().decode(Message.self, from: jsonData)
-//              print("#BB message id in api : \(message.msgId), \(message.text)")
 //              upsertMessage(responseMessage: message.text, userChat: userChat)
 //            } catch {
 //              print("Failed to decode JSON: \(error.localizedDescription)")
@@ -140,7 +133,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 //    }
 //  }
   
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) {
+  func handleStreamResponse(responseString: String, userChat: ChatData) {
       debugPrint("#LDD \(responseString)")
       let splitLines = responseString.split(separator: "\n")
       for line in splitLines {
@@ -159,15 +152,15 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       }
   }
 
-  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) {
-    guard let sessionId = userChat.sessionData?.sessionId else { return }
-    let streamMessageId = userChat.msgId + 1
+  private func upsertMessage(responseMessage: String, userChat: ChatData) {
+    guard let sessionId = userChat.toSessionData?.sessionID else { return }
+    let streamMessageId = userChat.messageID + 1
     /// Check if message already exists
     Task {
       let chatMessages = await DatabaseConfig.shared
         .fetchMessages(
           fetchDescriptor: QueryHelper.fetchMessage(
-            messageID: streamMessageId,
+            messageID: Int(streamMessageId),
             sessionID: sessionId
           )
         )
@@ -176,13 +169,13 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
         let _ = await DatabaseConfig.shared.createMessage(
           message: responseMessage,
           sessionId: sessionId,
-          messageId: streamMessageId,
+          messageId: Int(streamMessageId),
           role: .Bot,
           imageUrls: nil
         )
       } else {
         await DatabaseConfig.shared.updateMessage(
-          messageID: streamMessageId,
+          messageID: Int(streamMessageId),
           currentSessionID: sessionId,
           messageText: responseMessage
         )
@@ -207,13 +200,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
     let currentDate = Date()
-    let ssid = UUID().uuidString
-    print("#BB session Id in viewModel is \(ssid)")
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    await DatabaseConfig.shared.saveData()
-    switchToSession(ssid)
-    return ssid
+    let sessionId = UUID().uuidString
+    DocAssistDatabaseManager.shared.createSession(bid: userBId, createdAt: currentDate, filterId: oid, lastUpdatedAt: currentDate, ownerId: userDocId, sessionID: sessionId, subtitle: subTitle, title: "New Chat")
+    switchToSession(sessionId)
+    return sessionId
   }
   
   func switchToSession(_ id: String) {

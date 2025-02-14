@@ -32,6 +32,7 @@ public class ChatsVeiwController: UIViewController {
     authRefreshToken: String
     
   ) {
+    let trialInit =  DocAssistDatabaseManager.shared
     self.patientDelegate = patientDelegate
     self.ctx = ctx
     super.init(nibName: nil, bundle: nil)

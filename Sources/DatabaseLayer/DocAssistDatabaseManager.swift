@@ -15,7 +15,7 @@ enum DocAssistDatabaseVersion {
   static let containerName = "DocAssistCore"
 }
 
-final class DocAssistDatabaseManager {
+public final class DocAssistDatabaseManager {
   
   // MARK: - Properties
   
@@ -25,6 +25,12 @@ final class DocAssistDatabaseManager {
     let modelURL = bundle.url(forResource: DocAssistDatabaseVersion.containerName, withExtension: "mom")!
     let model = NSManagedObjectModel(contentsOf: modelURL)!
     let container = NSPersistentContainer(name: DocAssistDatabaseVersion.containerName, managedObjectModel: model)
+    /// Loading of persistent stores
+    container.loadPersistentStores { (storeDescription, error) in
+      if let error {
+        fatalError("Failed to load store: \(error)")
+      }
+    }
     return container
   }()
   
@@ -32,7 +38,9 @@ final class DocAssistDatabaseManager {
   
   // MARK: - Init
   
-  private init() {}
+  private init() {
+    
+  }
 }
 
 // MARK: - Create
@@ -50,8 +58,8 @@ extension DocAssistDatabaseManager {
     messageID: Int,
     role: ChatRole,
     sessionID: String,
-    imageURIs: [String]
-  ) {
+    imageURIs: [String]?
+  ) -> ChatData? {
     do {
       /// Get session to which the chat belongs
       let sessionData = try container.viewContext.fetch(
@@ -65,9 +73,12 @@ extension DocAssistDatabaseManager {
       chat.imageURIs = imageURIs
       /// Attach chat to session data
       sessionData?.addToToChatData(chat)
+      try container.viewContext.save()
+      return chat
     } catch {
       debugPrint("Error creating chat: \(error.localizedDescription)")
     }
+    return nil
   }
   
   /// Create session in the database
@@ -86,7 +97,7 @@ extension DocAssistDatabaseManager {
     filterId: String?,
     lastUpdatedAt: Date?,
     ownerId: String?,
-    sessionID: UUID?,
+    sessionID: String?,
     subtitle: String?,
     title: String?
   ) {
@@ -96,7 +107,7 @@ extension DocAssistDatabaseManager {
     session.filterId = filterId
     session.lastUpdatedAt = lastUpdatedAt
     session.ownerId = ownerId
-    session.sessionID = sessionID
+    session.sessionID = UUID().uuidString
     session.subtitle = subtitle
     session.title = title
     do {
