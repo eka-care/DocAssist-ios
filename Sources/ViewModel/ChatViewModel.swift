@@ -97,6 +97,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     )
   }
   
+  let dispatchSemaphore = DispatchSemaphore(value: 1)
+  
   func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
     guard let userChat else { return }
     DispatchQueue.main.async { [weak self] in
@@ -109,18 +111,31 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
         self?.streamStarted = false
       }
     }) { [weak self] result in
-      switch result {
-      case .success(let responseString):
-        print("#AV response was hit")
-        self?.handleStreamResponse(responseString: responseString, userChat: userChat)
-      case .failure(let error):
-        print("Error streaming: \(error)")
+      guard let self else {
+        print("#LD Self not available")
+        return
+      }
+      
+//      self.dispatchSemaphore.wait()
+      Task {
+        switch result {
+        case .success(let responseString):
+          print("#AV response was hit")
+          print("#LD 1 before waiting")
+          print("#LD 2 inside waiting")
+          await self.handleStreamResponse(responseString: responseString, userChat: userChat)
+        case .failure(let error):
+          print("#LD 3 going to signal error")
+//          self.dispatchSemaphore.signal()
+          print("#LD 4 signalled error")
+          
+          print("Error streaming: \(error)")
+        }
       }
     }
   }
   
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) {
-      debugPrint("#LDD \(responseString)")
+  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
       let splitLines = responseString.split(separator: "\n")
 
       var message: Message?
@@ -139,7 +154,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
           }
       }
 
-      upsertMessage(responseMessage: message?.text ?? "", userChat: userChat)
+      print("#LD Going to upsert")
+      await upsertMessage(responseMessage: message?.text ?? "", userChat: userChat)
+    
+    print("#LD 3 going to signal")
+//    dispatchSemaphore.signal()
+    print("#LD 4 signalled")
   }
 
   private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) {

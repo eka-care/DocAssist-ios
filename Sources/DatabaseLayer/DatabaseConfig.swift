@@ -11,6 +11,7 @@ import SwiftData
 @ModelActor
 final actor DatabaseConfig: Sendable {
   private let lock = NSLock()
+  private let upsertLock = NSLock()
   
   static var shared: DatabaseConfig!
   
@@ -57,14 +58,10 @@ final actor DatabaseConfig: Sendable {
   func saveData() {
     do {
       try modelContext.transaction {
-        do {
-          try modelContext.save()
-        } catch {
-          print("Error saving data: \(error)")
-        }
+        try modelContext.save()
       }
     }catch {
-      print("Error saving data: \(error)")
+      print("#LD Error saving data: \(error)")
     }
   }
   
@@ -259,25 +256,6 @@ final actor DatabaseConfig: Sendable {
       return []
     }
   }
-  
-  func appendChatMessage(message: String, sessionId: String, messageId: Int, role: MessageRole, imageUrls: [String]?) {
-    
-    if let fetchedSession = try? fetchSession(bySessionId: sessionId) {
-      let chat = ChatMessageModel(
-        msgId: messageId,
-        role: role,
-        messageFiles: nil,
-        messageText: message,
-        htmlString: nil,
-        createdAt: 0,
-        sessionData: fetchedSession,
-        imageUrls: imageUrls
-      )
-      fetchedSession.chatMessages.append(chat)
-    }
-    saveData()
-  }
-  
 }
 
 // Create
@@ -306,6 +284,32 @@ extension DatabaseConfig {
       return chat
     }
     return nil
+  }
+}
+
+// Upsert
+extension DatabaseConfig {
+  func upsertMessage(
+    message: String,
+    sessionId: String,
+    messageId: Int,
+    role: MessageRole,
+    imageUrls: [String]?
+  ) -> ChatMessageModel? {
+    upsertLock.lock()
+    defer {
+      upsertLock.unlock()
+    }
+    
+    if let fetchedMessage = fetchMessages(fetchDescriptor: QueryHelper.fetchMessage(messageID: messageId, sessionID: sessionId)).first {
+      print("#BB Chat message created session: \(fetchedMessage.sessionData?.sessionId ?? "empty")")
+      
+      fetchedMessage.messageText = message
+      saveData()
+      return fetchedMessage
+    }
+
+    return createMessage(message: message, sessionId: sessionId, messageId: messageId, role: role, imageUrls: imageUrls)
   }
 }
 
