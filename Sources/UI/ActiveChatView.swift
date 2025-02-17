@@ -11,10 +11,11 @@ import MarkdownUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 
+@MainActor
 public struct ActiveChatView: View {
-  @State var session: String
+  private let session: String
   @Environment(\.modelContext) var modelContext
-  @Query private var messages: [ChatMessageModel]
+  @Query private var messages: [ChatMessageModel] = []
   private var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
@@ -36,7 +37,7 @@ public struct ActiveChatView: View {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
-        message.sessionData?.sessionId == session
+        message.sessionId == session
       },
       sort: \.msgId,
       order: .forward
@@ -66,6 +67,14 @@ public struct ActiveChatView: View {
         }
       }
     }
+//    .onReceive(NotificationCenter.default.publisher(for: .addedMessage)) { _ in
+//      Task {
+//        updateMessage()
+//      }
+//    }
+//    .task {
+//      updateMessage()
+//    }
     .onAppear {
       print("#BB navigating to active chat screen ")
       print("#BB session Id in active chat \(session)")
@@ -75,6 +84,25 @@ public struct ActiveChatView: View {
       viewModel.inputString = ""
     }
   }
+  
+//  private func updateMessage() {
+//    Task {
+//      //      let allMessages = await (try? DatabaseConfig.shared.fetchAllMessages(bySessionId: session)) ?? []
+//      //      await MainActor.run {
+//      //        messages = allMessages
+//      //      }
+//      guard let lastMessage = try? await DatabaseConfig.shared.fetchAllMessages(bySessionId: session)?.last else { return }
+//      
+//      if messages.last?.msgId == lastMessage.msgId {
+//        let count = messages.count
+//        
+//        messages[count-1].messageText = lastMessage.messageText
+//      } else {
+//        messages.append(lastMessage)
+//      }
+////      messages = await (try? DatabaseConfig.shared.fetchAllMessages(bySessionId: session)) ?? []
+//    }
+//  }
   
   private var content: some View {
     VStack {

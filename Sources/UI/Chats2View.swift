@@ -15,10 +15,11 @@ enum ChatSegment: String, CaseIterable {
 
 struct Chats2View: View {
   @Query(
-    filter: #Predicate<SessionDataModel> { !$0.chatMessages.isEmpty },
+    filter: #Predicate<SessionDataModel> { !$0.sessionId.isEmpty },
     sort: \SessionDataModel.lastUpdatedAt,
     order: .reverse
   ) var allSessions: [SessionDataModel]
+  
   var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
   @Environment(\.modelContext) var modelContext
@@ -48,17 +49,18 @@ struct Chats2View: View {
   }
   
   var filteredSessions: [SessionDataModel] {
-    if searchText.isEmpty {
-      return thread
-    } else {
-      return thread.filter { session in
-        session.title.localizedCaseInsensitiveContains(searchText) ||
-        (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-        session.chatMessages.contains { chatMessage in
-          chatMessage.messageText?.localizedCaseInsensitiveContains(searchText) ?? false
-        }
-      }
-    }
+    return thread
+//    if searchText.isEmpty {
+//      return thread
+//    } else {
+//      return thread.filter { session in
+//        session.title.localizedCaseInsensitiveContains(searchText) ||
+//        (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+//        session.chatMessages.contains { chatMessage in
+//          chatMessage.messageText?.localizedCaseInsensitiveContains(searchText) ?? false
+//        }
+//      }
+//    }
   }
   
   init(backgroundColor: Color? = nil,
@@ -102,7 +104,8 @@ struct Chats2View: View {
               patientName: selectedPatientThread?.subTitle ?? "General Chat",
               calledFromPatientContext: false,
               title: selectedPatientThread?.title
-            ).modelContext(modelContext)
+            )
+            .modelContext(DatabaseConfig.shared.modelContext)
           }
       }
     }

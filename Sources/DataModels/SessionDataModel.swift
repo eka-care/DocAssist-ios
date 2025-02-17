@@ -29,9 +29,8 @@ public enum SessionDataV1: VersionedSchema {
     public var oid: String?
     public var userDocId: String
     public var userBId: String
-    @Relationship(deleteRule: .nullify) var chatMessages: [ChatMessageModel]
     
-    init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", subTitle: String?, oid: String?, userDocId: String, userBId: String, chatMessages: [ChatMessageModel] = []) {
+    init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", subTitle: String?, oid: String?, userDocId: String, userBId: String) {
       self.userId = userId
       self.sessionId = sessionId
       self.createdAt = createdAt
@@ -41,7 +40,6 @@ public enum SessionDataV1: VersionedSchema {
       self.oid = oid
       self.userDocId = userDocId
       self.userBId = userBId
-      self.chatMessages = chatMessages
     }
   }
 }

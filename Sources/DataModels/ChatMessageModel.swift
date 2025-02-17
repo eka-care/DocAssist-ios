@@ -16,7 +16,7 @@ public final class ChatMessageModel: Identifiable, Sendable {
   public var messageText: String?
   public var htmlString: String?
   public var createdAt: Int
-  public var sessionData: SessionDataModel?
+  public var sessionId: String
   
   // MARK: - Migration
   public var imageUrls: [String]?
@@ -28,7 +28,7 @@ public final class ChatMessageModel: Identifiable, Sendable {
     messageText: String? = nil,
     htmlString: String? = nil,
     createdAt: Int,
-    sessionData: SessionDataModel,
+    sessionId: String,
     imageUrls: [String]? = nil
   ) {
     self.msgId = msgId
@@ -37,7 +37,7 @@ public final class ChatMessageModel: Identifiable, Sendable {
     self.messageText = messageText
     self.htmlString = htmlString
     self.createdAt = createdAt
-    self.sessionData = sessionData
+    self.sessionId = sessionId
     self.imageUrls = imageUrls
   }
 }

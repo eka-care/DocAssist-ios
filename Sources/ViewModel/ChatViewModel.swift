@@ -70,6 +70,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       sessionId,
       lastMesssageId
     )
+  
     /// Start streaming post request
     startStreamingPostRequest(
       vaultFiles: vaultFiles,
@@ -87,23 +88,31 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     if let lastMessageId = lastMessageId {
       messageId = lastMessageId + 1
     }
-      return await DatabaseConfig.shared.createMessage(
+      let chat = await DatabaseConfig.shared.createMessage(
       message: query,
       sessionId: sessionId,
       messageId: messageId,
       role: .user,
       imageUrls: imageUrls
     )
+    
+    if chat?.msgId == 1 {
+      
+    }
+    
+    await DatabaseConfig.shared.saveTitle(sessionId: sessionId, title: query)
+    
+    return chat
   }
   
-  let dispatchSemaphore = DispatchSemaphore(value: 1)
+  static let dispatchSemaphore = DispatchSemaphore(value: 1)
   
   func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
     guard let userChat else { return }
     DispatchQueue.main.async { [weak self] in
       self?.streamStarted = true
     }
-    NetworkConfig.shared.queryParams["session_id"] = userChat.sessionData?.sessionId
+    NetworkConfig.shared.queryParams["session_id"] = userChat.sessionId
     networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
       
       DispatchQueue.main.async { [weak self] in
@@ -115,7 +124,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
         return
       }
       
-//      self.dispatchSemaphore.wait()
+//      ChatViewModel.dispatchSemaphore.wait()
       Task {
         switch result {
         case .success(let responseString):
@@ -123,9 +132,14 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
           print("#LD 1 before waiting")
           print("#LD 2 inside waiting")
           await self.handleStreamResponse(responseString: responseString, userChat: userChat)
+          
+          print("#LD 3 going to signal error")
+//          ChatViewModel.dispatchSemaphore.signal()
+          print("#LD 4 signalled error")
+          
         case .failure(let error):
           print("#LD 3 going to signal error")
-//          self.dispatchSemaphore.signal()
+//          ChatViewModel.dispatchSemaphore.signal()
           print("#LD 4 signalled error")
           
           print("Error streaming: \(error)")
@@ -155,18 +169,15 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 
       print("#LD Going to upsert")
     await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
-    
-    print("#LD 3 going to signal")
-//    dispatchSemaphore.signal()
-    print("#LD 4 signalled")
+    print("#LD Upsert done")
   }
   
   private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) async {
-    guard let sessionId = userChat.sessionData?.sessionId else { return }
+    let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
-    guard let sessionToUpdate = try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId) else { return }
-    if let messageToUpdate = sessionToUpdate.chatMessages.first(where: { $0.msgId == streamMessageId }) {
+    guard let messages = try? await DatabaseConfig.shared.fetchAllMessages(bySessionId: sessionId) else { return }
+    if let messageToUpdate = messages.first(where: { $0.msgId == streamMessageId }) {
       messageToUpdate.messageText = responseMessage
       await DatabaseConfig.shared.saveData()
       return
@@ -179,17 +190,18 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       messageText: responseMessage,
       htmlString: nil,
       createdAt: 0,
-      sessionData: sessionToUpdate,
+      sessionId: sessionId,
       imageUrls: nil
     )
-    sessionToUpdate.chatMessages.append(chat)
+    await DatabaseConfig.shared.insertMessage(message: chat)
+    await DatabaseConfig.shared.saveData()
   }
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
     do {
       let sessions = try await DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId)
       
-      if sessions.filter({ !$0.chatMessages.isEmpty }).count > 0 {
+      if sessions.count > 0 {
         return true
       } else {
         return false
@@ -213,10 +225,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   func switchToSession(_ id: String) {
     vmssid = id
-  }
-  
-  func setThreadTitle(with query: String) async {
-    await DatabaseConfig.shared.SaveTitle(sessionId: self.vmssid, title: query)
   }
   
   func getFormatedDateToDDMMYYYY(date: Date) -> String {
@@ -362,4 +370,8 @@ class DocAssistFileHelper {
     return documentsDirectory
   }
   
+}
+
+extension Notification.Name {
+  static let addedMessage = Notification.Name("addedMessage")
 }

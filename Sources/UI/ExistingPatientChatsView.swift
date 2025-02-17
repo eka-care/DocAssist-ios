@@ -103,6 +103,7 @@ public struct ExistingPatientChatsView: View {
           patientName: patientName,
           calledFromPatientContext: false
         )
+        .modelContext(DatabaseConfig.shared.modelContext)
       }
         }
   }
@@ -110,7 +111,7 @@ public struct ExistingPatientChatsView: View {
     ScrollView() {
       VStack {
         HStack {
-          Text("\(chats.filter { !$0.chatMessages.isEmpty }.count) chats found")
+          Text("\(chats.count) chats found")
             .font(Font.custom("Lato-Regular", size: 14))
             .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
             .padding(.leading, 16)
@@ -119,17 +120,15 @@ public struct ExistingPatientChatsView: View {
         
         VStack {
           ForEach(chats) { chat in
-            if !chat.chatMessages.isEmpty {
-              ChatRow(
-                title: chat.title,
-                subtitle: "Chat",
-                time: viewModel.getFormatedDateToDDMMYYYY(date: chat.lastUpdatedAt),
-                vm: viewModel,
-                sessionId: chat.sessionId,
-                patientName: patientName
-              )
-              Divider()
-            }
+            ChatRow(
+              title: chat.title,
+              subtitle: "Chat",
+              time: viewModel.getFormatedDateToDDMMYYYY(date: chat.lastUpdatedAt),
+              vm: viewModel,
+              sessionId: chat.sessionId,
+              patientName: patientName
+            )
+            Divider()
           }
         }
         .background(Color.white)

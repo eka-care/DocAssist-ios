@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @ModelActor
-final actor DatabaseConfig: Sendable {
+final actor DatabaseConfig {
   private let lock = NSLock()
   private let upsertLock = NSLock()
   
@@ -19,25 +19,8 @@ final actor DatabaseConfig: Sendable {
     shared = DatabaseConfig(modelContainer: modelContainer)
   }
   
-  func getLastMessageIdUsingSessionId(sessionId: String) -> Int? {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    var fetchDescriptor = FetchDescriptor<ChatMessageModel>(
-      predicate: #Predicate{ $0.sessionData?.sessionId == sessionId },
-      sortBy: [SortDescriptor(\ChatMessageModel.msgId, order: .reverse)])
-    
-    fetchDescriptor.fetchLimit = 1
-    
-    let lastMessage = try? modelContext.fetch(fetchDescriptor)
-    return lastMessage?.first?.msgId
-  }
-  
-  
   // Update
-  func SaveTitle(sessionId: String, title: String) {
-    lock.lock()
-    defer{ lock.unlock() }
+  func saveTitle(sessionId: String, title: String) {
     
     var fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.sessionId == sessionId }
@@ -46,8 +29,10 @@ final actor DatabaseConfig: Sendable {
     fetchDescriptor.fetchLimit = 1
     
     let session = try? modelContext.fetch(fetchDescriptor)
+    
     session?.first?.title = title
     session?.first?.lastUpdatedAt = Date()
+    
     do {
       try modelContext.save()
     } catch {
@@ -91,36 +76,6 @@ final actor DatabaseConfig: Sendable {
     }
   }
   
-  func getMessageBySessionId(sessionId: String) -> [ChatMessageModel] {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    let fetchDescriptor = FetchDescriptor<ChatMessageModel>(
-      predicate: #Predicate<ChatMessageModel> { message in
-        message.sessionData?.sessionId == sessionId
-      },
-      sortBy: [SortDescriptor(\ChatMessageModel.msgId, order: .forward)])
-    
-    do {
-      return try modelContext.fetch(fetchDescriptor)
-    } catch {
-      print("Encountered error in fetching the data \(error.localizedDescription)")
-      return []
-    }
-  }
-  
-  func getAllSessions() -> [SessionDataModel] {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    do {
-      return try modelContext.fetch(FetchDescriptor<SessionDataModel>())
-    } catch {
-      print("Encountered error in fetching the data \(error.localizedDescription)")
-      return []
-    }
-  }
-  
   func deleteAllValues() {
     lock.lock()
     defer{ lock.unlock() }
@@ -144,67 +99,6 @@ final actor DatabaseConfig: Sendable {
     return results
   }
   
-  func fetchPatientName(fromSessionId ssid: String, context: ModelContext) throws -> String {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
-      predicate: #Predicate { $0.sessionId == ssid }
-    )
-    let results = try context.fetch(fetchDescriptor)
-    return results.first?.subTitle ?? ""
-  }
-
-  func fetchChatUsing(oid: String) -> [SessionDataModel] {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
-      predicate: #Predicate<SessionDataModel> { session in
-        session.oid == oid
-      },
-      sortBy: [SortDescriptor(\SessionDataModel.lastUpdatedAt, order: .reverse)]
-    )
-    
-    do {
-      let results = try modelContext.fetch(fetchDescriptor)
-      return results
-    } catch {
-      print("Error fetching sessions for patient \(oid): \(error)")
-      return []
-    }
-  }
-  
-  func fetchAllChatMessageFromSession(session: String) -> [ChatMessageModel] {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    debugPrint("#BB: fetchchat")
-    let descriptor = FetchDescriptor<ChatMessageModel>(predicate: #Predicate{ $0.sessionData?.sessionId == session })
-    do {
-      let allMessages = try modelContext.fetch(descriptor)
-      return allMessages
-    } catch {
-      print("Error fetching all chats: \(error.localizedDescription)")
-      return []
-    }
-  }
-  
-//  func updateMessage(newMessage: String, sessionId: String, msgId: Int) {
-//    lock.lock()
-//    defer{ lock.unlock() }
-//    
-//    var descriptor = FetchDescriptor<ChatMessageModel>(predicate: #Predicate{ (($0.sessionData?.sessionId == sessionId) && ($0.msgId == msgId)) })
-//    descriptor.fetchLimit = 1
-//    do {
-//      let message = try modelContext.fetch(descriptor).first
-//      message?.messageText = newMessage
-//      saveData()
-//    } catch {
-//      debugPrint("error in updating message \(error.localizedDescription)")
-//    }
-//  }
-  
   func insertSession(session: SessionDataModel) {
     modelContext.insert(session)
   }
@@ -218,40 +112,39 @@ final actor DatabaseConfig: Sendable {
     return try modelContext.fetch(descriptor).first
   }
   
+  func fetchMessage(bySessionId sessionId: String, messageId: Int) throws -> ChatMessageModel? {
+    lock.lock()
+    defer { lock.unlock() }
+    
+    var descriptor = FetchDescriptor<ChatMessageModel>(
+      predicate: #Predicate<ChatMessageModel> { session in
+        session.sessionId == sessionId && session.msgId == messageId }
+    )
+    descriptor.fetchLimit = 1
+    return try modelContext.fetch(descriptor).first
+  }
+  
+  func fetchAllMessages(bySessionId sessionId: String) throws -> [ChatMessageModel]? {
+    lock.lock()
+    defer { lock.unlock() }
+    let descriptor = FetchDescriptor<ChatMessageModel>(
+      predicate: #Predicate<ChatMessageModel> { session in
+        session.sessionId == sessionId
+      },
+      sortBy: [SortDescriptor(\ChatMessageModel.msgId, order: .reverse)]
+    )
+    return try modelContext.fetch(descriptor)
+  }
+  
+  func insertMessage(message: ChatMessageModel) {
+    modelContext.insert(message)
+  }
+  
   func saveChatMessage() {
     do {
       try modelContext.save()
     } catch {
       print("Error saving data: \(error)")
-    }
-  }
-  
-  func getLastMessageId(sessionId: String) -> Int? {
-    
-    var fetchDescriptor = FetchDescriptor<ChatMessageModel>(
-      predicate: #Predicate<ChatMessageModel> { message in
-        message.sessionData?.sessionId == sessionId
-      },
-      sortBy: [SortDescriptor(\ChatMessageModel.msgId, order: .reverse)]
-    )
-    fetchDescriptor.fetchLimit = 1
-    
-    do {
-      let messages = try modelContext.fetch(fetchDescriptor)
-      return messages.first?.msgId
-    } catch {
-      print("Error fetching last message id: \(error)")
-      return nil
-    }
-  }
-  
-  func fetchAllSessions() -> [SessionDataModel] {
-    
-    do {
-      return try modelContext.fetch(FetchDescriptor<SessionDataModel>())
-    } catch {
-      print("Error fetching all sessions: \(error)")
-      return []
     }
   }
 }
@@ -265,134 +158,62 @@ extension DatabaseConfig {
     role: MessageRole,
     imageUrls: [String]?
   ) -> ChatMessageModel? {
-    if let fetchedSession = try? fetchSession(bySessionId: sessionId) {
-      let chat = ChatMessageModel(
-        msgId: messageId,
-        role: role,
-        messageFiles: nil,
-        messageText: message,
-        htmlString: nil,
-        createdAt: 0,
-        sessionData: fetchedSession,
-        imageUrls: imageUrls
-      )
-      fetchedSession.chatMessages.append(chat)
-      print("#BB Chat message created session: \(chat.sessionData?.sessionId ?? "empty")")
-      saveData()
-      return chat
+    let chat = ChatMessageModel(
+      msgId: messageId,
+      role: role,
+      messageFiles: nil,
+      messageText: message,
+      htmlString: nil,
+      createdAt: 0,
+      sessionId: sessionId,
+      imageUrls: imageUrls
+    )
+    insertMessage(message: chat)
+    
+    print("#BB Chat message created session: \(chat.sessionId)")
+    saveData()
+    
+    DispatchQueue.main.async {
+      NotificationCenter.default.post(name: .addedMessage, object: nil)
     }
-    return nil
+    
+    return chat
   }
 }
 
 // Upsert
 extension DatabaseConfig {
-  func upsertMessage(
-    message: String,
-    sessionId: String,
-    messageId: Int,
-    role: MessageRole,
-    imageUrls: [String]?
-  ) -> ChatMessageModel? {
-    upsertLock.lock()
-    
-    var createdMessage: ChatMessageModel?
-    
-    if let fetchedMessage = fetchMessages(fetchDescriptor: QueryHelper.fetchMessage(messageID: messageId, sessionID: sessionId)).first {
-      print("#BB Chat message created session: \(fetchedMessage.sessionData?.sessionId ?? "empty")")
-      
-      fetchedMessage.messageText = message
-      saveData()
-      createdMessage = fetchedMessage
-    } else {
-      createdMessage = createMessage(message: message, sessionId: sessionId, messageId: messageId, role: role, imageUrls: imageUrls)
-      saveData()
-    }
-    
-    upsertLock.unlock()
-    
-    return createdMessage
-  }
-  
   func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel) {
-    upsertLock.lock()
-    defer { upsertLock.unlock() }
-    guard let sessionId = userChat.sessionData?.sessionId else { return }
+//    debugPrint("#LD Before lock")
+//    upsertLock.lock()
+//    defer {
+//      debugPrint("#LD Going to unlock")
+//      upsertLock.unlock()
+//    }
+    
+    let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
+    
     /// Check if message already exists
-    guard let sessionToUpdate = try? fetchSession(bySessionId: sessionId) else { return }
-    if let messageToUpdate = sessionToUpdate.chatMessages.first(where: { $0.msgId == streamMessageId }) {
-      messageToUpdate.messageText = responseMessage
-      saveData()
+    if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
+      
+      DispatchQueue.main.async {
+        messageToUpdate.messageText = responseMessage
+        
+        NotificationCenter.default.post(name: .addedMessage, object: nil)
+        
+      }
       return
     }
     
-    let chat = ChatMessageModel(
-      msgId: streamMessageId,
+    let _ = createMessage(
+      message: responseMessage,
+      sessionId: sessionId,
+      messageId: streamMessageId,
       role: .Bot,
-      messageFiles: nil,
-      messageText: responseMessage,
-      htmlString: nil,
-      createdAt: 0,
-      sessionData: sessionToUpdate,
       imageUrls: nil
     )
-    sessionToUpdate.chatMessages.append(chat)
-    saveData()
+    
+    debugPrint("#LD End of function")
   }
 }
-
-// Read
-extension DatabaseConfig {
-  func fetchMessages(fetchDescriptor: FetchDescriptor<ChatMessageModel>) -> [ChatMessageModel] {
-    do {
-      let messages = try modelContext.fetch(fetchDescriptor)
-      print("#BB messages \(messages.count)")
-      return messages
-    } catch {
-      print("Error fetching last message id: \(error)")
-      return []
-    }
-  }
-  
-  func fetchSessions(fetchDescriptor: FetchDescriptor<SessionDataModel>) -> [SessionDataModel] {
-    do {
-      lock.lock()
-      defer{ lock.unlock() }
-      let sessions = try modelContext.fetch(fetchDescriptor)
-      return sessions
-    } catch {
-      print("Error fetching last message id: \(error)")
-      return []
-    }
-  }
-}
-
-// Update
-extension DatabaseConfig {
-  func updateMessage(
-    messageID: Int,
-    currentSessionID: String,
-    messageText: String? = nil
-  ) async {
-       
-    let fetchDescriptor = QueryHelper.fetchMessage(
-      messageID: messageID,
-      sessionID: currentSessionID
-    )
-    do {
-      let messages = try modelContext.fetch(fetchDescriptor)
-      print("Message ")
-      await MainActor.run {
-        messages.first?.msgId = messageID
-        if let messageText {
-          messages.first?.messageText = messageText
-        }
-      }
-    } catch {
-      debugPrint("Error updating message \(error.localizedDescription)")
-    }
-  }
-}
-
-// Delete

@@ -26,7 +26,7 @@ extension QueryHelper {
     print("#BB Fetching message with ID: \(messageID) in session: \(sessionID)")
     var fetchDescriptor = FetchDescriptor<ChatMessageModel>(
       predicate: #Predicate{
-        (($0.sessionData?.sessionId == sessionID) && ($0.msgId == messageID))
+        (($0.sessionId == sessionID) && ($0.msgId == messageID))
       },
       sortBy: [SortDescriptor(\ChatMessageModel.msgId, order: .reverse)]
     )
