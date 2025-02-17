@@ -66,9 +66,6 @@ public struct ActiveChatView: View {
         }
       }
     }
-    .onTapGesture {
-      isTextFieldFocused = false
-    }
     .onAppear {
       print("#BB navigating to active chat screen ")
       print("#BB session Id in active chat \(session)")
@@ -127,6 +124,10 @@ public struct ActiveChatView: View {
             }
             .padding(.top, 10)
           }
+          .onChange(of: isTextFieldFocused, { _, _ in
+            proxy.scrollTo("bottomID", anchor: .top)
+          })
+          .scrollDismissesKeyboard(.immediately)
           .onChange(of: messages) { _ , _ in
             withAnimation {
               proxy.scrollTo("bottomID", anchor: .bottom)

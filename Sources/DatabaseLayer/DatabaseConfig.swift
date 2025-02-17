@@ -57,10 +57,8 @@ final actor DatabaseConfig: Sendable {
   
   func saveData() {
     do {
-      try modelContext.transaction {
-        try modelContext.save()
-      }
-    }catch {
+      try modelContext.save()
+    } catch {
       print("#LD Error saving data: \(error)")
     }
   }
@@ -308,11 +306,39 @@ extension DatabaseConfig {
       createdMessage = fetchedMessage
     } else {
       createdMessage = createMessage(message: message, sessionId: sessionId, messageId: messageId, role: role, imageUrls: imageUrls)
+      saveData()
     }
     
     upsertLock.unlock()
     
     return createdMessage
+  }
+  
+  func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel) {
+    upsertLock.lock()
+    guard let sessionId = userChat.sessionData?.sessionId else { return }
+    let streamMessageId = userChat.msgId + 1
+    /// Check if message already exists
+    guard let sessionToUpdate = try? fetchSession(bySessionId: sessionId) else { return }
+    if let messageToUpdate = sessionToUpdate.chatMessages.first(where: { $0.msgId == streamMessageId }) {
+      messageToUpdate.messageText = responseMessage
+      saveData()
+      upsertLock.unlock()
+      return
+    }
+    
+    let chat = ChatMessageModel(
+      msgId: streamMessageId,
+      role: .Bot,
+      messageFiles: nil,
+      messageText: responseMessage,
+      htmlString: nil,
+      createdAt: 0,
+      sessionData: sessionToUpdate,
+      imageUrls: nil
+    )
+    sessionToUpdate.chatMessages.append(chat)
+    upsertLock.unlock()
   }
 }
 

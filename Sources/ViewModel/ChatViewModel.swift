@@ -155,42 +155,35 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       }
 
       print("#LD Going to upsert")
-      await upsertMessage(responseMessage: message?.text ?? "", userChat: userChat)
+    await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
     
     print("#LD 3 going to signal")
 //    dispatchSemaphore.signal()
     print("#LD 4 signalled")
   }
-
-  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) {
+  
+  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) async {
     guard let sessionId = userChat.sessionData?.sessionId else { return }
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
-    Task {
-      let chatMessages = await DatabaseConfig.shared
-        .fetchMessages(
-          fetchDescriptor: QueryHelper.fetchMessage(
-            messageID: streamMessageId,
-            sessionID: sessionId
-          )
-        )
-      print("#BB chatMessages in upsertMessage : \(chatMessages.description)")
-      if chatMessages.isEmpty {
-        let _ = await DatabaseConfig.shared.createMessage(
-          message: responseMessage,
-          sessionId: sessionId,
-          messageId: streamMessageId,
-          role: .Bot,
-          imageUrls: nil
-        )
-      } else {
-        await DatabaseConfig.shared.updateMessage(
-          messageID: streamMessageId,
-          currentSessionID: sessionId,
-          messageText: responseMessage
-        )
-      }
+    guard let sessionToUpdate = try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId) else { return }
+    if let messageToUpdate = sessionToUpdate.chatMessages.first(where: { $0.msgId == streamMessageId }) {
+      messageToUpdate.messageText = responseMessage
+      await DatabaseConfig.shared.saveData()
+      return
     }
+    
+    let chat = ChatMessageModel(
+      msgId: streamMessageId,
+      role: .Bot,
+      messageFiles: nil,
+      messageText: responseMessage,
+      htmlString: nil,
+      createdAt: 0,
+      sessionData: sessionToUpdate,
+      imageUrls: nil
+    )
+    sessionToUpdate.chatMessages.append(chat)
   }
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
