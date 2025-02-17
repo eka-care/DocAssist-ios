@@ -297,19 +297,22 @@ extension DatabaseConfig {
     imageUrls: [String]?
   ) -> ChatMessageModel? {
     upsertLock.lock()
-    defer {
-      upsertLock.unlock()
-    }
+    
+    var createdMessage: ChatMessageModel?
     
     if let fetchedMessage = fetchMessages(fetchDescriptor: QueryHelper.fetchMessage(messageID: messageId, sessionID: sessionId)).first {
       print("#BB Chat message created session: \(fetchedMessage.sessionData?.sessionId ?? "empty")")
       
       fetchedMessage.messageText = message
       saveData()
-      return fetchedMessage
+      createdMessage = fetchedMessage
+    } else {
+      createdMessage = createMessage(message: message, sessionId: sessionId, messageId: messageId, role: role, imageUrls: imageUrls)
     }
-
-    return createMessage(message: message, sessionId: sessionId, messageId: messageId, role: role, imageUrls: imageUrls)
+    
+    upsertLock.unlock()
+    
+    return createdMessage
   }
 }
 
