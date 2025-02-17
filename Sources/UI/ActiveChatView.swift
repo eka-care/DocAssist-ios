@@ -82,6 +82,9 @@ public struct ActiveChatView: View {
     }
     .onDisappear {
       viewModel.inputString = ""
+      Task {
+        await DatabaseConfig.shared.deleteSessionIfNoMessages(sessionId: session)
+      }
     }
   }
   

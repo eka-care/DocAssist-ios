@@ -360,12 +360,14 @@ import SwiftData
 //  }
 //}
 //
+
 func getInitials(name: String?) -> String? {
-  if name != "General Chat" {
-    return name?.uppercased().components(separatedBy: " ").reduce("") { $0 + $1.prefix(1) }
-  } else {
-    return "GeneralChat"
-  }
+    guard let name = name, name != "General Chat" else {
+        return "GeneralChat"
+    }
+    let words = name.uppercased().components(separatedBy: " ")
+    let initials = words.prefix(2).map { $0.prefix(1) }.joined()
+    return initials
 }
 
 func nameInitialsView(initials: String) -> some View {

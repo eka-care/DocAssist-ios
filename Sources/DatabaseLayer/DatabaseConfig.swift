@@ -87,6 +87,27 @@ final actor DatabaseConfig {
       print("Error deleting all values: \(error)")
     }
   }
+
+  func deleteSessionIfNoMessages(sessionId: String) async {
+    do {
+      let fetchDescriptor = FetchDescriptor<ChatMessageModel>(
+        predicate: #Predicate { $0.sessionId == sessionId }
+      )
+      let messages = try modelContext.fetch(fetchDescriptor)
+      if messages.isEmpty {
+        let sessionFetchDescriptor = FetchDescriptor<SessionDataModel>(
+          predicate: #Predicate { $0.sessionId == sessionId }
+        )
+        
+        if let session = try modelContext.fetch(sessionFetchDescriptor).first {
+          try await modelContext.delete(session)
+          print("Deleted session with ID: \(sessionId)")
+        }
+      }
+    } catch {
+      print("Error deleting session: \(error)")
+    }
+  }
   
   func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String) throws -> [SessionDataModel] {
     lock.lock()
@@ -184,13 +205,6 @@ extension DatabaseConfig {
 // Upsert
 extension DatabaseConfig {
   func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel) {
-//    debugPrint("#LD Before lock")
-//    upsertLock.lock()
-//    defer {
-//      debugPrint("#LD Going to unlock")
-//      upsertLock.unlock()
-//    }
-    
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
     
