@@ -316,6 +316,7 @@ extension DatabaseConfig {
   
   func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel) {
     upsertLock.lock()
+    defer { upsertLock.unlock() }
     guard let sessionId = userChat.sessionData?.sessionId else { return }
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
@@ -323,7 +324,6 @@ extension DatabaseConfig {
     if let messageToUpdate = sessionToUpdate.chatMessages.first(where: { $0.msgId == streamMessageId }) {
       messageToUpdate.messageText = responseMessage
       saveData()
-      upsertLock.unlock()
       return
     }
     
@@ -338,7 +338,7 @@ extension DatabaseConfig {
       imageUrls: nil
     )
     sessionToUpdate.chatMessages.append(chat)
-    upsertLock.unlock()
+    saveData()
   }
 }
 

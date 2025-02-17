@@ -95,13 +95,14 @@ struct Chats2View: View {
       NavigationStack {
         chatView
           .navigationDestination(item: $selectedPatientThread) { _ in
-            ActiveChatView(session: selectedPatientThread?.sessionId ?? "",
-                           viewModel: viewModel,
-                           backgroundColor: .white,
-                           patientName: selectedPatientThread?.subTitle ?? "General Chat",
-                           calledFromPatientContext: false,
-                           title: selectedPatientThread?.title
-            )
+            ActiveChatView(
+              session: selectedPatientThread?.sessionId ?? "",
+              viewModel: viewModel,
+              backgroundColor: .white,
+              patientName: selectedPatientThread?.subTitle ?? "General Chat",
+              calledFromPatientContext: false,
+              title: selectedPatientThread?.title
+            ).modelContext(modelContext)
           }
       }
     }

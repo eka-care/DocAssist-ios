@@ -186,7 +186,7 @@ struct ChatRow: View {
                 patientName: patientName,
                 calledFromPatientContext: false,
                 title: title
-            ).modelContext(DatabaseConfig.shared.modelContext)
+            )
             
         } label: {
             HStack(spacing: 12) {

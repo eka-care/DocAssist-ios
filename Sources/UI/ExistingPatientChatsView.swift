@@ -101,8 +101,8 @@ public struct ExistingPatientChatsView: View {
           viewModel: viewModel,
           backgroundColor: backgroundColor,
           patientName: patientName,
-          calledFromPatientContext: false)
-        .modelContext(DatabaseConfig.shared.modelContext)
+          calledFromPatientContext: false
+        )
       }
         }
   }

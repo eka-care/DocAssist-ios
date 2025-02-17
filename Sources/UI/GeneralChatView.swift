@@ -68,7 +68,7 @@ public struct GeneralChatView: View {
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen
     )
-      .modelContext(ctx)
-      .navigationBarHidden(true)
+    .modelContext(DatabaseConfig.shared.modelContext)
+    .navigationBarHidden(true)
   }
 }
