@@ -9,8 +9,8 @@ import SwiftUI
 
 struct ImagePreviewCell: View {
   let imageUrl: String
-  let onDelete: () -> Void
-  
+  let imageId: Int
+  let onDelete: (_ Index: Int) -> Void
   var body: some View {
     ZStack(alignment: .topTrailing) {
       let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(imageUrl)
@@ -24,13 +24,17 @@ struct ImagePreviewCell: View {
       } placeholder: {
         ProgressView()
       }
-      Button(action: onDelete) {
+      Button {
+        onDelete(imageId)
+      } label: {
         Image(systemName: "xmark.circle.fill")
           .foregroundColor(.white)
           .background(Color.black.opacity(0.5))
           .clipShape(Circle())
+          .padding(10)
       }
-      .padding(4)
+      .contentShape(Rectangle())
     }
   }
 }
+

@@ -273,8 +273,8 @@ public struct ActiveChatView: View {
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
               ForEach(selectedImages.indices, id: \.self) { index in
-                ImagePreviewCell(imageUrl: selectedImages[index]) {
-                  selectedImages.remove(at: index)
+                ImagePreviewCell(imageUrl: selectedImages[index], imageId: index) { id in
+                  selectedImages.remove(at: id)
                 }
               }
             }
