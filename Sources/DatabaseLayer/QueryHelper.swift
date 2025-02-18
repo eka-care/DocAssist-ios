@@ -23,7 +23,7 @@ extension QueryHelper {
     messageID: Int,
     sessionID: String
   ) -> FetchDescriptor<ChatMessageModel> {
-    print("#BB Fetching message with ID: \(messageID) in session: \(sessionID)")
+    
     var fetchDescriptor = FetchDescriptor<ChatMessageModel>(
       predicate: #Predicate{
         (($0.sessionId == sessionID) && ($0.msgId == messageID))

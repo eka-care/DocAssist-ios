@@ -87,7 +87,7 @@ public class ChatsVeiwController: UIViewController {
     
     uiHostingController.view.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
-      uiHostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
+      uiHostingController.view.topAnchor.constraint(equalTo: view.topAnchor, constant: UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0),
       uiHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
       uiHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       uiHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
@@ -171,7 +171,7 @@ public class ActiveChatViewController: UIViewController {
             authToken: authToken,
             authRefreshToken: authRefreshToken
         )
-      docAssistView = AnyView(existingChatsView.modelContext(DatabaseConfig.shared.modelContext))
+      docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
     } else {
       let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
         let activeChatView = ActiveChatView(
@@ -181,7 +181,7 @@ public class ActiveChatViewController: UIViewController {
             patientName: patientSubtitle ?? "",
             calledFromPatientContext: true
         )
-      docAssistView = await AnyView(activeChatView.modelContext(DatabaseConfig.shared.modelContext))
+      docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
     }
   }
   
@@ -227,7 +227,6 @@ extension ActiveChatViewController {
     if oid == "" {
       ownerId = userDocId
     }
-    print("#BB \(ownerId)")
     registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
   }
   

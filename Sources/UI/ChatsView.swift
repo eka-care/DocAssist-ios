@@ -233,7 +233,7 @@ import SwiftData
 //      viewModel.switchToSession(thread.sessionId)
 //      selectedSessionId = thread.sessionId
 //      do {
-//        let patient = try DatabaseConfig.shared.fetchPatientName(fromSessionId: thread.sessionId, context: DatabaseConfig.shared.modelContext)
+//        let patient = try DatabaseConfig.shared.fetchPatientName(fromSessionId: thread.sessionId, context:  DatabaseConfig.shared.modelContext)
 //        patientName = patient
 //      } catch {
 //        print("No patient name found")

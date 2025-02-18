@@ -37,7 +37,6 @@ public struct ExistingPatientChatsView: View {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    print("#BB this is existing screen view getting called")
     
     _chats = Query(
       filter: #Predicate<SessionDataModel> { eachChat in
@@ -82,7 +81,6 @@ public struct ExistingPatientChatsView: View {
               viewModel.switchToSession(newSession)
               
               DispatchQueue.main.async {
-                print("#BB session Id in button is \(newSession)")
                 path.append("ActiveView")
               }
             }
@@ -103,7 +101,7 @@ public struct ExistingPatientChatsView: View {
           patientName: patientName,
           calledFromPatientContext: false
         )
-        .modelContext(DatabaseConfig.shared.modelContext)
+        .modelContext( DatabaseConfig.shared.modelContext)
       }
         }
   }

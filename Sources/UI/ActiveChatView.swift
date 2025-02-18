@@ -33,7 +33,6 @@ public struct ActiveChatView: View {
   let recordsRepo = RecordsRepo()
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
-    print("#BB \(FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first)")
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -47,7 +46,6 @@ public struct ActiveChatView: View {
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
-    print("#BB active chat init is getting called")
   }
   
   public var body: some View {
@@ -67,46 +65,19 @@ public struct ActiveChatView: View {
         }
       }
     }
-//    .onReceive(NotificationCenter.default.publisher(for: .addedMessage)) { _ in
-//      Task {
-//        updateMessage()
-//      }
-//    }
-//    .task {
-//      updateMessage()
-//    }
     .onAppear {
-      print("#BB navigating to active chat screen ")
-      print("#BB session Id in active chat \(session)")
       viewModel.switchToSession(session)
     }
     .onDisappear {
       viewModel.inputString = ""
-      Task {
-        await DatabaseConfig.shared.deleteSessionIfNoMessages(sessionId: session)
+      if messages.isEmpty {
+        Task {
+          await DatabaseConfig.shared.deleteSession(sessionId: session)
+        }
       }
     }
   }
-  
-//  private func updateMessage() {
-//    Task {
-//      //      let allMessages = await (try? DatabaseConfig.shared.fetchAllMessages(bySessionId: session)) ?? []
-//      //      await MainActor.run {
-//      //        messages = allMessages
-//      //      }
-//      guard let lastMessage = try? await DatabaseConfig.shared.fetchAllMessages(bySessionId: session)?.last else { return }
-//      
-//      if messages.last?.msgId == lastMessage.msgId {
-//        let count = messages.count
-//        
-//        messages[count-1].messageText = lastMessage.messageText
-//      } else {
-//        messages.append(lastMessage)
-//      }
-////      messages = await (try? DatabaseConfig.shared.fetchAllMessages(bySessionId: session)) ?? []
-//    }
-//  }
-  
+
   private var content: some View {
     VStack {
       if calledFromPatientContext {
@@ -327,14 +298,12 @@ public struct ActiveChatView: View {
         .sheet(isPresented: $showRecordsView) {
           NavigationStack {
             RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-              print("#BB data is \(data)")
               selectedImages = data.compactMap { record in
                 guard let image = record.image else { return nil }
                 return image
               }
               selectedDocumentId = data.compactMap({ record in
                 guard let docId = record.documentID else { return nil }
-                print("#BB docId is \(docId)")
                 return docId
               }
                                                    
@@ -404,7 +373,6 @@ public struct ActiveChatView: View {
             viewModel.inputString = ""
             selectedImages = []
             selectedDocumentId = []
-            isTextFieldFocused.toggle()
           }
         } label: {
           Image(systemName: "arrow.up")
@@ -476,6 +444,7 @@ struct MessageTextView: View {
                         .aspectRatio(contentMode: .fill)
                         .frame(width: 86, height: 86)
                         .clipped()
+                        .cornerRadius(10)
                 case .failure(_):
                   ProgressView()
                    

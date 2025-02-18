@@ -33,79 +33,27 @@ final actor DatabaseConfig {
     session?.first?.title = title
     session?.first?.lastUpdatedAt = Date()
     
-    do {
-      try modelContext.save()
-    } catch {
-      print("Error saving title: \(error)")
-    }
+    saveData()
   }
   
   func saveData() {
     do {
       try modelContext.save()
     } catch {
-      print("#LD Error saving data: \(error)")
+      print("Error saving data: \(error)")
     }
   }
   
   func deleteSession(sessionId: String) {
-    lock.lock()
-    defer{ lock.unlock() }
-    
-    do {
-      var fetchDescriptor = FetchDescriptor<SessionDataModel>(
-        predicate: #Predicate<SessionDataModel> { session in
-          session.sessionId == sessionId
-        }
-      )
-      
-      fetchDescriptor.fetchLimit = 1
-      
-      if let sessions = try? modelContext.fetch(fetchDescriptor),
-         let sessionToDelete = sessions.first {
-        modelContext.delete(sessionToDelete)
-        
-        // Save changes
-        try modelContext.save()
-        print("Successfully deleted session: \(sessionId)")
-      } else {
-        print("No session found with ID: \(sessionId)")
-      }
-    } catch {
-      print("Error deleting session: \(error.localizedDescription)")
-    }
+    try? modelContext.delete(model: SessionDataModel.self, where: #Predicate{ $0.sessionId == sessionId })
   }
   
   func deleteAllValues() {
-    lock.lock()
-    defer{ lock.unlock() }
-    
     do {
       try modelContext.delete(model: SessionDataModel.self)
       try modelContext.delete(model: ChatMessageModel.self)
     } catch {
       print("Error deleting all values: \(error)")
-    }
-  }
-
-  func deleteSessionIfNoMessages(sessionId: String) async {
-    do {
-      let fetchDescriptor = FetchDescriptor<ChatMessageModel>(
-        predicate: #Predicate { $0.sessionId == sessionId }
-      )
-      let messages = try modelContext.fetch(fetchDescriptor)
-      if messages.isEmpty {
-        let sessionFetchDescriptor = FetchDescriptor<SessionDataModel>(
-          predicate: #Predicate { $0.sessionId == sessionId }
-        )
-        
-        if let session = try modelContext.fetch(sessionFetchDescriptor).first {
-          try await modelContext.delete(session)
-          print("Deleted session with ID: \(sessionId)")
-        }
-      }
-    } catch {
-      print("Error deleting session: \(error)")
     }
   }
   
@@ -160,14 +108,6 @@ final actor DatabaseConfig {
   func insertMessage(message: ChatMessageModel) {
     modelContext.insert(message)
   }
-  
-  func saveChatMessage() {
-    do {
-      try modelContext.save()
-    } catch {
-      print("Error saving data: \(error)")
-    }
-  }
 }
 
 // Create
@@ -190,8 +130,6 @@ extension DatabaseConfig {
       imageUrls: imageUrls
     )
     insertMessage(message: chat)
-    
-    print("#BB Chat message created session: \(chat.sessionId)")
     saveData()
     
     DispatchQueue.main.async {
@@ -227,7 +165,5 @@ extension DatabaseConfig {
       role: .Bot,
       imageUrls: nil
     )
-    
-    debugPrint("#LD End of function")
   }
 }

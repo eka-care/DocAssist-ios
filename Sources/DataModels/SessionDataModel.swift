@@ -12,7 +12,7 @@ public typealias SessionDataModel = SessionDataV1.SessionDataModelV1
 
 public enum SessionDataV1: VersionedSchema {
   
-  public nonisolated(unsafe) static let versionIdentifier: Schema.Version = Schema.Version(1, 0, 0)
+  public nonisolated(unsafe) static let versionIdentifier: Schema.Version = Schema.Version(2, 0, 0)
   
   public static var models: [any PersistentModel.Type] {
     [SessionDataModelV1.self]

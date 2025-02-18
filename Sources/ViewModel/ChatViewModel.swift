@@ -63,7 +63,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     lastMesssageId: Int?
   ) async {
     /// Create user message
-    print("#BB message id in viewModel : \(lastMesssageId)")
     let userMessage =  await addUserMessage(
       newMessage,
       imageUrls,
@@ -97,10 +96,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     )
     
     if chat?.msgId == 1 {
-      
+      await DatabaseConfig.shared.saveTitle(sessionId: sessionId, title: query)
     }
-    
-    await DatabaseConfig.shared.saveTitle(sessionId: sessionId, title: query)
     
     return chat
   }
@@ -120,28 +117,13 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       }
     }) { [weak self] result in
       guard let self else {
-        print("#LD Self not available")
         return
       }
-      
-//      ChatViewModel.dispatchSemaphore.wait()
       Task {
         switch result {
         case .success(let responseString):
-          print("#AV response was hit")
-          print("#LD 1 before waiting")
-          print("#LD 2 inside waiting")
           await self.handleStreamResponse(responseString: responseString, userChat: userChat)
-          
-          print("#LD 3 going to signal error")
-//          ChatViewModel.dispatchSemaphore.signal()
-          print("#LD 4 signalled error")
-          
         case .failure(let error):
-          print("#LD 3 going to signal error")
-//          ChatViewModel.dispatchSemaphore.signal()
-          print("#LD 4 signalled error")
-          
           print("Error streaming: \(error)")
         }
       }
@@ -166,10 +148,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
               print("Failed to decode JSON: \(error.localizedDescription)")
           }
       }
-
-      print("#LD Going to upsert")
     await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
-    print("#LD Upsert done")
   }
   
   private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) async {
@@ -215,7 +194,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
     let currentDate = Date()
     let ssid = UUID().uuidString
-    print("#BB session Id in viewModel is \(ssid)")
     let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
     await DatabaseConfig.shared.insertSession(session: createSessionModel)
     await DatabaseConfig.shared.saveData()
@@ -257,7 +235,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 }
 
 extension ChatViewModel: AVAudioRecorderDelegate  {
-  
   func startRecording() {
     let recordingSession = AVAudioSession.sharedInstance()
     do {

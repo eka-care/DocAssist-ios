@@ -29,7 +29,7 @@ struct DocAssistView: View {
         //ExistingPatientChatsView()
       case .allChats :
         Text("All Chats")
-   //     Chats2View(userDocId: <#T##String#>, userBid: <#T##String#>, ctx: <#T##ModelContext#>, delegate: <#T##any ConvertVoiceToText#>, patientDelegate: <#T##any NavigateToPatientDirectory#>, searchForPatient: <#T##(() -> Void)##(() -> Void)##() -> Void#>, authToken: <#T##String#>, authRefreshToken: <#T##String#>, selectedScreen: <#T##Binding<SelectedScreen?>#>)
+   //     ChatListView(userDocId: <#T##String#>, userBid: <#T##String#>, ctx: <#T##ModelContext#>, delegate: <#T##any ConvertVoiceToText#>, patientDelegate: <#T##any NavigateToPatientDirectory#>, searchForPatient: <#T##(() -> Void)##(() -> Void)##() -> Void#>, authToken: <#T##String#>, authRefreshToken: <#T##String#>, selectedScreen: <#T##Binding<SelectedScreen?>#>)
         
       }
     }

@@ -20,11 +20,9 @@ struct ImagePreviewCell: View {
           .aspectRatio(contentMode: .fill)
           .frame(width: 66, height: 66)
           .clipped()
+          .cornerRadius(10)
       } placeholder: {
         ProgressView()
-      }
-      .onAppear {
-        print("#BB image url is \(imageUrl)")
       }
       Button(action: onDelete) {
         Image(systemName: "xmark.circle.fill")

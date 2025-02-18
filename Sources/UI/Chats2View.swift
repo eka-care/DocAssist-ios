@@ -1,5 +1,5 @@
 //
-//  Chats2View.swift
+//  ChatListView.swift
 //  ChatBotAiPackage
 //
 //  Created by Brunda B on 02/02/25.
@@ -13,7 +13,7 @@ enum ChatSegment: String, CaseIterable {
     case allChats = "All Chats"
 }
 
-struct Chats2View: View {
+struct ChatsScreenView: View {
   @Query(
     filter: #Predicate<SessionDataModel> { !$0.sessionId.isEmpty },
     sort: \SessionDataModel.lastUpdatedAt,
@@ -105,7 +105,7 @@ struct Chats2View: View {
               calledFromPatientContext: false,
               title: selectedPatientThread?.title
             )
-            .modelContext(DatabaseConfig.shared.modelContext)
+            .modelContext( DatabaseConfig.shared.modelContext)
           }
       }
     }
@@ -236,7 +236,7 @@ struct Chats2View: View {
     private var messageSubViewIPhone: some View {
       NavigationLink {
         ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
-          .modelContext(DatabaseConfig.shared.modelContext)
+          .modelContext( DatabaseConfig.shared.modelContext)
       } label: {
         messageSubView
       }
@@ -359,17 +359,6 @@ struct Chats2View: View {
   }
   
   func MessageSubView(_ thread: SessionDataModel, _ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool, _ allChat: Bool) -> some View {
-//    NavigationLink {
-//      ActiveChatView(
-//        session: thread.sessionId,
-//        viewModel: viewModel,
-//        backgroundColor: .white,
-//        patientName: thread.subTitle ?? "General Chat",
-//        calledFromPatientContext: false,
-//        title: title
-//      )
-//      .modelContext(DatabaseConfig.shared.modelContext)
-//    } label: {
       MessageSubViewComponent(
         title: title,
         date: date,
@@ -377,7 +366,6 @@ struct Chats2View: View {
         foregroundColor: foregroundColor,
         allChat: allChat
       )
-  //  }
   }
   
   struct MessageSubViewComponent: View {

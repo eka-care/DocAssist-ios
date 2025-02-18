@@ -27,10 +27,10 @@ struct IpadDetailChatView: View {
             authToken: authToken,
             authRefreshToken: authRefreshToken
           )
-          .modelContext(DatabaseConfig.shared.modelContext)
+          .modelContext( DatabaseConfig.shared.modelContext)
         case .allPatient(let selectedPatient, let chatViewModel) :
           ActiveChatView(session: selectedPatient.sessionId, viewModel: chatViewModel, backgroundColor: .white, patientName: selectedPatient.subTitle ?? "empty User", calledFromPatientContext: false, title: selectedPatient.title)
-            .modelContext(DatabaseConfig.shared.modelContext)
+            .modelContext( DatabaseConfig.shared.modelContext)
         default:
           DetailEmptyView()
         }

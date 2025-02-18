@@ -55,7 +55,7 @@ public struct GeneralChatView: View {
   }
   
   public var body: some View {
-    Chats2View(
+    ChatsScreenView(
       backgroundColor: backgroundColor,
       subTitle: subTitle,
       userDocId: userDocId,
@@ -68,7 +68,7 @@ public struct GeneralChatView: View {
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen
     )
-    .modelContext(DatabaseConfig.shared.modelContext)
+    .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
     .navigationBarHidden(true)
   }
 }

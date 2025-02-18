@@ -78,14 +78,14 @@ public struct IpadChatView: View {
         authRefreshToken: authRefreshToken,
         selectedScreen: $selectedScreen
       )
-      .modelContext(DatabaseConfig.shared.modelContext)
+      .modelContext( DatabaseConfig.shared.modelContext)
     } detail: {
       IpadDetailChatView(
         selectedScreen: selectedScreen,
         authToken: authToken,
         authRefreshToken: authRefreshToken
       )
-      .modelContext(DatabaseConfig.shared.modelContext)
+      .modelContext( DatabaseConfig.shared.modelContext)
     }
     .navigationSplitViewStyle(.balanced)
     
