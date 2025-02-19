@@ -49,7 +49,6 @@ public struct ActiveChatView: View {
   }
   
   public var body: some View {
-    VStack(alignment: .leading, spacing: 0) {
       ZStack {
         VStack {
           Image(.bg)
@@ -59,12 +58,9 @@ public struct ActiveChatView: View {
           Spacer()
         }
         VStack {
-          ZStack {
             content
-          }
         }
       }
-    }
     .onAppear {
       viewModel.switchToSession(session)
     }
@@ -121,7 +117,12 @@ public struct ActiveChatView: View {
                 MessageBubble(message: message, m: message.messageText ?? "No message", url: message.imageUrls)
                   .padding(.horizontal)
                   .id(message.id)
+                
+                if message.role == .user && messages.last?.id == message.id {
+                  LoadingView()
+                }
               }
+              
               Color.clear.frame(height: 1).id("bottomID")
             }
             .padding(.top, 10)
@@ -269,7 +270,6 @@ public struct ActiveChatView: View {
   var messageInputView: some View {
     VStack (spacing: 15) {
       if !selectedImages.isEmpty {
-        VStack {
           ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
               ForEach(selectedImages.indices, id: \.self) { index in
@@ -280,14 +280,11 @@ public struct ActiveChatView: View {
             }
           }
           .frame(height: 20)
-        }
-        .padding()
+          .padding()
       }
       
-      HStack {
-        TextField(" Start typing...", text: viewModel.inputStringBinding, axis: .vertical)
-      }
-      
+      TextField(" Start typing...", text: viewModel.inputStringBinding, axis: .vertical)
+        .frame(minHeight: 25)
       HStack(spacing: 10) {
         Button {
           showRecordsView = true
@@ -555,3 +552,13 @@ struct DocSuggestion: View {
   }
 }
 
+struct LoadingView: View {
+  var body: some View {
+    HStack {
+      BotAvatarImage()
+        .padding()
+      ProgressView()
+      Spacer()
+    }
+  }
+}

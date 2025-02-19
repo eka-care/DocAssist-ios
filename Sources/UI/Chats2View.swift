@@ -155,7 +155,7 @@ struct ChatsScreenView: View {
               Text(segment.rawValue).tag(segment)
           }
       }
-      .pickerStyle(SegmentedPickerStyle())
+      .pickerStyle(.segmented)
       .padding(.horizontal, 16)
       
       SearchBar(text: $searchText)
@@ -241,7 +241,7 @@ struct ChatsScreenView: View {
         messageSubView
       }
     }
-    
+     
     private var messageSubView: some View {
       MessageSubViewComponent(
         title: subTitle,
@@ -258,25 +258,16 @@ struct ChatsScreenView: View {
   
   
   func threadListView(allChats: Bool) -> some View {
-    let filteredThreads: [SessionDataModel] = {
-      if allChats {
-        return filteredSessions
-      } else {
-        return filteredSessions.filter { $0.oid != "" }
-      }
-    }()
-    
-    return VStack {
+    VStack {
       Divider()
       ScrollView {
         VStack {
-          ForEach(filteredThreads, id: \.sessionId) { thread in
-            Button(action: {
+          ForEach(filteredSessions, id: \.sessionId) { thread in
+            Button {
               handleThreadSelection(thread)
-            }) {
+            } label: {
               threadItemView(for: thread, allChats: allChats)
             }
-            .buttonStyle(PlainButtonStyle())
           }
         }
         .padding(.horizontal)
@@ -292,14 +283,13 @@ struct ChatsScreenView: View {
   }
   
   private func threadItemView(for thread: SessionDataModel, allChats: Bool) -> some View {
-    MessageSubView(
-      thread,
-      thread.title,
-      viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
-      thread.subTitle,
+    MessageSubViewComponent(
+      title: thread.title,
+      date: viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
+      subTitle: thread.subTitle,
       foregroundColor: (newSessionId == thread.sessionId) ||
       (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false,
-      allChats
+      allChat: allChats
     )
     .background(Color.clear)
     .background(
@@ -356,16 +346,6 @@ struct ChatsScreenView: View {
       }
       .padding(.bottom, 20)
     }
-  }
-  
-  func MessageSubView(_ thread: SessionDataModel, _ title: String, _ date: String, _ subTitle: String?, foregroundColor: Bool, _ allChat: Bool) -> some View {
-      MessageSubViewComponent(
-        title: title,
-        date: date,
-        subTitle: subTitle,
-        foregroundColor: foregroundColor,
-        allChat: allChat
-      )
   }
   
   struct MessageSubViewComponent: View {

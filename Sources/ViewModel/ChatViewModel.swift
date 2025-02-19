@@ -151,31 +151,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
   }
   
-  private func upsertMessage(responseMessage: String, userChat: ChatMessageModel) async {
-    let sessionId = userChat.sessionId
-    let streamMessageId = userChat.msgId + 1
-    /// Check if message already exists
-    guard let messages = try? await DatabaseConfig.shared.fetchAllMessages(bySessionId: sessionId) else { return }
-    if let messageToUpdate = messages.first(where: { $0.msgId == streamMessageId }) {
-      messageToUpdate.messageText = responseMessage
-      await DatabaseConfig.shared.saveData()
-      return
-    }
-    
-    let chat = ChatMessageModel(
-      msgId: streamMessageId,
-      role: .Bot,
-      messageFiles: nil,
-      messageText: responseMessage,
-      htmlString: nil,
-      createdAt: 0,
-      sessionId: sessionId,
-      imageUrls: nil
-    )
-    await DatabaseConfig.shared.insertMessage(message: chat)
-    await DatabaseConfig.shared.saveData()
-  }
-  
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
     do {
       let sessions = try await DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId)
