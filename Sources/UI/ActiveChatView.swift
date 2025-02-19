@@ -63,6 +63,7 @@ public struct ActiveChatView: View {
       }
     .onAppear {
       viewModel.switchToSession(session)
+      DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
     .onDisappear {
       viewModel.inputString = ""
@@ -288,6 +289,7 @@ public struct ActiveChatView: View {
       HStack(spacing: 10) {
         Button {
           showRecordsView = true
+          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
         } label: {
           Image(.paperClip)
             .foregroundStyle(Color.neutrals600)
@@ -335,6 +337,7 @@ public struct ActiveChatView: View {
         
         Button {
           viewModel.handleMicrophoneTap()
+          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"] )
         } label: {
           Image(.mic)
             .resizable()
@@ -370,6 +373,7 @@ public struct ActiveChatView: View {
             viewModel.inputString = ""
             selectedImages = []
             selectedDocumentId = []
+            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
           }
         } label: {
           Image(systemName: "arrow.up")

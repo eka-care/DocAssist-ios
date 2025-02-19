@@ -22,7 +22,9 @@ let package = Package(
    // Lottie dependency
     .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.1"),
     // Medical Record
-    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", branch: "main")
+    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", branch: "main"),
+    // Mixpanel
+    .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -37,7 +39,9 @@ let package = Package(
         // Lottie dependency
         .product(name: "Lottie", package: "lottie-ios"),
         // Medical Record
-        .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI")
+        .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
+        // Mixpanel
+        .product(name: "Mixpanel", package: "mixpanel-swift")
       ],
       resources: [
         .process("Resources")
