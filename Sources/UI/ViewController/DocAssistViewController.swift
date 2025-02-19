@@ -96,6 +96,7 @@ public class ChatsVeiwController: UIViewController {
     uiHostingController.didMove(toParent: self)
     
     DatabaseConfig.setup(modelContainer: ctx.container)
+    DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: nil)
   }
   
   private func searchForPatient() {
@@ -156,6 +157,7 @@ public class ActiveChatViewController: UIViewController {
     setupSubViews()
     
     DatabaseConfig.setup(modelContainer: ctx.container)
+    DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
   }
   
   private func setupSwiftUIView() async {
@@ -172,6 +174,7 @@ public class ActiveChatViewController: UIViewController {
             authRefreshToken: authRefreshToken
         )
       docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
+      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: nil)
     } else {
       let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
         let activeChatView = ActiveChatView(
@@ -182,6 +185,7 @@ public class ActiveChatViewController: UIViewController {
             calledFromPatientContext: true
         )
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
+      DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
   }
   

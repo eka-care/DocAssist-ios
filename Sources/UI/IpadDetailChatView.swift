@@ -28,6 +28,9 @@ struct IpadDetailChatView: View {
             authRefreshToken: authRefreshToken
           )
           .modelContext( DatabaseConfig.shared.modelContext)
+          .onAppear {
+            DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: nil)
+          }
         case .allPatient(let selectedPatient, let chatViewModel) :
           ActiveChatView(session: selectedPatient.sessionId, viewModel: chatViewModel, backgroundColor: .white, patientName: selectedPatient.subTitle ?? "empty User", calledFromPatientContext: false, title: selectedPatient.title)
             .modelContext( DatabaseConfig.shared.modelContext)

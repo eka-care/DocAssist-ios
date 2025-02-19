@@ -136,6 +136,9 @@ struct ChatsScreenView: View {
       }
     }
     .navigationBarHidden(true)
+    .onAppear {
+      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: nil)
+    }
   }
   
   private var headerView: some View {
@@ -157,6 +160,12 @@ struct ChatsScreenView: View {
       }
       .pickerStyle(.segmented)
       .padding(.horizontal, 16)
+      .onChange(of: selectedSegment) { _ , newValue in
+        let properties: [String: String] = [
+          "type": newValue == .allChats ? "all_chats" : "patients"
+        ]
+        DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryTopNav, properties: properties)
+      }
       
       SearchBar(text: $searchText)
     }
@@ -188,7 +197,7 @@ struct ChatsScreenView: View {
             if let sessions = groupedThreads[key], let firstSession = sessions.first {
               Button {
                 selectedScreen = .selectedPatient(viewModel, firstSession.oid ?? "", firstSession.userBId, firstSession.userDocId, firstSession.subTitle ?? "")
-                
+                DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: nil)
               } label: {
                 GroupPatientView(
                   subTitle: firstSession.subTitle ?? "",
