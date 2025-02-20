@@ -331,6 +331,9 @@ public struct ActiveChatView: View {
           .padding(.vertical, 6)
           .background(Color(red: 0.91, green: 0.91, blue: 0.91))
           .cornerRadius(123)
+          .onAppear {
+            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "select_pt"])
+          }
         }
         
         Spacer()
