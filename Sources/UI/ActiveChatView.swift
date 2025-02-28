@@ -10,6 +10,7 @@ import SwiftData
 import MarkdownUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
+import EkaVoiceToRx
 
 @MainActor
 public struct ActiveChatView: View {
@@ -29,7 +30,7 @@ public struct ActiveChatView: View {
   @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
   var title: String?
-  
+  let voiceToRxViewModel = VoiceToRxViewModel()
   let recordsRepo = RecordsRepo()
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
@@ -359,34 +360,67 @@ public struct ActiveChatView: View {
           )
         }
         
-        
-        Button {
-          viewModel.inputString = viewModel.inputString.trimmingCharacters(in: .whitespacesAndNewlines)
-          
-          guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
-          else { return }
-          Task {
-            await viewModel.sendMessage(
-              newMessage: viewModel.inputString,
-              imageUrls: selectedImages,
-              vaultFiles: selectedDocumentId,
-              sessionId: session,
-              lastMesssageId: messages.last?.msgId
-            )
-            viewModel.inputString = ""
-            selectedImages = []
-            selectedDocumentId = []
-            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+        if !viewModel.inputString.isEmpty {
+          Button {
+            viewModel.inputString = viewModel.inputString.trimmingCharacters(in: .whitespacesAndNewlines)
+            
+            guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
+            else { return }
+            Task {
+              await viewModel.sendMessage(
+                newMessage: viewModel.inputString,
+                imageUrls: selectedImages,
+                vaultFiles: selectedDocumentId,
+                sessionId: session,
+                lastMesssageId: messages.last?.msgId
+              )
+              viewModel.inputString = ""
+              selectedImages = []
+              selectedDocumentId = []
+              DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+            }
+          } label: {
+            Image(systemName: "arrow.up")
+              .foregroundStyle(Color.white)
+              .fontWeight(.semibold)
+              .padding(4)
+              .background((viewModel.inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
           }
-        } label: {
-          Image(systemName: "arrow.up")
-            .foregroundStyle(Color.white)
-            .fontWeight(.semibold)
-            .padding(4)
-            .background((viewModel.inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
+          .disabled(viewModel.inputString.isEmpty)
+          .disabled(viewModel.streamStarted)
+          
+        } else {
+          Menu {
+            Button {
+              voiceToRxViewModel.startRecording(conversationType: .dictation)
+              FloatingButtonController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+            } label: {
+              Image(.micMenu)
+              VStack {
+                Text("Dictation mode")
+                  .font(Font.custom("Lato-Regular", size: 14))
+                  .foregroundStyle(Color.neutrals400)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+              }
+            }
+            
+            Button {
+              voiceToRxViewModel.startRecording(conversationType: .conversation)
+              FloatingButtonController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+            } label: {
+              Image(.v2RxMenu)
+              VStack {
+                Text("Conversation mode")
+                  .font(Font.custom("Lato-Regular", size: 14))
+                  .foregroundStyle(Color.neutrals400)
+                  .frame(maxWidth: .infinity, alignment: .leading)
+              }
+            }
+            
+          } label: {
+            Image(.voiceToRxButton)
+          }
         }
-        .disabled(viewModel.inputString.isEmpty)
-        .disabled(viewModel.streamStarted)
       }
     }
     .focused($isTextFieldFocused)
