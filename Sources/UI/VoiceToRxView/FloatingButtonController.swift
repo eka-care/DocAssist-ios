@@ -42,7 +42,7 @@ class FloatingButtonController: UIViewController {
     guard let button = UIHostingController(
       rootView: PictureInPictureView(voiceToRxViewModel: viewModel, stopVoiceRecording: showConfirmationAlert)
     ).view else { return }
-    button.frame = CGRect(x: (UIApplication.shared.keyWindow?.frame.width ?? 0), y: (UIApplication.shared.keyWindow?.frame.height)!/4, width: 200, height: 50)
+    button.frame = CGRect(x: (UIApplication.shared.keyWindow?.frame.width ?? 0), y: (UIApplication.shared.keyWindow?.frame.height)!/4, width: 250, height: 50)
     view.addSubview(button)
     self.view = view
     self.button = button
