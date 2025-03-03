@@ -31,6 +31,8 @@ public class SetUIComponents {
   public var ipadEmptyChatView: UIImage?
   public var generalChatDefaultSuggestion: [String]?
   public var patientChatDefaultSuggestion: [String]?
+  public var docOId: String?
+  public var docUUId: String?
   
   public static let shared = SetUIComponents()
 

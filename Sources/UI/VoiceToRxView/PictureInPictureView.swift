@@ -8,16 +8,21 @@
 import SwiftUI
 import EkaVoiceToRx
 
-public struct PictureInPictureView: View {
+struct PictureInPictureView: View {
   
   let voiceToRxViewModel: VoiceToRxViewModel
+  let stopVoiceRecording:() -> Void
   
-  public init(voiceToRxViewModel: VoiceToRxViewModel) {
+  init(
+    voiceToRxViewModel: VoiceToRxViewModel,
+    stopVoiceRecording: @escaping () -> Void
+  ) {
     self.voiceToRxViewModel = voiceToRxViewModel
+    self.stopVoiceRecording = stopVoiceRecording
   }
   
-  public var body: some View {
-    AudioMessageView(titleText: "Amit Bharti", voiceToRxViewModel: voiceToRxViewModel)
+  var body: some View {
+    AudioMessageView(name: "Amit Bharti", voiceToRxViewModel: voiceToRxViewModel, stopVoiceRecording: stopVoiceRecording)
       .frame(width: 200, height: 90)
   }
 }
@@ -30,122 +35,52 @@ struct AudioMessageView: View {
   let name: String
   let voiceToRxViewModel: VoiceToRxViewModel
   @State var isRecordingStopped: Bool = false
+  let stopVoiceRecording: () -> Void
   // MARK: - Init
-  
-  init(titleText: String, voiceToRxViewModel: VoiceToRxViewModel) {
-    self.name = titleText
+
+  init(name: String, voiceToRxViewModel: VoiceToRxViewModel, stopVoiceRecording: @escaping () -> Void) {
+    self.name = name
     self.voiceToRxViewModel = voiceToRxViewModel
+    self.stopVoiceRecording = stopVoiceRecording
   }
   
   // MARK: - Body
   
-//  var body: some View {
-//    HStack(spacing: 12) {
-//      VStack(alignment: .leading) {
-//        Text(name)
-//          .font(.system(size: 16, weight: .semibold))
-//        
-//        Text(formatTime(elapsedTime))
-//          .font(.system(size: 14))
-//          .foregroundColor(.gray)
-//      }
-//      
-//      Spacer()
-//      
-//      Button(action: {
-//        print("#BB recording is stopped")
-//        isRecordingStopped = true
-//      }) {
-//        Image(systemName: "stop.fill")
-//          .font(.system(size: 18))
-//          .foregroundStyle(.red)
-//      }
-//    }
-//    .padding()
-//    .background(
-//      LinearGradient(
-//        colors: [
-//          Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
-//          Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
-//        ],
-//        startPoint: .leading,
-//        endPoint: .trailing
-//      )
-//    )
-//    .clipShape(RoundedRectangle(cornerRadius: 12))
-//    .frame(maxWidth: 300)
-//    .alert(isPresented: $isRecordingStopped) {
-//        Alert(
-//            title: Text("Are you done with the conversation"),
-//            message: Text("Are you sure you want to stop recording?"),
-//            primaryButton: .default(Text("Yes, I'm done")) {
-//                stopTimer()
-//                voiceToRxViewModel.stopRecording()
-//            },
-//            secondaryButton: .cancel(Text("Not yet")) {
-//                isRecordingStopped = false
-//            }
-//        )
-//    }
-//    .onAppear {
-//      startTimer()
-//    }
-//  }
-  
   var body: some View {
-    ZStack {
-      HStack(spacing: 12) {
-        VStack(alignment: .leading) {
-          Text(name)
-            .font(.system(size: 16, weight: .semibold))
-          
-          Text(formatTime(elapsedTime))
-            .font(.system(size: 14))
-            .foregroundColor(.gray)
-        }
+    HStack(spacing: 12) {
+      VStack(alignment: .leading) {
+        Text(name)
+          .font(.system(size: 16, weight: .semibold))
         
-        Spacer()
-        
-        Button(action: {
-          print("#BB recording is stopped")
-          // Ensure we're on the main thread when updating state
-          DispatchQueue.main.async {
-            isRecordingStopped = true
-          }
-        }) {
-          Image(systemName: "stop.fill")
-            .font(.system(size: 18))
-            .foregroundStyle(.red)
-        }
+        Text(formatTime(elapsedTime))
+          .font(.system(size: 14))
+          .foregroundColor(.gray)
       }
-      .padding()
-      .background(
-        LinearGradient(
-          colors: [
-            Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
-            Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
-          ],
-          startPoint: .leading,
-          endPoint: .trailing
-        )
-      )
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-      .frame(maxWidth: 300)
+      
+      Spacer()
+      
+      Button {
+        stopVoiceRecording()
+        isRecordingStopped = true
+        stopTimer()
+      } label: {
+        Image(systemName: "stop.fill")
+          .foregroundStyle(.red)
+      }
     }
-    // Place the alert at the ZStack level
-    .alert(isPresented: $isRecordingStopped) {
-      Alert(
-        title: Text("Are you done with the conversation"),
-        message: Text("Are you sure you want to stop recording?"),
-        primaryButton: .default(Text("Yes, I'm done")) {
-          stopTimer()
-          voiceToRxViewModel.stopRecording()
-        },
-        secondaryButton: .cancel(Text("Not yet")) {
-          isRecordingStopped = false
-        }
+    .padding()
+    .background(
+      LinearGradient(
+        colors: [
+          Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
+          Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
+        ],
+        startPoint: .leading,
+        endPoint: .trailing
       )
-    }
+    )
+    .clipShape(RoundedRectangle(cornerRadius: 12))
+    .frame(maxWidth: 300)
     .onAppear {
       startTimer()
     }
