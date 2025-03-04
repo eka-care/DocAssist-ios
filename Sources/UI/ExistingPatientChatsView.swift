@@ -137,7 +137,7 @@ public struct ExistingPatientChatsView: View {
     .background(Color(red: 0.96, green: 0.96, blue: 0.96))
     .scrollIndicators(.hidden)
     .onAppear {
-      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: nil)
+      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "particular_pt"])
     }
   }
   

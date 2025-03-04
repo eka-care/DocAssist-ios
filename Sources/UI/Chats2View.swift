@@ -137,7 +137,7 @@ struct ChatsScreenView: View {
     }
     .navigationBarHidden(true)
     .onAppear {
-      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: nil)
+      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
     }
   }
   

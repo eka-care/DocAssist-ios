@@ -96,7 +96,7 @@ public class ChatsVeiwController: UIViewController {
     uiHostingController.didMove(toParent: self)
     
     DatabaseConfig.setup(modelContainer: ctx.container)
-    DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: nil)
+    DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
   }
   
   private func searchForPatient() {

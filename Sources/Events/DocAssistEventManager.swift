@@ -10,7 +10,7 @@ import Mixpanel
 
 enum DocAssistAnalyticsEvent: String {
   case docAssistLandingPage = "doc_assist_landing_page"
-  case docAssistLandingPgClick = "doc_assist_landing_pg_click"
+  case docAssistLandingPgClick = "doc_assist_landing_pg_clicks"
   case docAssistHistoryPage = "doc_assist_history_page"
   case docAssistHistoryClicks = "doc_assist_history_clicks"
   case docAssistHistoryTopNav = "doc_assist_history_top_nav"
