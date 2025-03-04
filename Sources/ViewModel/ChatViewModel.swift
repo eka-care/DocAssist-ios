@@ -32,7 +32,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var alertTitle = ""
   var alertMessage = ""
   var audioRecorder: AVAudioRecorder?
-  var audioPlayer: AVAudioPlayer?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -312,16 +311,6 @@ extension Date {
     dateFormatter.dateFormat = format
     return dateFormatter.string(from: self)
   }
-}
-
-class DocAssistFileHelper {
-  
-  public static func getDocumentDirectoryURL() -> URL {
-    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-    let documentsDirectory = paths[0]
-    return documentsDirectory
-  }
-  
 }
 
 extension Notification.Name {

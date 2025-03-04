@@ -22,7 +22,8 @@ struct MessageBubble: View {
         BotAvatarImage()
           .alignmentGuide(.top) { d in d[.top] }
       }
-      MessageTextView(text: m, role: message.role, url: url)
+      
+      MessageTextView(text: m, role: message.role, url: url, message: message)
         .alignmentGuide(.top) { d in d[.top] }
       
       if message.role == .Bot {
