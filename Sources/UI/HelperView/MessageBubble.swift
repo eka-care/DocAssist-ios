@@ -11,6 +11,7 @@ struct MessageBubble: View {
   let message: ChatMessageModel
   let m: String?
   let url: [String]?
+  let viewModel: ChatViewModel
   
   var body: some View {
     HStack(alignment: .top) {
@@ -23,7 +24,7 @@ struct MessageBubble: View {
           .alignmentGuide(.top) { d in d[.top] }
       }
       
-      MessageTextView(text: m, role: message.role, url: url, message: message)
+      MessageTextView(text: m, role: message.role, url: url, message: message, viewModel: viewModel)
         .alignmentGuide(.top) { d in d[.top] }
       
       if message.role == .Bot {

@@ -14,6 +14,7 @@ struct ClinicalNotesView: View {
   @State private var audioPlayer: AVAudioPlayer?
   @State private var isPlaying = false
   var audioManger = AudioPlayerManager()
+  let viewModel: ChatViewModel
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -87,10 +88,9 @@ struct ClinicalNotesView: View {
     }
     .onTapGesture {
       print("#BB deepthought page")
+      viewModel.navigateToDeepThought(id: UUID())
     }
   }
 }
 
-#Preview {
-  ClinicalNotesView()
-}
+

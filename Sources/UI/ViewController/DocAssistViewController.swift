@@ -29,7 +29,8 @@ public class ChatsVeiwController: UIViewController {
     delegate: ConvertVoiceToText,
     patientDelegate: NavigateToPatientDirectory,
     authToken: String,
-    authRefreshToken: String
+    authRefreshToken: String,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
     
   ) {
     self.patientDelegate = patientDelegate
@@ -49,7 +50,8 @@ public class ChatsVeiwController: UIViewController {
         patientDelegate: patientDelegate,
         searchForPatient: searchForPatient,
         authToken: authToken,
-        authRefreshToken: authRefreshToken
+        authRefreshToken: authRefreshToken,
+        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
       )
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -67,7 +69,8 @@ public class ChatsVeiwController: UIViewController {
         searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
-        selectedScreen: Binding.constant(nil)
+        selectedScreen: Binding.constant(nil),
+        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -129,9 +132,10 @@ public class ActiveChatViewController: UIViewController {
     delegate: ConvertVoiceToText,
     calledFromPatientContext: Bool,
     authToken: String,
-    authRefreshToken: String
+    authRefreshToken: String,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
   ) {
-    self.vm = ChatViewModel(context: ctx, delegate: delegate)
+    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate)
     self.backgroundColor = backgroundColor
     self.ctx = ctx
     self.patientSubtitle = patientSubtitle

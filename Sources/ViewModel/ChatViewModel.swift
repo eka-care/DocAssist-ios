@@ -21,7 +21,9 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   private(set) var vmssid: String = ""
   private var context: ModelContext
-  private var delegate : ConvertVoiceToText? = nil
+  private var delegate: ConvertVoiceToText? = nil
+  private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
+  
   private let networkCall = NetworkCall()
   var inputString = ""
   var isRecording = false
@@ -49,9 +51,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  init(context: ModelContext, delegate: ConvertVoiceToText? = nil) {
+  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil) {
     self.context = context
     self.delegate = delegate
+    self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
   }
   
   func sendMessage(
@@ -315,4 +318,10 @@ extension Date {
 
 extension Notification.Name {
   static let addedMessage = Notification.Name("addedMessage")
+}
+
+extension ChatViewModel {
+  func navigateToDeepThought(id: UUID) {
+    deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
+  }
 }

@@ -4,7 +4,7 @@
 import PackageDescription
 
 let package = Package(
-  name: "ChatBotAiPackage",
+  name: "DocAssist-ios",
   platforms: [
     .iOS(.v17)
   ],

@@ -119,7 +119,12 @@ public struct ActiveChatView: View {
           ScrollView {
             VStack {
               ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "No message", url: message.imageUrls)
+                MessageBubble(
+                  message: message,
+                  m: message.messageText ?? "No message",
+                  url: message.imageUrls,
+                  viewModel: viewModel
+                )
                   .padding(.horizontal)
                   .id(message.id)
                 
