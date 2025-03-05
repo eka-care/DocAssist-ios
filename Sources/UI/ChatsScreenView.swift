@@ -73,11 +73,12 @@ struct ChatsScreenView: View {
        searchForPatient: @escaping (() -> Void),
        authToken: String,
        authRefreshToken: String,
-       selectedScreen: Binding<SelectedScreen?>
+       selectedScreen: Binding<SelectedScreen?>,
+       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
-    self.viewModel = ChatViewModel(context: ctx, delegate: delegate)
+    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate)
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate

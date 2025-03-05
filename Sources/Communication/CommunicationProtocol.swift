@@ -15,3 +15,6 @@ public protocol ConvertVoiceToText {
   func convertVoiceToText(audioFileURL: URL, completion: @escaping (String) -> Void)
 }
 
+public protocol DeepThoughtsViewDelegate: AnyObject {
+  func navigateToDeepThoughtPage(id: UUID)
+}

@@ -29,7 +29,7 @@ public struct ActiveChatView: View {
   @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
   var title: String?
-  let voiceToRxViewModel = VoiceToRxViewModel()
+  @ObservedObject var voiceToRxViewModel = VoiceToRxViewModel()
   let recordsRepo = RecordsRepo()
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
@@ -50,6 +50,7 @@ public struct ActiveChatView: View {
     V2RxInitConfigurations.shared.modelContainer = modelContext.container
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
+    V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
   }
   
   public var body: some View {
@@ -119,7 +120,12 @@ public struct ActiveChatView: View {
           ScrollView {
             VStack {
               ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "No message", url: message.imageUrls)
+                MessageBubble(
+                  message: message,
+                  m: message.messageText ?? "No message",
+                  url: message.imageUrls,
+                  viewModel: viewModel
+                )
                   .padding(.horizontal)
                   .id(message.id)
                 
