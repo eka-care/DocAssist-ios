@@ -33,6 +33,7 @@ public class SetUIComponents {
   public var patientChatDefaultSuggestion: [String]?
   public var docOId: String?
   public var docUUId: String?
+  public var docName: String?
   
   public static let shared = SetUIComponents()
 
