@@ -53,8 +53,8 @@ struct MessageTextView: View {
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
       }
       
-      if let sessionId = message.v2RxAudioSessionsId {
-      ClinicalNotesView(viewModel: viewModel)
+      if message.v2RxAudioSessionsId != nil {
+        VoiceToRxChatView(viewModel: viewModel)
       }
     }
   }
