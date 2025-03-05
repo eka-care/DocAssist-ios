@@ -50,7 +50,7 @@ public struct ActiveChatView: View {
     V2RxInitConfigurations.shared.modelContainer = modelContext.container
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
-    //   V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
+    V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
   }
   
   public var body: some View {
