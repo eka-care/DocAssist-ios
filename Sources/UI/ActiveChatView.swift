@@ -69,7 +69,7 @@ public struct ActiveChatView: View {
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
       if newValue == .resultDisplay(success: true) {
         Task {
-          let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: 1, role: .Bot, imageUrls: nil, v2RxAudioSessionId: voiceToRxViewModel.sessionID)
+          let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: voiceToRxViewModel.sessionID)
         }
       }
     }
