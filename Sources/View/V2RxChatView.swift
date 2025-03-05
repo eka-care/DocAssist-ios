@@ -19,7 +19,7 @@ struct VoiceToRxChatView: View {
   var createdAt: Date
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
-  let v2rxsessionId: String
+  let v2rxsessionId: UUID
     
   private var statusText: String {
     switch v2rxState {
@@ -135,7 +135,7 @@ struct VoiceToRxChatView: View {
       if v2rxState == .retry {
         // TODO: - Call for retry
       } else {
-        viewModel.navigateToDeepThought(id: UUID(uuidString: v2rxsessionId) ?? UUID())
+        viewModel.navigateToDeepThought(id: v2rxsessionId)
       }
     }
   }
