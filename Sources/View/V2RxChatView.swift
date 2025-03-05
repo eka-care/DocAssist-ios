@@ -1,20 +1,24 @@
 //
-//  SwiftUIView.swift
-//  ChatBotAiPackage
+//  V2RxChatView.swift
+//  DocAssist-ios
 //
-//  Created by Brunda B on 03/03/25.
+//  Created by Arya Vashisht on 05/03/25.
 //
 
 import SwiftUI
 import EkaVoiceToRx
 import AVFoundation
 
-struct ClinicalNotesView: View {
+struct VoiceToRxChatView: View {
+  
+  // MARK: - Properties
   
   @State private var audioPlayer: AVAudioPlayer?
   @State private var isPlaying = false
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
+  
+  // MARK: - Body
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
@@ -23,7 +27,6 @@ struct ClinicalNotesView: View {
           Image(systemName: "waveform.circle.fill")
             .foregroundColor(.green)
             .font(.system(size: 24))
-          
           Text("View clinical notes")
             .font(.headline)
             .foregroundColor(.black)
@@ -34,7 +37,6 @@ struct ClinicalNotesView: View {
             .foregroundColor(.gray)
             .padding(.leading, 40)
           Spacer()
-          
           Text("Saved")
             .font(.subheadline)
             .foregroundColor(.green)
@@ -47,12 +49,9 @@ struct ClinicalNotesView: View {
       .padding()
       .background(Color.white)
       .clipShape(RoundedRectangle(cornerRadius: 12))
-      
       HStack {
         Button(action: {
-          
           isPlaying.toggle()
-          
           if isPlaying {
             audioManger.playAudio()
             print("#BB playing")
@@ -65,17 +64,13 @@ struct ClinicalNotesView: View {
             .foregroundColor(.blue)
             .font(.system(size: 20))
         }
-        
         Text("Recording")
           .foregroundColor(.gray)
           .font(.subheadline)
-        
         Spacer()
-        
         Text("01m 04s")
           .foregroundColor(.gray)
           .font(.subheadline)
-        
       }
       .padding()
       .background(Color.gray.opacity(0.1))
@@ -84,7 +79,6 @@ struct ClinicalNotesView: View {
     .padding()
     .onAppear {
       // TODO: - Fetch clinical notes
-      
     }
     .onTapGesture {
       print("#BB deepthought page")
@@ -92,5 +86,3 @@ struct ClinicalNotesView: View {
     }
   }
 }
-
-

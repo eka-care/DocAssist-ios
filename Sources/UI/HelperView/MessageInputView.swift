@@ -20,7 +20,7 @@ struct MessageInputView: View {
   let viewModel: ChatViewModel
   let session: String
   let messages: [ChatMessageModel]
-  let voiceToRxViewModel: VoiceToRxViewModel
+  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
   
   var body: some View {
@@ -136,7 +136,7 @@ struct MessageInputView: View {
           Menu {
             Button {
               voiceToRxViewModel.startRecording(conversationType: .dictation)
-              FloatingButtonController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+              FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
             } label: {
               Image(.micMenu)
               Text("Dictation mode")
@@ -147,7 +147,7 @@ struct MessageInputView: View {
             
             Button {
               voiceToRxViewModel.startRecording(conversationType: .conversation)
-              FloatingButtonController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+              FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
             } label: {
               Image(.v2RxMenu)
               Text("Conversation mode")
