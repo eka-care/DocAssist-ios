@@ -84,6 +84,7 @@ public struct ExistingPatientChatsView: View {
                 path.append("ActiveView")
               }
             }
+            DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: ["type": "start_new_chat"])
           }
           label: {
             Text("New chat")
