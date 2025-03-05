@@ -53,7 +53,7 @@ struct MessageTextView: View {
 //      }
 //      
 //      if let sessionId = message.v2RxAudioSessionsId {
-        ClinicalNotesView()
+//        ClinicalNotesView()
 //      }
     }
   }
