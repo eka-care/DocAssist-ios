@@ -113,11 +113,12 @@ final actor DatabaseConfig {
 // Create
 extension DatabaseConfig {
   func createMessage(
-    message: String,
+    message: String? = nil,
     sessionId: String,
     messageId: Int,
     role: MessageRole,
-    imageUrls: [String]?
+    imageUrls: [String]?,
+    v2RxAudioSessionId: UUID? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
       msgId: messageId,
@@ -125,9 +126,10 @@ extension DatabaseConfig {
       messageFiles: nil,
       messageText: message,
       htmlString: nil,
-      createdAt: 0,
+      createdAt: .now,
       sessionId: sessionId,
-      imageUrls: imageUrls
+      imageUrls: imageUrls,
+      v2RxAudioSessionId: v2RxAudioSessionId
     )
     insertMessage(message: chat)
     saveData()

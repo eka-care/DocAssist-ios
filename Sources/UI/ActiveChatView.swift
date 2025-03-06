@@ -54,18 +54,25 @@ public struct ActiveChatView: View {
   }
   
   public var body: some View {
-      ZStack {
-        VStack {
-          Image(.bg)
-            .resizable()
-            .frame(height: 120)
-            .edgesIgnoringSafeArea(.all)
-          Spacer()
-        }
-        VStack {
-            content
+    ZStack {
+      VStack {
+        Image(.bg)
+          .resizable()
+          .frame(height: 120)
+          .edgesIgnoringSafeArea(.all)
+        Spacer()
+      }
+      VStack {
+        content
+      }
+    }
+    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
+      if newValue == .resultDisplay(success: true) {
+        Task {
+          let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: voiceToRxViewModel.sessionID)
         }
       }
+    }
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
@@ -79,7 +86,7 @@ public struct ActiveChatView: View {
       }
     }
   }
-
+  
   private var content: some View {
     VStack {
       if calledFromPatientContext {
@@ -120,14 +127,15 @@ public struct ActiveChatView: View {
           ScrollView {
             VStack {
               ForEach(messages) { message in
+                
                 MessageBubble(
                   message: message,
-                  m: message.messageText ?? "No message",
+                  m: message.messageText,
                   url: message.imageUrls,
                   viewModel: viewModel
                 )
-                  .padding(.horizontal)
-                  .id(message.id)
+                .padding(.horizontal)
+                .id(message.id)
                 
                 if message.role == .user && messages.last?.id == message.id {
                   LoadingView()

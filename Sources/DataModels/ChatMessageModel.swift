@@ -12,7 +12,7 @@ public typealias ChatMessageModel = ChatMessageV1.ChatMessageModelV1
 
 public enum ChatMessageV1: VersionedSchema {
   
-  public nonisolated(unsafe) static let versionIdentifier: Schema.Version = Schema.Version(3, 0, 0)
+  public nonisolated(unsafe) static let versionIdentifier: Schema.Version = Schema.Version(4, 0, 0)
   
   public static var models: [any PersistentModel.Type] {
     [ChatMessageModelV1.self]
@@ -25,10 +25,10 @@ public enum ChatMessageV1: VersionedSchema {
     public var messageFiles: [Int]?
     public var messageText: String?
     public var htmlString: String?
-    public var createdAt: Int
+    public var createdAt: Date
     public var sessionId: String
     public var imageUrls: [String]?
-    public var v2RxAudioSessionsId: String?
+    public var v2RxAudioSessionId: UUID?
     
     init(
       msgId: Int,
@@ -36,10 +36,10 @@ public enum ChatMessageV1: VersionedSchema {
       messageFiles: [Int]? = nil,
       messageText: String? = nil,
       htmlString: String? = nil,
-      createdAt: Int,
+      createdAt: Date,
       sessionId: String,
       imageUrls: [String]? = nil,
-      v2RxAudioSessionsId: String? = nil
+      v2RxAudioSessionId: UUID? = nil
     ) {
       self.msgId = msgId
       self.role = role
@@ -49,7 +49,7 @@ public enum ChatMessageV1: VersionedSchema {
       self.createdAt = createdAt
       self.sessionId = sessionId
       self.imageUrls = imageUrls
-      self.v2RxAudioSessionsId = v2RxAudioSessionsId
+      self.v2RxAudioSessionId = v2RxAudioSessionId
     }
   }
 }

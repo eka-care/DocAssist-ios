@@ -14,6 +14,7 @@ struct MessageTextView: View {
   let url: [String]?
   let message: ChatMessageModel
   let viewModel: ChatViewModel
+  let createdAt: Date
   
   var body: some View {
     VStack {
@@ -53,8 +54,8 @@ struct MessageTextView: View {
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
       }
       
-      if message.v2RxAudioSessionsId != nil {
-        VoiceToRxChatView(viewModel: viewModel)
+      if let v2RxAudioSessionId = message.v2RxAudioSessionId {
+        VoiceToRxChatView(createdAt: createdAt, viewModel: viewModel, v2rxsessionId: v2RxAudioSessionId)
       }
     }
   }

@@ -24,7 +24,7 @@ struct MessageBubble: View {
           .alignmentGuide(.top) { d in d[.top] }
       }
       
-      MessageTextView(text: m, role: message.role, url: url, message: message, viewModel: viewModel)
+      MessageTextView(text: m, role: message.role, url: url, message: message, viewModel: viewModel, createdAt: message.createdAt)
         .alignmentGuide(.top) { d in d[.top] }
       
       if message.role == .Bot {
