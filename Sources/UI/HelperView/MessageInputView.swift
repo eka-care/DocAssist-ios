@@ -170,6 +170,18 @@ struct MessageInputView: View {
         .stroke(Color.gray, lineWidth: 0.5)
     )
     .padding(8)
+    .onAppear {
+      setupFloatingVoiceToRxController()
+    }
+  }
+}
+
+extension MessageInputView {
+  private func setupFloatingVoiceToRxController() {
+    FloatingVoiceToRxViewController.shared.onTapResultView = { success in
+      /// Route to deepthought page
+      viewModel.navigateToDeepThought(id: voiceToRxViewModel.sessionID)
+    }
   }
 }
 
