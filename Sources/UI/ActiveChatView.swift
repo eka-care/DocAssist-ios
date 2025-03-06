@@ -77,6 +77,7 @@ public struct ActiveChatView: View {
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
+      V2RxInitConfigurations.shared.ownerName = patientName
     }
     .onDisappear {
       viewModel.inputString = ""
