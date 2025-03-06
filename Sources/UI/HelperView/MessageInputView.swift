@@ -128,7 +128,7 @@ struct MessageInputView: View {
             Image(systemName: "arrow.up")
               .foregroundStyle(Color.white)
               .fontWeight(.semibold)
-              .padding(4)
+              .padding(10)
               .background((inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
           }
           .disabled(inputString.isEmpty || viewModel.streamStarted)
@@ -170,15 +170,6 @@ struct MessageInputView: View {
         .stroke(Color.gray, lineWidth: 0.5)
     )
     .padding(8)
-//    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
-//      if newValue == .resultDisplay(success: true) {
-//        let uuidString = "173EDD22-4CF2-4526-BC93-F5FAC48AB7C1"
-//        Task {
-//          let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: 1, role: .Bot, imageUrls: nil, v2RxAudioSessionId: UUID(uuidString: uuidString) /*voiceToRxViewModel.sessionID*/)
-//        }
-//        print("#BB VoiceToRxViewModel: \(voiceToRxViewModel.sessionID)")
-//      }
-//    }
   }
 }
 
