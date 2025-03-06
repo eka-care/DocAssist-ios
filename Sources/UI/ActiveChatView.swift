@@ -51,7 +51,6 @@ public struct ActiveChatView: View {
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
     V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
-    V2RxInitConfigurations.shared.subOwnerName = patientName
   }
   
   public var body: some View {
@@ -77,7 +76,9 @@ public struct ActiveChatView: View {
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      V2RxInitConfigurations.shared.ownerName = patientName
+      if patientName != "General Chat" {
+        V2RxInitConfigurations.shared.subOwnerName = patientName
+      }
     }
     .onDisappear {
       viewModel.inputString = ""
