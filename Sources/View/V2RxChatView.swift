@@ -20,6 +20,7 @@ struct VoiceToRxChatView: View {
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
   let v2rxsessionId: UUID
+  @ObservedObject var v2rxViewModel: VoiceToRxViewModel
     
   private var statusText: String {
     switch v2rxState {
@@ -97,38 +98,37 @@ struct VoiceToRxChatView: View {
       .padding()
       .background(Color.white)
       .clipShape(RoundedRectangle(cornerRadius: 12))
-      HStack {
-        Button(action: {
-          isPlaying.toggle()
-          if isPlaying {
-            audioManger.playAudio()
-            print("#BB playing")
-          } else {
-            audioManger.stopAudio()
-            print("#BB STOPPED")
-          }
-        }) {
-          Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-            .foregroundColor(.blue)
-            .font(.system(size: 20))
-        }
-        Text("Recording")
-          .foregroundColor(.gray)
-          .font(.subheadline)
-        Spacer()
-        Text("01m 04s")
-          .foregroundColor(.gray)
-          .font(.subheadline)
-      }
-      .padding()
-      .background(Color.gray.opacity(0.1))
-      .clipShape(RoundedRectangle(cornerRadius: 12))
+//      HStack {
+//        Button(action: {
+//          isPlaying.toggle()
+//          if isPlaying {
+//            audioManger.playAudio()
+//            print("#BB playing")
+//          } else {
+//            audioManger.stopAudio()
+//            print("#BB STOPPED")
+//          }
+//        }) {
+//          Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+//            .foregroundColor(.blue)
+//            .font(.system(size: 20))
+//        }
+//        Text("Recording")
+//          .foregroundColor(.gray)
+//          .font(.subheadline)
+//        Spacer()
+//        Text("01m 04s")
+//          .foregroundColor(.gray)
+//          .font(.subheadline)
+//      }
+//      .padding()
+//      .background(Color.gray.opacity(0.1))
+//      .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .padding()
     .onAppear {
       Task {
-        // TODO: - Send original sessionId
-        v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: UUID())
+        v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
       }
     }
     .onTapGesture {

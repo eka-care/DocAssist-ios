@@ -135,7 +135,8 @@ public struct ActiveChatView: View {
                   message: message,
                   m: message.messageText,
                   url: message.imageUrls,
-                  viewModel: viewModel
+                  viewModel: viewModel,
+                  v2rxViewModel: voiceToRxViewModel
                 )
                 .padding(.horizontal)
                 .id(message.id)

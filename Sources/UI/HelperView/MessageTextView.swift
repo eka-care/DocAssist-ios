@@ -7,6 +7,7 @@
 
 import SwiftUI
 import MarkdownUI
+import EkaVoiceToRx
 
 struct MessageTextView: View {
   let text: String?
@@ -15,6 +16,7 @@ struct MessageTextView: View {
   let message: ChatMessageModel
   let viewModel: ChatViewModel
   let createdAt: Date
+  @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   
   var body: some View {
     VStack {
@@ -55,7 +57,12 @@ struct MessageTextView: View {
       }
       
       if let v2RxAudioSessionId = message.v2RxAudioSessionId {
-        VoiceToRxChatView(createdAt: createdAt, viewModel: viewModel, v2rxsessionId: v2RxAudioSessionId)
+        VoiceToRxChatView(
+          createdAt: createdAt,
+          viewModel: viewModel,
+          v2rxsessionId: v2RxAudioSessionId,
+          v2rxViewModel: v2rxViewModel
+        )
       }
     }
   }
