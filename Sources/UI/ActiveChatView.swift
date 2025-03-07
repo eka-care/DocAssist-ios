@@ -29,7 +29,7 @@ public struct ActiveChatView: View {
   @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
   var title: String?
-  @ObservedObject var voiceToRxViewModel = VoiceToRxViewModel()
+  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo = RecordsRepo()
   let patientNameConstant = "General Chat"
   
@@ -48,13 +48,15 @@ public struct ActiveChatView: View {
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
     
-    V2RxInitConfigurations.shared.modelContainer = modelContext.container
+    V2RxInitConfigurations.shared.modelContainer = DatabaseConfig.shared.modelContainer
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
     V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
     if patientName != patientNameConstant {
       V2RxInitConfigurations.shared.subOwnerName = patientName
     }
+    /// Making sure to initialise voice init configurations before voice to rx view model
+    voiceToRxViewModel = VoiceToRxViewModel(voiceToRxInitConfig: V2RxInitConfigurations.shared)
   }
   
   public var body: some View {
