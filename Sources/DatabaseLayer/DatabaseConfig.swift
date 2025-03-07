@@ -118,7 +118,8 @@ extension DatabaseConfig {
     messageId: Int,
     role: MessageRole,
     imageUrls: [String]?,
-    v2RxAudioSessionId: UUID? = nil
+    v2RxAudioSessionId: UUID? = nil,
+    v2RxaudioFileString: String? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
       msgId: messageId,
@@ -129,7 +130,8 @@ extension DatabaseConfig {
       createdAt: .now,
       sessionId: sessionId,
       imageUrls: imageUrls,
-      v2RxAudioSessionId: v2RxAudioSessionId
+      v2RxAudioSessionId: v2RxAudioSessionId,
+      v2RxaudioFileString: v2RxaudioFileString
     )
     insertMessage(message: chat)
     saveData()

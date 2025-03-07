@@ -31,6 +31,7 @@ public struct ActiveChatView: View {
   var title: String?
   @ObservedObject var voiceToRxViewModel = VoiceToRxViewModel()
   let recordsRepo = RecordsRepo()
+  let patientNameConstant = "General Chat"
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
     self.session = session
@@ -51,6 +52,9 @@ public struct ActiveChatView: View {
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
     V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
+    if patientName != patientNameConstant {
+      V2RxInitConfigurations.shared.subOwnerName = patientName
+    }
   }
   
   public var body: some View {
@@ -66,19 +70,20 @@ public struct ActiveChatView: View {
         content
       }
     }
-    .onChange(of: voiceToRxViewModel.screenState) { [voiceToRxViewModel] oldValue , newValue in
+    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
       if newValue == .resultDisplay(success: true) {
         Task {
-          let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: voiceToRxViewModel.sessionID)
+          guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
+          let uid = "AEFAE9B8-9179-A597-D87184783AFD"
+          let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: UUID(uuidString: uid)!)
+          print("#BB: v2RxSessionId \(v2RxSessionId) v2rxAudioFileString: \(v2rxAudioFileString)")
+          let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
         }
       }
     }
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      if patientName != "General Chat" {
-        V2RxInitConfigurations.shared.subOwnerName = patientName
-      }
     }
     .onDisappear {
       viewModel.inputString = ""

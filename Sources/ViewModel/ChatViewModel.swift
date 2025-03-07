@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import AVFAudio
 import AVFoundation
+import EkaVoiceToRx
 
 public struct ExistingChatResponse {
   var chatExist: Bool
@@ -325,4 +326,18 @@ extension ChatViewModel {
     guard let id else { return }
     deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
   }
+}
+
+extension ChatViewModel {
+  
+  public func fetchVoiceConversations(using sessionId: UUID) async -> String? {
+    print("#BB v2RxSessionId \(sessionId)")
+    let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
+      predicate: #Predicate { $0.id == sessionId }
+    )
+    let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
+    print("#BB result is \(result)")
+    return result.first?.fileURL
+  }
+  
 }
