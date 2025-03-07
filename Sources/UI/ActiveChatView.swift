@@ -73,7 +73,7 @@ public struct ActiveChatView: View {
       }
     }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
-      if newValue == .resultDisplay(success: true) {
+      if newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false) {
         Task {
           guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
           let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
