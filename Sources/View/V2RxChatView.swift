@@ -127,8 +127,7 @@ struct VoiceToRxChatView: View {
     .padding()
     .onAppear {
       Task {
-        // TODO: - Send original sessionId
-        v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: UUID())
+        v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
       }
     }
     .onTapGesture {
