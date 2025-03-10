@@ -137,6 +137,12 @@ struct MessageInputView: View {
             Button {
               voiceToRxViewModel.startRecording(conversationType: .dictation)
               FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+              Task {
+                guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
+                let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
+                print("#BB: v2RxSessionId \(v2RxSessionId) v2rxAudioFileString: \(v2rxAudioFileString)")
+                await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
+              }
             } label: {
               Image(.micMenu)
               Text("Dictation mode")
@@ -148,6 +154,12 @@ struct MessageInputView: View {
             Button {
               voiceToRxViewModel.startRecording(conversationType: .conversation)
               FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+              Task {
+                guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
+                let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
+                print("#BB: v2RxSessionId \(v2RxSessionId) v2rxAudioFileString: \(v2rxAudioFileString)")
+                await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
+              }
             } label: {
               Image(.v2RxMenu)
               Text("Conversation mode")
@@ -179,10 +191,7 @@ struct MessageInputView: View {
 
 extension MessageInputView {
   private func setupFloatingVoiceToRxController() {
-    FloatingVoiceToRxViewController.shared.onTapResultView = { success in
-      /// Route to deepthought page
-      viewModel.navigateToDeepThought(id: voiceToRxViewModel.sessionID)
-    }
+    FloatingVoiceToRxViewController.shared.voiceToRxDelegate = V2RxInitConfigurations.shared.voiceToRxDelegate
   }
 }
 
