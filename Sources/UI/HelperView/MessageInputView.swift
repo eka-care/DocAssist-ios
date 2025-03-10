@@ -191,10 +191,7 @@ struct MessageInputView: View {
 
 extension MessageInputView {
   private func setupFloatingVoiceToRxController() {
-    FloatingVoiceToRxViewController.shared.onTapResultView = { success in
-      /// Route to deepthought page
-      viewModel.navigateToDeepThought(id: voiceToRxViewModel.sessionID)
-    }
+    FloatingVoiceToRxViewController.shared.voiceToRxDelegate = V2RxInitConfigurations.shared.voiceToRxDelegate
   }
 }
 

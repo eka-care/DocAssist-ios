@@ -43,7 +43,7 @@ struct VoiceToRxChatView: View {
       return UIImage(resource: .savedV2Rx)
     case .retry:
       return UIImage(resource: .smartReportFailure)
-    case .none:
+    default:
       return UIImage(resource: .draftV2Rx)
     }
   }
@@ -56,7 +56,7 @@ struct VoiceToRxChatView: View {
       return .green
     case .retry:
       return .red
-    case .none:
+    default:
       return .gray
     }
   }
@@ -128,9 +128,18 @@ struct VoiceToRxChatView: View {
         v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
       }
     }
+    .onChange(of: v2rxViewModel.screenState) { _ , newValue in
+      if newValue == .resultDisplay(success: true) ||
+          newValue == .resultDisplay(success: false) {
+        Task {
+          v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
+        }
+      }
+    }
     .onTapGesture {
       if v2rxState == .retry {
-        // TODO: - Call for retry
+        /// Retry file uploads if pending from local
+        v2rxViewModel.retryIfNeeded()
       } else {
         viewModel.navigateToDeepThought(id: v2rxsessionId)
       }

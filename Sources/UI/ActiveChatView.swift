@@ -52,6 +52,7 @@ public struct ActiveChatView: View {
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
     V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
+    V2RxInitConfigurations.shared.voiceToRxDelegate = SetUIComponents.shared.v2rxDelegate
     if patientName != patientNameConstant {
       V2RxInitConfigurations.shared.subOwnerName = patientName
     }
