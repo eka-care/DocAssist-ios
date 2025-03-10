@@ -71,56 +71,61 @@ struct VoiceToRxChatView: View {
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      VStack(alignment: .leading) {
-        HStack {
-          Image(uiImage: v2rximage)
-            .foregroundColor(.green)
-            .font(.system(size: 24))
-          Text("View clinical notes")
-            .font(.headline)
-            .foregroundColor(.black)
+      if v2rxState == .loading {
+        ProgressView()
+      }
+      else {
+        VStack(alignment: .leading) {
+          HStack {
+            Image(uiImage: v2rximage)
+              .foregroundColor(.green)
+              .font(.system(size: 24))
+            Text("View clinical notes")
+              .font(.headline)
+              .foregroundColor(.black)
+          }
+          HStack {
+            Text(formattedDate)
+              .font(.subheadline)
+              .foregroundColor(.gray)
+              .padding(.leading, 20)
+            Text(statusText)
+              .font(.subheadline)
+              .foregroundColor(v2rxStateColor)
+              .padding(.horizontal, 8)
+              .padding(.vertical, 4)
+              .background(v2rxStateColor.opacity(0.15))
+              .cornerRadius(8)
+            Spacer()
+          }
         }
+        .padding()
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         HStack {
-          Text(formattedDate)
-            .font(.subheadline)
+          Button(action: {
+            isPlaying.toggle()
+            if isPlaying {
+              audioManger.playAudio(session: v2rxsessionId)
+              print("#BB playing")
+            } else {
+              audioManger.stopAudio()
+              print("#BB STOPPED")
+            }
+          }) {
+            Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+              .foregroundColor(.blue)
+              .font(.system(size: 20))
+          }
+          Text("Recording")
             .foregroundColor(.gray)
-            .padding(.leading, 20)
-          Text(statusText)
-            .font(.subheadline)
-            .foregroundColor(v2rxStateColor)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(v2rxStateColor.opacity(0.15))
-            .cornerRadius(8)
+            .font(Font.custom("Lato", size: 14))
           Spacer()
         }
+        .padding()
+        .background(Color.gray.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
       }
-      .padding()
-      .background(Color.white)
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-      HStack {
-        Button(action: {
-          isPlaying.toggle()
-          if isPlaying {
-            audioManger.playAudio(session: v2rxsessionId)
-            print("#BB playing")
-          } else {
-            audioManger.stopAudio()
-            print("#BB STOPPED")
-          }
-        }) {
-          Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-            .foregroundColor(.blue)
-            .font(.system(size: 20))
-        }
-        Text("Recording")
-          .foregroundColor(.gray)
-          .font(Font.custom("Lato", size: 14))
-        Spacer()
-      }
-      .padding()
-      .background(Color.gray.opacity(0.1))
-      .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .padding()
     .onAppear {
