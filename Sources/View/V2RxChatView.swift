@@ -15,7 +15,7 @@ struct VoiceToRxChatView: View {
   
   @State private var audioPlayer: AVAudioPlayer?
   @State private var isPlaying = false
-  @State var v2rxState: DocAssistV2RxState?
+  @State var v2rxState: DocAssistV2RxState = .loading
   var createdAt: Date
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
@@ -73,8 +73,7 @@ struct VoiceToRxChatView: View {
     VStack(alignment: .leading, spacing: 0) {
       if v2rxState == .loading {
         ProgressView()
-      }
-      else {
+      } else {
         VStack(alignment: .leading) {
           HStack {
             Image(uiImage: v2rximage)
@@ -106,7 +105,7 @@ struct VoiceToRxChatView: View {
           Button(action: {
             isPlaying.toggle()
             if isPlaying {
-              audioManger.playAudio(session: v2rxsessionId)
+              audioManger.playAudio(sessionID: v2rxsessionId)
               print("#BB playing")
             } else {
               audioManger.stopAudio()
@@ -130,14 +129,20 @@ struct VoiceToRxChatView: View {
     .padding()
     .onAppear {
       Task {
-        v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
+        print(" Session id is \(v2rxsessionId)")
+        if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId) {
+          print("State is \(state)")
+          v2rxState = state
+        }
       }
     }
     .onChange(of: v2rxViewModel.screenState) { _ , newValue in
       if newValue == .resultDisplay(success: true) ||
           newValue == .resultDisplay(success: false) {
         Task {
-          v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
+          if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId) {
+            v2rxState = state
+          }
         }
       }
     }

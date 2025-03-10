@@ -6,14 +6,19 @@
 //
 
 import AVFoundation
+import EkaVoiceToRx
+import SwiftData
 
 class AudioPlayerManager {
   
   private var audioPlayer: AVAudioPlayer?
   
-  func prepareAudio(session: UUID) {
-    let audioString = session.uuidString + "/full_audio.m4a_"
-    let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(audioString)
+  func prepareAudio(
+    sessionID: UUID
+  ) {
+    let m4aFileName = "full_audio.m4a_"
+    let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL()
+      .appendingPathComponent(sessionID.uuidString).appendingPathComponent(m4aFileName)
     print("#BB Audio URL: \(completeUrl)")
     do {
       audioPlayer = try AVAudioPlayer(contentsOf: completeUrl)
@@ -23,10 +28,20 @@ class AudioPlayerManager {
     }
   }
   
-  func playAudio(session: UUID) {
-    prepareAudio(session: session)
+  func playAudio(
+    sessionID: UUID
+  ) {
+    prepareAudio(sessionID: sessionID)
     configureAudioSession()
     audioPlayer?.play()
+  }
+  
+  private func getLastPathComponentFromV2rxDb(sessionID: UUID) async -> String? {
+    let descriptor = FetchDescriptor<VoiceConversationModel>(
+      predicate: #Predicate { $0.id == sessionID }
+    )
+    let model = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: descriptor)
+    return model.first?.fileURL
   }
   
   private func configureAudioSession() {
