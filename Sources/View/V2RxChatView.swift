@@ -115,11 +115,8 @@ struct VoiceToRxChatView: View {
         }
         Text("Recording")
           .foregroundColor(.gray)
-          .font(.subheadline)
+          .font(Font.custom("Lato", size: 14))
         Spacer()
-        Text("01m 04s")
-          .foregroundColor(.gray)
-          .font(.subheadline)
       }
       .padding()
       .background(Color.gray.opacity(0.1))
@@ -127,7 +124,6 @@ struct VoiceToRxChatView: View {
     }
     .padding()
     .onAppear {
-    //  audioManger.prepareAudio(session: v2rxsessionId)
       Task {
         v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
       }
