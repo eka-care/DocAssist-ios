@@ -147,7 +147,7 @@ struct V2RxChatView: View {
         }
       }
     }
-    .onChange(of: v2rxViewModel.screenState) { _ , newValue in
+    .onChange(of: FloatingVoiceToRxViewController.shared.viewModel?.screenState) { _ , newValue in
       if newValue == .resultDisplay(success: true) ||
           newValue == .resultDisplay(success: false) {
         Task {
