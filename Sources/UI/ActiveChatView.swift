@@ -73,16 +73,6 @@ public struct ActiveChatView: View {
         content
       }
     }
-    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
-      if newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false) {
-        Task {
-          guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-          let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
-          print("#BB: v2RxSessionId \(v2RxSessionId) v2rxAudioFileString: \(v2rxAudioFileString)")
-       //   let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
-        }
-      }
-    }
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)

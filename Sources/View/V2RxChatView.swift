@@ -43,7 +43,7 @@ struct VoiceToRxChatView: View {
       return UIImage(resource: .savedV2Rx)
     case .retry:
       return UIImage(resource: .smartReportFailure)
-    case .none:
+    default:
       return UIImage(resource: .draftV2Rx)
     }
   }
@@ -56,7 +56,7 @@ struct VoiceToRxChatView: View {
       return .green
     case .retry:
       return .red
-    case .none:
+    default:
       return .gray
     }
   }
@@ -115,11 +115,8 @@ struct VoiceToRxChatView: View {
         }
         Text("Recording")
           .foregroundColor(.gray)
-          .font(.subheadline)
+          .font(Font.custom("Lato", size: 14))
         Spacer()
-        Text("01m 04s")
-          .foregroundColor(.gray)
-          .font(.subheadline)
       }
       .padding()
       .background(Color.gray.opacity(0.1))
@@ -127,9 +124,16 @@ struct VoiceToRxChatView: View {
     }
     .padding()
     .onAppear {
-    //  audioManger.prepareAudio(session: v2rxsessionId)
       Task {
         v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
+      }
+    }
+    .onChange(of: v2rxViewModel.screenState) { _ , newValue in
+      if newValue == .resultDisplay(success: true) ||
+          newValue == .resultDisplay(success: false) {
+        Task {
+          v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
+        }
       }
     }
     .onTapGesture {
