@@ -134,7 +134,8 @@ struct VoiceToRxChatView: View {
     }
     .onTapGesture {
       if v2rxState == .retry {
-        // TODO: - Call for retry
+        /// Retry file uploads if pending from local
+        v2rxViewModel.retryIfNeeded()
       } else {
         viewModel.navigateToDeepThought(id: v2rxsessionId)
       }
