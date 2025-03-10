@@ -98,35 +98,36 @@ struct VoiceToRxChatView: View {
       .padding()
       .background(Color.white)
       .clipShape(RoundedRectangle(cornerRadius: 12))
-//      HStack {
-//        Button(action: {
-//          isPlaying.toggle()
-//          if isPlaying {
-//            audioManger.playAudio()
-//            print("#BB playing")
-//          } else {
-//            audioManger.stopAudio()
-//            print("#BB STOPPED")
-//          }
-//        }) {
-//          Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-//            .foregroundColor(.blue)
-//            .font(.system(size: 20))
-//        }
-//        Text("Recording")
-//          .foregroundColor(.gray)
-//          .font(.subheadline)
-//        Spacer()
-//        Text("01m 04s")
-//          .foregroundColor(.gray)
-//          .font(.subheadline)
-//      }
-//      .padding()
-//      .background(Color.gray.opacity(0.1))
-//      .clipShape(RoundedRectangle(cornerRadius: 12))
+      HStack {
+        Button(action: {
+          isPlaying.toggle()
+          if isPlaying {
+            audioManger.playAudio(session: v2rxsessionId)
+            print("#BB playing")
+          } else {
+            audioManger.stopAudio()
+            print("#BB STOPPED")
+          }
+        }) {
+          Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+            .foregroundColor(.blue)
+            .font(.system(size: 20))
+        }
+        Text("Recording")
+          .foregroundColor(.gray)
+          .font(.subheadline)
+        Spacer()
+        Text("01m 04s")
+          .foregroundColor(.gray)
+          .font(.subheadline)
+      }
+      .padding()
+      .background(Color.gray.opacity(0.1))
+      .clipShape(RoundedRectangle(cornerRadius: 12))
     }
     .padding()
     .onAppear {
+    //  audioManger.prepareAudio(session: v2rxsessionId)
       Task {
         v2rxState = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId)
       }
