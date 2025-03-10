@@ -9,7 +9,7 @@ import SwiftUI
 import EkaVoiceToRx
 import AVFoundation
 
-struct VoiceToRxChatView: View {
+struct V2RxChatView: View {
   
   // MARK: - Properties
   
@@ -19,7 +19,7 @@ struct VoiceToRxChatView: View {
   var createdAt: Date
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
-  let v2rxsessionId: UUID
+  let v2rxSessionId: UUID
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
     
   private var statusText: String {
@@ -61,6 +61,17 @@ struct VoiceToRxChatView: View {
     }
   }
   
+  private var v2rxStateTitle: String {
+    switch v2rxState {
+    case .draft, .saved:
+      "View clinical notes"
+    case .retry:
+      "Failed to analyse"
+    default:
+      ""
+    }
+  }
+  
   private var formattedDate: String {
     let formatter = DateFormatter()
     formatter.dateFormat = "dd MMM’yy"
@@ -79,17 +90,17 @@ struct VoiceToRxChatView: View {
             Image(uiImage: v2rximage)
               .foregroundColor(.green)
               .font(.system(size: 24))
-            Text("View clinical notes")
-              .font(.headline)
+            Text(v2rxStateTitle)
+              .font(.custom("Lato-Bold", size: 16))
               .foregroundColor(.black)
           }
           HStack {
             Text(formattedDate)
-              .font(.subheadline)
+              .font(.custom("Lato-Regular", size: 13))
               .foregroundColor(.gray)
               .padding(.leading, 20)
             Text(statusText)
-              .font(.subheadline)
+              .font(.custom("Lato-Bold", size: 12))
               .foregroundColor(v2rxStateColor)
               .padding(.horizontal, 8)
               .padding(.vertical, 4)
@@ -105,7 +116,7 @@ struct VoiceToRxChatView: View {
           Button(action: {
             isPlaying.toggle()
             if isPlaying {
-              audioManger.playAudio(sessionID: v2rxsessionId)
+              audioManger.playAudio(sessionID: v2rxSessionId)
               print("#BB playing")
             } else {
               audioManger.stopAudio()
@@ -118,7 +129,7 @@ struct VoiceToRxChatView: View {
           }
           Text("Recording")
             .foregroundColor(.gray)
-            .font(Font.custom("Lato", size: 14))
+            .font(.custom("Lato-Regular", size: 14))
           Spacer()
         }
         .padding()
@@ -129,8 +140,8 @@ struct VoiceToRxChatView: View {
     .padding()
     .onAppear {
       Task {
-        print(" Session id is \(v2rxsessionId)")
-        if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId) {
+        print(" Session id is \(v2rxSessionId)")
+        if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
           print("State is \(state)")
           v2rxState = state
         }
@@ -140,7 +151,7 @@ struct VoiceToRxChatView: View {
       if newValue == .resultDisplay(success: true) ||
           newValue == .resultDisplay(success: false) {
         Task {
-          if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxsessionId) {
+          if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
             v2rxState = state
           }
         }
@@ -151,7 +162,7 @@ struct VoiceToRxChatView: View {
         /// Retry file uploads if pending from local
         v2rxViewModel.retryIfNeeded()
       } else {
-        viewModel.navigateToDeepThought(id: v2rxsessionId)
+        viewModel.navigateToDeepThought(id: v2rxSessionId)
       }
     }
   }

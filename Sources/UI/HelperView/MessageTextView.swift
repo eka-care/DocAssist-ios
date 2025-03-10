@@ -57,10 +57,10 @@ struct MessageTextView: View {
       }
       
       if let v2RxAudioSessionId = message.v2RxAudioSessionId {
-        VoiceToRxChatView(
+        V2RxChatView(
           createdAt: createdAt,
           viewModel: viewModel,
-          v2rxsessionId: v2RxAudioSessionId,
+          v2rxSessionId: v2RxAudioSessionId,
           v2rxViewModel: v2rxViewModel
         )
       }
