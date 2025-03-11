@@ -23,7 +23,7 @@ class AudioPlayerManager {
       audioPlayer = try AVAudioPlayer(contentsOf: completeUrl)
       audioPlayer?.prepareToPlay()
     } catch {
-      print("#BB Error initializing audio player: \(error.localizedDescription)")
+      print("Error initializing audio player: \(error.localizedDescription)")
     }
   }
   
@@ -48,7 +48,7 @@ class AudioPlayerManager {
       try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
       try AVAudioSession.sharedInstance().setActive(true)
     } catch {
-      print("#BB Error configuring audio session: \(error.localizedDescription)")
+      print("Error configuring audio session: \(error.localizedDescription)")
     }
   }
 
