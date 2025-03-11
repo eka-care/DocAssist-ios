@@ -127,11 +127,12 @@ extension DatabaseConfig {
       messageFiles: nil,
       messageText: message,
       htmlString: nil,
-      createdAt: .now,
+      createdAt: 1,
       sessionId: sessionId,
       imageUrls: imageUrls,
       v2RxAudioSessionId: v2RxAudioSessionId,
-      v2RxaudioFileString: v2RxaudioFileString
+      v2RxaudioFileString: v2RxaudioFileString,
+      createdAtDate: .now
     )
     insertMessage(message: chat)
     saveData()

@@ -113,7 +113,7 @@ struct V2RxChatView: View {
         }
         .padding()
         .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topRight])
         .onTapGesture {
           if v2rxState == .retry {
             /// Retry file uploads if pending from local
@@ -126,31 +126,34 @@ struct V2RxChatView: View {
             }
           }
         }
-        HStack {
-          Button(action: {
-            isPlaying.toggle()
-            if isPlaying {
-              audioManger.playAudio(sessionID: v2rxSessionId)
-            } else {
-              audioManger.stopAudio()
+        VStack(alignment: .center) {
+          HStack {
+            Button(action: {
+              isPlaying.toggle()
+              if isPlaying {
+                audioManger.playAudio(sessionID: v2rxSessionId)
+              } else {
+                audioManger.stopAudio()
+              }
+            }) {
+              Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                .foregroundColor(.blue)
+                .font(.system(size: 20))
             }
-          }) {
-            Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-              .foregroundColor(.blue)
-              .font(.system(size: 20))
-          }
-          Text("Recording")
-            .foregroundColor(.gray)
-            .font(.custom("Lato-Regular", size: 14))
-          Spacer()
-          Text(audioDuration)
-            .font(.custom("Lato-Regular", size: 14))
-            .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+            Text("Recording")
+              .foregroundColor(.gray)
+              .font(.custom("Lato-Regular", size: 14))
+            Spacer()
+            Text(audioDuration)
+              .font(.custom("Lato-Regular", size: 14))
+              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
             
+          }
+          .padding()
+          .background(Color.gray.opacity(0.1))
+          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight])
         }
-        .padding()
-        .background(Color.gray.opacity(0.1))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .padding(.init(top: 0, leading: 12, bottom: 0, trailing: 12))
       }
     }
     .padding()

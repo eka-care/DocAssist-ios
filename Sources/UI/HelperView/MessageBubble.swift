@@ -32,7 +32,7 @@ struct MessageBubble: View {
         url: url,
         message: message,
         viewModel: viewModel,
-        createdAt: message.createdAt,
+        createdAt: message.createdAtDate ?? .now,
         v2rxViewModel: v2rxViewModel
       )
         .alignmentGuide(.top) { d in d[.top] }
