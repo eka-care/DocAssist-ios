@@ -10,7 +10,6 @@ import EkaVoiceToRx
 import AVFoundation
 
 struct V2RxChatView: View {
-  
   // MARK: - Properties
   
   @State private var audioPlayer: AVAudioPlayer?
@@ -171,7 +170,7 @@ struct V2RxChatView: View {
       audioManger.prepareAudio(sessionID: v2rxSessionId)
       audioDuration = audioManger.getDuration() ?? ""
     }
-    .onChange(of: FloatingVoiceToRxViewController.shared.viewModel?.screenState) { _ , newValue in
+    .onChange(of: v2rxViewModel.screenState) { _ , newValue in
       if newValue == .resultDisplay(success: true) ||
           newValue == .resultDisplay(success: false) {
         Task {
