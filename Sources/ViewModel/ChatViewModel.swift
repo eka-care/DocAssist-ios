@@ -340,7 +340,6 @@ extension ChatViewModel {
   }
   
   public func checkForVoiceToRxResult(using sessionId: UUID?) async -> Bool {
-    print("#BB sessionId: \(sessionId)")
     guard let sessionId else { return true }
     
     let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(

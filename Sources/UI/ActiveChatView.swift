@@ -88,12 +88,9 @@ public struct ActiveChatView: View {
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      
-      print("#BB1 \(viewModel.v2rxEnabled)")
       Task {
         viewModel.v2rxEnabled = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID) ? true : false
       }
-      print("#BB2 \(viewModel.v2rxEnabled)")
     }
     .onDisappear {
       viewModel.inputString = ""
