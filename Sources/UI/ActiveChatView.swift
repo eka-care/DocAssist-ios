@@ -56,8 +56,13 @@ public struct ActiveChatView: View {
     if patientName != patientNameConstant {
       V2RxInitConfigurations.shared.subOwnerName = patientName
     }
-    /// Making sure to initialise voice init configurations before voice to rx view model
-    voiceToRxViewModel = VoiceToRxViewModel(voiceToRxInitConfig: V2RxInitConfigurations.shared)
+    
+    /// If reference is present use that
+    if let v2rxViewModel = FloatingVoiceToRxViewController.shared.viewModel {
+      voiceToRxViewModel = v2rxViewModel
+    } else { /// Making sure to initialise voice init configurations before voice to rx view model
+      voiceToRxViewModel = VoiceToRxViewModel(voiceToRxInitConfig: V2RxInitConfigurations.shared)
+    }
   }
   
   public var body: some View {
