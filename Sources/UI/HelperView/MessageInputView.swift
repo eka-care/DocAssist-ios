@@ -137,6 +137,7 @@ struct MessageInputView: View {
             Button {
               voiceToRxViewModel.startRecording(conversationType: .dictation)
               FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+              viewModel.v2rxEnabled = false
               Task {
                 guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
                 let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
@@ -153,6 +154,7 @@ struct MessageInputView: View {
             Button {
               voiceToRxViewModel.startRecording(conversationType: .conversation)
               FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+              viewModel.v2rxEnabled = false
               Task {
                 guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
                 let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
@@ -166,9 +168,13 @@ struct MessageInputView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
           } label: {
-            Image(.voiceToRxButton)
-              .padding(4)
+            Image(systemName: "waveform.circle.fill")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 24,height: 24)
+              .foregroundStyle(viewModel.v2rxEnabled ? Color.primaryprimary : Color.gray.opacity(0.5))
           }
+          .disabled(!viewModel.v2rxEnabled)
         }
       }
     }

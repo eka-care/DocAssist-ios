@@ -73,6 +73,11 @@ public struct ActiveChatView: View {
         content
       }
     }
+    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
+      if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
+        viewModel.v2rxEnabled = true
+      }
+    }
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)

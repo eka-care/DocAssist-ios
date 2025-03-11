@@ -35,6 +35,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var alertTitle = ""
   var alertMessage = ""
   var audioRecorder: AVAudioRecorder?
+  var v2rxEnabled: Bool = true
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -331,12 +332,10 @@ extension ChatViewModel {
 extension ChatViewModel {
   
   public func fetchVoiceConversations(using sessionId: UUID) async -> String? {
-    print("#BB v2RxSessionId \(sessionId)")
     let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
       predicate: #Predicate { $0.id == sessionId }
     )
     let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
-    print("#BB result is \(result)")
     return result.first?.fileURL
   }
   
