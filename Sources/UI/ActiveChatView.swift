@@ -55,6 +55,8 @@ public struct ActiveChatView: View {
     V2RxInitConfigurations.shared.voiceToRxDelegate = SetUIComponents.shared.v2rxDelegate
     if patientName != patientNameConstant {
       V2RxInitConfigurations.shared.subOwnerName = patientName
+    } else {
+      V2RxInitConfigurations.shared.subOwnerName = "Clinical Note"
     }
     
     /// If reference is present use that
@@ -86,6 +88,12 @@ public struct ActiveChatView: View {
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
+      
+      print("#BB1 \(viewModel.v2rxEnabled)")
+      Task {
+        viewModel.v2rxEnabled = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID) ? true : false
+      }
+      print("#BB2 \(viewModel.v2rxEnabled)")
     }
     .onDisappear {
       viewModel.inputString = ""

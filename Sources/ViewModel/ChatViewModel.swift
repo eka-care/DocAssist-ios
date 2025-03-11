@@ -339,4 +339,16 @@ extension ChatViewModel {
     return result.first?.fileURL
   }
   
+  public func checkForVoiceToRxResult(using sessionId: UUID?) async -> Bool {
+    print("#BB sessionId: \(sessionId)")
+    guard let sessionId else { return true }
+    
+    let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
+      predicate: #Predicate { $0.id == sessionId }
+    )
+    
+    let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
+    
+    return ((result.first?.didFetchResult) != nil)
+  }
 }
