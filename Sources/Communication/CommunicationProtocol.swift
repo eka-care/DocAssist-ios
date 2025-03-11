@@ -16,5 +16,5 @@ public protocol ConvertVoiceToText {
 }
 
 public protocol DeepThoughtsViewDelegate: AnyObject {
-  func navigateToDeepThoughtPage(id: UUID)
+  func navigateToDeepThoughtPage(id: String)
 }

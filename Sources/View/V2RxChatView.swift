@@ -20,6 +20,7 @@ struct V2RxChatView: View {
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
   let v2rxSessionId: UUID
+  @State var updatedSessionID: String?
   @State var audioDuration: String = ""
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
     
@@ -118,7 +119,11 @@ struct V2RxChatView: View {
             /// Retry file uploads if pending from local
             v2rxViewModel.retryIfNeeded()
           } else {
-            viewModel.navigateToDeepThought(id: v2rxSessionId)
+            if let updatedSessionID {
+              viewModel.navigateToDeepThought(id: updatedSessionID)
+            } else {
+              viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
+            }
           }
         }
         HStack {
@@ -151,10 +156,13 @@ struct V2RxChatView: View {
     .padding()
     .onAppear {
       Task {
-        print(" Session id is \(v2rxSessionId)")
         if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
           print("State is \(state)")
           v2rxState = state
+        }
+        let models = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: EkaVoiceToRx.QueryHelper.queryForFetch(with: v2rxSessionId))
+        if let sessionId = models.first?.updatedSessionID?.uuidString {
+          updatedSessionID = "P-PP-\(sessionId)"
         }
       }
       audioManger.prepareAudio(sessionID: v2rxSessionId)

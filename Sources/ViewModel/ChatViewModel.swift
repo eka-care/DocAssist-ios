@@ -323,7 +323,7 @@ extension Notification.Name {
 }
 
 extension ChatViewModel {
-  func navigateToDeepThought(id: UUID?) {
+  func navigateToDeepThought(id: String?) {
     guard let id else { return }
     deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
   }
