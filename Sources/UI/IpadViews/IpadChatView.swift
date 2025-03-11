@@ -8,7 +8,7 @@
 import SwiftUI
 import SwiftData
 
-public enum SelectedScreen: Equatable {
+public enum SelectedScreen {
   case selectedPatient(ChatViewModel, String, String, String, String)
   case allPatient(SessionDataModel, ChatViewModel)
   case emptyScreen

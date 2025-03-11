@@ -138,7 +138,7 @@ struct ChatsScreenView: View {
     }
     .navigationBarHidden(true)
     .onAppear {
-      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: nil)
+      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
     }
   }
   
@@ -198,7 +198,7 @@ struct ChatsScreenView: View {
             if let sessions = groupedThreads[key], let firstSession = sessions.first {
               Button {
                 selectedScreen = .selectedPatient(viewModel, firstSession.oid ?? "", firstSession.userBId, firstSession.userDocId, firstSession.subTitle ?? "")
-                DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: nil)
+                DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: ["type": "start_new_chat"])
               } label: {
                 GroupPatientView(
                   subTitle: firstSession.subTitle ?? "",
