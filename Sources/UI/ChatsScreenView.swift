@@ -73,11 +73,12 @@ struct ChatsScreenView: View {
        searchForPatient: @escaping (() -> Void),
        authToken: String,
        authRefreshToken: String,
-       selectedScreen: Binding<SelectedScreen?>
+       selectedScreen: Binding<SelectedScreen?>,
+       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
-    self.viewModel = ChatViewModel(context: ctx, delegate: delegate)
+    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate)
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate
@@ -404,4 +405,45 @@ struct ChatsScreenView: View {
 
 var currentDevice: UIUserInterfaceIdiom {
   UIDevice.current.userInterfaceIdiom
+}
+
+func getInitials(name: String?) -> String? {
+    guard let name = name, name != "General Chat" else {
+        return "GeneralChat"
+    }
+    let words = name.uppercased().components(separatedBy: " ")
+    let initials = words.prefix(2).map { $0.prefix(1) }.joined()
+    return initials
+}
+
+func nameInitialsView(initials: String) -> some View {
+  ZStack {
+    LinearGradient(
+      colors: [
+        Color(red: 233/255, green: 237/255, blue: 254/255, opacity: 1.0),
+        Color(red: 248/255, green: 239/255, blue: 251/255, opacity: 1.0)
+      ],
+      startPoint: .leading,
+      endPoint: .trailing
+    )
+    .frame(width: 38, height: 38)
+    Group {
+      if initials == "GeneralChat" {
+        Image(.chatMsgs)
+      } else {
+        Text(initials)
+      }
+    }
+    .foregroundStyle(LinearGradient(
+      colors: [
+        Color(red: 32/255, green: 92/255, blue: 255/255, opacity: 1.0),
+        Color(red: 174/255, green: 113/255, blue: 210/255, opacity: 1.0)
+      ],
+      startPoint: .leading,
+      endPoint: .trailing
+    ))
+    .font(.custom("Lato-Bold", size: 16))
+    .fontWeight(.bold)
+  }
+  .clipShape(Circle())
 }

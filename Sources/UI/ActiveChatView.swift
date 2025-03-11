@@ -7,9 +7,9 @@
 
 import SwiftUI
 import SwiftData
-import MarkdownUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
+import EkaVoiceToRx
 
 @MainActor
 public struct ActiveChatView: View {
@@ -29,8 +29,9 @@ public struct ActiveChatView: View {
   @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
   var title: String?
-  
+  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo = RecordsRepo()
+  let patientNameConstant = "General Chat"
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
     self.session = session
@@ -46,24 +47,50 @@ public struct ActiveChatView: View {
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
+    
+    V2RxInitConfigurations.shared.modelContainer = DatabaseConfig.shared.modelContainer
+    V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
+    V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
+    V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
+    V2RxInitConfigurations.shared.voiceToRxDelegate = SetUIComponents.shared.v2rxDelegate
+    if patientName != patientNameConstant {
+      V2RxInitConfigurations.shared.subOwnerName = patientName
+    } else {
+      V2RxInitConfigurations.shared.subOwnerName = "Clinical Note"
+    }
+    
+    /// If reference is present use that
+    if let v2rxViewModel = FloatingVoiceToRxViewController.shared.viewModel {
+      voiceToRxViewModel = v2rxViewModel
+    } else { /// Making sure to initialise voice init configurations before voice to rx view model
+      voiceToRxViewModel = VoiceToRxViewModel(voiceToRxInitConfig: V2RxInitConfigurations.shared)
+    }
   }
   
   public var body: some View {
-      ZStack {
-        VStack {
-          Image(.bg)
-            .resizable()
-            .frame(height: 120)
-            .edgesIgnoringSafeArea(.all)
-          Spacer()
-        }
-        VStack {
-            content
-        }
+    ZStack {
+      VStack {
+        Image(.bg)
+          .resizable()
+          .frame(height: 120)
+          .edgesIgnoringSafeArea(.all)
+        Spacer()
       }
+      VStack {
+        content
+      }
+    }
+    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
+      if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
+        viewModel.v2rxEnabled = true
+      }
+    }
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
+      Task {
+        viewModel.v2rxEnabled = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID) ? true : false
+      }
     }
     .onDisappear {
       viewModel.inputString = ""
@@ -74,7 +101,7 @@ public struct ActiveChatView: View {
       }
     }
   }
-
+  
   private var content: some View {
     VStack {
       if calledFromPatientContext {
@@ -115,17 +142,26 @@ public struct ActiveChatView: View {
           ScrollView {
             VStack {
               ForEach(messages) { message in
-                MessageBubble(message: message, m: message.messageText ?? "No message", url: message.imageUrls)
-                  .padding(.horizontal)
-                  .id(message.id)
+                
+                MessageBubble(
+                  message: message,
+                  m: message.messageText,
+                  url: message.imageUrls,
+                  viewModel: viewModel,
+                  v2rxViewModel: voiceToRxViewModel
+                )
+                .padding(.horizontal)
+                .id(message.id)
                 
                 if message.role == .user && messages.last?.id == message.id {
                   LoadingView()
+                  
                 }
               }
               
               Color.clear.frame(height: 1).id("bottomID")
             }
+            .textSelection(.enabled)
             .padding(.top, 10)
           }
           .onChange(of: isTextFieldFocused, { _, _ in
@@ -206,301 +242,24 @@ public struct ActiveChatView: View {
   
   var chatInputView : some View {
     if viewModel.messageInput {
-      AnyView(messageInputView)
+      AnyView(
+        MessageInputView(
+          inputString: viewModel.inputStringBinding,
+          selectedImages: $selectedImages,
+          selectedDocumentId: $selectedDocumentId,
+          showRecordsView: $showRecordsView,
+          patientName: patientName,
+          viewModel: viewModel,
+          session: session,
+          messages: messages,
+          voiceToRxViewModel: voiceToRxViewModel,
+          recordsRepo: recordsRepo
+        )
+      )
     } else {
-      AnyView(voiceInputView)
-    }
-  }
-  
-  var voiceInputView: some View {
-    HStack(alignment: .center, spacing: 10) {
-      Button {
-        viewModel.dontRecord()
-      } label: {
-        Image(.xmark)
-          .frame(width: 24, height: 24)
-          .padding(6)
-      }
-      .frame(width: 36, height: 36)
-      .background(Color.white)
-      .cornerRadius(18)
-      
-      if viewModel.isRecording {
-        AudioWaveformView()
-          .frame(height: 36)
-          .layoutPriority(1)
-      } else {
-        Spacer()
-          .frame(height: 36)
-      }
-      
-      TimerView(isTimerRunning: !viewModel.voiceProcessing)
-        .frame(width: 60)
-      
-      if viewModel.voiceProcessing {
-        ProgressView()
-          .frame(width: 36, height: 36)
-      }
-      
-      if !viewModel.voiceProcessing {
-        Button {
-          viewModel.stopRecording()
-        } label: {
-          Image(.check)
-            .frame(width: 24, height: 24)
-            .padding(6)
-        }
-        .frame(width: 36, height: 36)
-        .background(Color.white)
-        .cornerRadius(18)
-      }
-    }
-    .frame(maxWidth: .infinity, minHeight: 44)
-    .padding(.horizontal, 8)
-    .background(Color.white)
-    .cornerRadius(16)
-    .overlay(
-      RoundedRectangle(cornerRadius: 16)
-        .inset(by: -0.5)
-        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
-    )
-    .padding(.horizontal, 16)
-    .padding(.vertical, 8)
-  }
-  
-  var messageInputView: some View {
-    VStack (spacing: 15) {
-      if !selectedImages.isEmpty {
-          ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-              ForEach(selectedImages.indices, id: \.self) { index in
-                ImagePreviewCell(imageUrl: selectedImages[index], imageId: index) { id in
-                  selectedImages.remove(at: id)
-                }
-              }
-            }
-          }
-          .frame(height: 20)
-          .padding()
-      }
-      
-      TextField(" Start typing...", text: viewModel.inputStringBinding, axis: .vertical)
-        .frame(minHeight: 25)
-      HStack(spacing: 10) {
-        Button {
-          showRecordsView = true
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
-        } label: {
-          Image(.paperClip)
-            .foregroundStyle(Color.neutrals600)
-        }
-        .sheet(isPresented: $showRecordsView) {
-          NavigationStack {
-            RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-              selectedImages = data.compactMap { record in
-                guard let image = record.image else { return nil }
-                return image
-              }
-              selectedDocumentId = data.compactMap({ record in
-                guard let docId = record.documentID else { return nil }
-                return docId
-              }
-                                                   
-              )
-              showRecordsView = false
-            }.environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
-          }
-        }
-        
-        if let patientName = patientName , !patientName.isEmpty,
-           patientName != "General Chat" {
-          HStack(alignment: .center, spacing: 4) {
-            VStack(alignment: .center, spacing: 10) {
-              Image(systemName: "person.fill")
-            }
-            .padding(4)
-            .frame(width: 16, height: 16, alignment: .center)
-            
-            Text(patientName)
-              .font(
-                Font.custom("Lato-Bold", size: 12)
-              )
-              .foregroundColor(Color(red: 0.28, green: 0.28, blue: 0.28))
-          }
-          .padding(.horizontal, 8)
-          .padding(.vertical, 6)
-          .background(Color(red: 0.91, green: 0.91, blue: 0.91))
-          .cornerRadius(123)
-          .onAppear {
-            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "select_pt"])
-          }
-        }
-        
-        Spacer()
-        
-        Button {
-          viewModel.handleMicrophoneTap()
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"] )
-        } label: {
-          Image(.mic)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 14)
-            .foregroundStyle(Color.neutrals600)
-        }
-        .alert(isPresented: viewModel.showPermissionAlertBinding) {
-          Alert(
-            title: Text(viewModel.alertTitle),
-            message: Text(viewModel.alertMessage),
-            primaryButton: .default(Text("Go to Settings")) {
-              viewModel.openAppSettings()
-            },
-            secondaryButton: .cancel(Text("Cancel"))
-          )
-        }
-        
-        
-        Button {
-          viewModel.inputString = viewModel.inputString.trimmingCharacters(in: .whitespacesAndNewlines)
-          
-          guard !viewModel.inputString.isEmpty || !selectedImages.isEmpty
-          else { return }
-          Task {
-            await viewModel.sendMessage(
-              newMessage: viewModel.inputString,
-              imageUrls: selectedImages,
-              vaultFiles: selectedDocumentId,
-              sessionId: session,
-              lastMesssageId: messages.last?.msgId
-            )
-            viewModel.inputString = ""
-            selectedImages = []
-            selectedDocumentId = []
-            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
-          }
-        } label: {
-          Image(systemName: "arrow.up")
-            .foregroundStyle(Color.white)
-            .fontWeight(.semibold)
-            .padding(4)
-            .background((viewModel.inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
-        }
-        .disabled(viewModel.inputString.isEmpty)
-        .disabled(viewModel.streamStarted)
-      }
-    }
-    .focused($isTextFieldFocused)
-    .padding(8)
-    .background(Color(.white))
-    .cornerRadius(20)
-    .overlay(content: {
-      RoundedRectangle(cornerRadius:20)
-        .stroke(Color.gray, lineWidth: 0.5)
-    })
-    .padding(8)
-  }
-}
-
-struct MessageBubble: View {
-  let message: ChatMessageModel
-  let m: String?
-  let url: [String]?
-  
-  var body: some View {
-    HStack(alignment: .top) {
-      if message.role == .user {
-        Spacer()
-      }
-      
-      if message.role == .Bot {
-        BotAvatarImage()
-          .alignmentGuide(.top) { d in d[.top] }
-      }
-      MessageTextView(text: m, role: message.role, url: url)
-        .alignmentGuide(.top) { d in d[.top] }
-      
-      if message.role == .Bot {
-        Spacer()
-      }
-    }
-    .padding(.top, 4)
-  }
-}
-
-struct MessageTextView: View {
-  let text: String?
-  let role: MessageRole
-  let url: [String]?
-  
-  var body: some View {
-    VStack {
-      if let url = url {
-        HStack {
-          ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
-            let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(urlImage)
-            AsyncImage(url: completeUrl) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 86, height: 86)
-                        .clipped()
-                        .cornerRadius(10)
-                case .failure(_):
-                  ProgressView()
-                   
-                @unknown default:
-                    ProgressView()
-                }
-            }
-          }
-        }
-      }
-      
-      if let text, text != "" {
-        Markdown(text)
-          .font(.body)
-          .padding(8)
-          .background(backgroundColor)
-          .foregroundColor(foregroundColor)
-          .contentTransition(.numericText())
-          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
-      }
-    }
-  }
-  
-  private var backgroundColor: Color {
-    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .white) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
-  }
-  
-  private var foregroundColor: Color {
-    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (.neutrals800)
-  }
-}
-
-struct BotAvatarImage: View {
-  var body: some View {
-    if let image = SetUIComponents.shared.chatIcon {
-      Image(uiImage: image)
-        .resizable()
-        .scaledToFit()
-        .frame(width: 20)
-    }
-  }
-}
-
-struct UserAvatarImage: View {
-  var body: some View {
-    if let image = SetUIComponents.shared.userIcon {
-      Image(uiImage: image)
-        .resizable()
-        .scaledToFit()
-        .frame(width: 35)
-        .cornerRadius(15)
-        .foregroundStyle(Color.gray)
+      AnyView(
+        VoiceInputView(viewModel: viewModel)
+      )
     }
   }
 }
@@ -522,50 +281,5 @@ struct CustomCornerShape: Shape {
       cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
     )
     return Path(path.cgPath)
-  }
-}
-
-struct DocSuggestion: View {
-  
-  var image: UIImage
-  var title: String
-  var subTitle: String
-  
-  init(image: UIImage, title: String, subTitle: String) {
-    self.image = image
-    self.title = title
-    self.subTitle = subTitle
-  }
-  
-  var body: some View {
-    
-    HStack(alignment: .top, spacing: 12) {
-      Spacer()
-      Image(uiImage: image)
-        .frame(width: 24)
-      VStack(alignment: .leading, spacing: 4) {
-        Text(title)
-          .foregroundStyle(Color.neutrals600)
-          .font(.custom("Lato-Bold", size: 16))
-          .frame(maxWidth: .infinity, alignment: .leading)
-        Text(subTitle)
-          .foregroundStyle(Color.neutrals600)
-          .font(.custom("Lato-Regular", size: 13))
-          .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .frame(width: 260)
-      Spacer()
-    }
-  }
-}
-
-struct LoadingView: View {
-  var body: some View {
-    HStack {
-      BotAvatarImage()
-        .padding()
-      ProgressView()
-      Spacer()
-    }
   }
 }

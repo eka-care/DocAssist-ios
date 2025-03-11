@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import AVFAudio
 import AVFoundation
+import EkaVoiceToRx
 
 public struct ExistingChatResponse {
   var chatExist: Bool
@@ -21,7 +22,9 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   private(set) var vmssid: String = ""
   private var context: ModelContext
-  private var delegate : ConvertVoiceToText? = nil
+  private var delegate: ConvertVoiceToText? = nil
+  private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
+  
   private let networkCall = NetworkCall()
   var inputString = ""
   var isRecording = false
@@ -32,7 +35,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var alertTitle = ""
   var alertMessage = ""
   var audioRecorder: AVAudioRecorder?
-  var audioPlayer: AVAudioPlayer?
+  var v2rxEnabled: Bool = true
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -50,9 +53,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  init(context: ModelContext, delegate: ConvertVoiceToText? = nil) {
+  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil) {
     self.context = context
     self.delegate = delegate
+    self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
   }
   
   func sendMessage(
@@ -314,16 +318,36 @@ extension Date {
   }
 }
 
-class DocAssistFileHelper {
-  
-  public static func getDocumentDirectoryURL() -> URL {
-    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-    let documentsDirectory = paths[0]
-    return documentsDirectory
-  }
-  
-}
-
 extension Notification.Name {
   static let addedMessage = Notification.Name("addedMessage")
+}
+
+extension ChatViewModel {
+  func navigateToDeepThought(id: String?) {
+    guard let id else { return }
+    deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
+  }
+}
+
+extension ChatViewModel {
+  
+  public func fetchVoiceConversations(using sessionId: UUID) async -> String? {
+    let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
+      predicate: #Predicate { $0.id == sessionId }
+    )
+    let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
+    return result.first?.fileURL
+  }
+  
+  public func checkForVoiceToRxResult(using sessionId: UUID?) async -> Bool {
+    guard let sessionId else { return true }
+    
+    let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
+      predicate: #Predicate { $0.id == sessionId }
+    )
+    
+    let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
+    
+    return ((result.first?.didFetchResult) != nil)
+  }
 }

@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import EkaVoiceToRx
 
 public class SetUIComponents {
   
@@ -31,6 +32,10 @@ public class SetUIComponents {
   public var ipadEmptyChatView: UIImage?
   public var generalChatDefaultSuggestion: [String]?
   public var patientChatDefaultSuggestion: [String]?
+  public var docOId: String?
+  public var docUUId: String?
+  public var docName: String?
+  public weak var v2rxDelegate: FloatingVoiceToRxDelegate?
   
   public static let shared = SetUIComponents()
 
