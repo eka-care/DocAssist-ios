@@ -19,7 +19,6 @@ class AudioPlayerManager {
     let m4aFileName = "full_audio.m4a_"
     let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL()
       .appendingPathComponent(sessionID.uuidString).appendingPathComponent(m4aFileName)
-    print("#BB Audio URL: \(completeUrl)")
     do {
       audioPlayer = try AVAudioPlayer(contentsOf: completeUrl)
       audioPlayer?.prepareToPlay()
@@ -31,7 +30,7 @@ class AudioPlayerManager {
   func playAudio(
     sessionID: UUID
   ) {
-    prepareAudio(sessionID: sessionID)
+  //  prepareAudio(sessionID: sessionID)
     configureAudioSession()
     audioPlayer?.play()
   }
@@ -55,5 +54,12 @@ class AudioPlayerManager {
 
 func stopAudio() {
     audioPlayer?.stop()
+  }
+  
+  func getDuration() -> String? {
+    guard let duration = audioPlayer?.duration else { return nil }
+    let minutes = Int(duration) / 60
+    let seconds = Int(duration) % 60
+    return String(format: "%02dm:%02ds", minutes, seconds)
   }
 }

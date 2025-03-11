@@ -20,6 +20,7 @@ struct V2RxChatView: View {
   var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
   let v2rxSessionId: UUID
+  @State var audioDuration: String = ""
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
     
   private var statusText: String {
@@ -112,15 +113,21 @@ struct V2RxChatView: View {
         .padding()
         .background(Color.white)
         .clipShape(RoundedRectangle(cornerRadius: 12))
+        .onTapGesture {
+          if v2rxState == .retry {
+            /// Retry file uploads if pending from local
+            v2rxViewModel.retryIfNeeded()
+          } else {
+            viewModel.navigateToDeepThought(id: v2rxSessionId)
+          }
+        }
         HStack {
           Button(action: {
             isPlaying.toggle()
             if isPlaying {
               audioManger.playAudio(sessionID: v2rxSessionId)
-              print("#BB playing")
             } else {
               audioManger.stopAudio()
-              print("#BB STOPPED")
             }
           }) {
             Image(systemName: isPlaying ? "stop.fill" : "play.fill")
@@ -131,6 +138,10 @@ struct V2RxChatView: View {
             .foregroundColor(.gray)
             .font(.custom("Lato-Regular", size: 14))
           Spacer()
+          Text(audioDuration)
+            .font(.custom("Lato-Regular", size: 14))
+            .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+            
         }
         .padding()
         .background(Color.gray.opacity(0.1))
@@ -146,6 +157,8 @@ struct V2RxChatView: View {
           v2rxState = state
         }
       }
+      audioManger.prepareAudio(sessionID: v2rxSessionId)
+      audioDuration = audioManger.getDuration() ?? ""
     }
     .onChange(of: FloatingVoiceToRxViewController.shared.viewModel?.screenState) { _ , newValue in
       if newValue == .resultDisplay(success: true) ||
@@ -155,14 +168,8 @@ struct V2RxChatView: View {
             v2rxState = state
           }
         }
-      }
-    }
-    .onTapGesture {
-      if v2rxState == .retry {
-        /// Retry file uploads if pending from local
-        v2rxViewModel.retryIfNeeded()
-      } else {
-        viewModel.navigateToDeepThought(id: v2rxSessionId)
+        audioManger.prepareAudio(sessionID: v2rxSessionId)
+        audioDuration = audioManger.getDuration() ?? ""
       }
     }
   }
