@@ -348,6 +348,10 @@ extension ChatViewModel {
     
     let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
     
-    return ((result.first?.didFetchResult) != nil)
+    if let result = result.first { /// If we found v2rx session with completed session we enable mic
+      return result.didFetchResult != nil
+    } else { /// If no v2rx session is found means it was deleted and we enable mic again
+      return true
+    }
   }
 }

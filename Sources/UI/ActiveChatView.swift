@@ -94,19 +94,19 @@ public struct ActiveChatView: View {
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      if voiceToRxViewModel.screenState == .deletedRecording {
-        Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID!)
-        }
-        viewModel.v2rxEnabled = true
-      }
+      
       Task {
           let result = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID)
           await MainActor.run {
               viewModel.v2rxEnabled = result
           }
       }
-      print("#BB v2rxEnabled is \(viewModel.v2rxEnabled)")
+      
+      if voiceToRxViewModel.screenState == .deletedRecording {
+        Task {
+          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID!)
+        }
+      }
     }
     .onDisappear {
       viewModel.inputString = ""
