@@ -84,12 +84,20 @@ public struct ActiveChatView: View {
       if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
         viewModel.v2rxEnabled = true
       }
+      if newValue == .deleted {
+        Task {
+          DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(sessionId: voiceToRxViewModel.sessionID)
+        }
+      }
     }
     .onAppear {
       viewModel.switchToSession(session)
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       Task {
         viewModel.v2rxEnabled = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID) ? true : false
+      }
+      if voiceToRxViewModel.screenState == .deleted {
+        DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(sessionId: voiceToRxViewModel.sessionID)
       }
     }
     .onDisappear {
@@ -161,14 +169,13 @@ public struct ActiveChatView: View {
               
               Color.clear.frame(height: 1).id("bottomID")
             }
-            .textSelection(.enabled)
             .padding(.top, 10)
           }
           .onChange(of: isTextFieldFocused, { _, _ in
             proxy.scrollTo("bottomID", anchor: .top)
           })
           .scrollDismissesKeyboard(.immediately)
-          .onChange(of: messages) { _ , _ in
+          .onChange(of: messages) { oldValue , newValue in
             withAnimation {
               proxy.scrollTo("bottomID", anchor: .bottom)
             }
