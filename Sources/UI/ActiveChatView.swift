@@ -170,8 +170,9 @@ public struct ActiveChatView: View {
                 .id(message.id)
                 
                 if message.role == .user && messages.last?.id == message.id {
-                  LoadingView()
-                  
+                  if viewModel.streamStarted {
+                    LoadingView()
+                  }
                 }
               }
               

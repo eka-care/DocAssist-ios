@@ -177,6 +177,7 @@ public class ActiveChatViewController: UIViewController {
             authToken: authToken,
             authRefreshToken: authRefreshToken
         )
+        .navigationBarHidden(true)
       docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
     } else {
       let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
@@ -187,6 +188,7 @@ public class ActiveChatViewController: UIViewController {
             patientName: patientSubtitle ?? "",
             calledFromPatientContext: true
         )
+        .navigationBarHidden(true)
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
