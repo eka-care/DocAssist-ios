@@ -86,7 +86,7 @@ public struct ActiveChatView: View {
       }
       if newValue == .deletedRecording {
         Task {
-          DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(sessionId: voiceToRxViewModel.sessionID)
+          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID!)
         }
       }
     }
@@ -97,7 +97,10 @@ public struct ActiveChatView: View {
         viewModel.v2rxEnabled = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID) ? true : false
       }
       if voiceToRxViewModel.screenState == .deletedRecording {
-        DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(sessionId: voiceToRxViewModel.sessionID)
+        Task {
+          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID!)
+        }
+        print("#BB delete recording is getting called")
       }
     }
     .onDisappear {
