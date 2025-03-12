@@ -86,73 +86,77 @@ struct V2RxChatView: View {
       if v2rxState == .loading {
         ProgressView()
       } else {
-        VStack(alignment: .leading) {
-          HStack {
-            Image(uiImage: v2rximage)
-              .foregroundColor(.green)
-              .font(.system(size: 24))
-            Text(v2rxStateTitle)
-              .font(.custom("Lato-Bold", size: 16))
-              .foregroundColor(.black)
-          }
-          HStack {
-            Text(formattedDate)
-              .font(.custom("Lato-Regular", size: 13))
-              .foregroundColor(.gray)
-              .padding(.leading, 20)
-            Text(statusText)
-              .font(.custom("Lato-Bold", size: 12))
-              .foregroundColor(v2rxStateColor)
-              .padding(.horizontal, 8)
-              .padding(.vertical, 4)
-              .background(v2rxStateColor.opacity(0.15))
-              .cornerRadius(8)
-            Spacer()
-          }
-        }
-        .padding()
-        .background(Color.white)
-        .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topRight])
-        .onTapGesture {
-          if v2rxState == .retry {
-            /// Retry file uploads if pending from local
-            v2rxViewModel.retryIfNeeded()
-          } else {
-            if let updatedSessionID {
-              viewModel.navigateToDeepThought(id: updatedSessionID)
+        VStack(alignment: .leading, spacing: 0) {
+          Button {
+            if v2rxState == .retry {
+              /// Retry file uploads if pending from local
+              v2rxViewModel.retryIfNeeded()
             } else {
-              viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
-            }
-          }
-        }
-        VStack(alignment: .center) {
-          HStack {
-            Button(action: {
-              isPlaying.toggle()
-              if isPlaying {
-                audioManger.playAudio(sessionID: v2rxSessionId)
+              if let updatedSessionID {
+                viewModel.navigateToDeepThought(id: updatedSessionID)
               } else {
-                audioManger.stopAudio()
+                viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
               }
-            }) {
-              Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-                .foregroundColor(.blue)
-                .font(.system(size: 20))
             }
-            Text("Recording")
-              .foregroundColor(.gray)
-              .font(.custom("Lato-Regular", size: 14))
-            Spacer()
-            Text(audioDuration)
-              .font(.custom("Lato-Regular", size: 14))
-              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-            
+          } label: {
+            VStack(alignment: .leading) {
+              HStack {
+                Image(uiImage: v2rximage)
+                  .foregroundColor(.green)
+                  .font(.system(size: 24))
+                Text(v2rxStateTitle)
+                  .font(.custom("Lato-Bold", size: 16))
+                  .foregroundColor(.black)
+              }
+              HStack {
+                Text(formattedDate)
+                  .font(.custom("Lato-Regular", size: 13))
+                  .foregroundColor(.gray)
+                  .padding(.leading, 20)
+                Text(statusText)
+                  .font(.custom("Lato-Bold", size: 12))
+                  .foregroundColor(v2rxStateColor)
+                  .padding(.horizontal, 8)
+                  .padding(.vertical, 4)
+                  .background(v2rxStateColor.opacity(0.15))
+                  .cornerRadius(8)
+                Spacer()
+              }
+            }
           }
           .padding()
-          .background(Color.gray.opacity(0.1))
-          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight])
+          .background(Color.white)
+          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topRight])
+          VStack(alignment: .center) {
+            HStack {
+              Button(action: {
+                isPlaying.toggle()
+                if isPlaying {
+                  audioManger.playAudio(sessionID: v2rxSessionId)
+                } else {
+                  audioManger.stopAudio()
+                }
+              }) {
+                Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                  .foregroundColor(.blue)
+                  .font(.system(size: 20))
+              }
+              Text("Recording")
+                .foregroundColor(.gray)
+                .font(.custom("Lato-Regular", size: 14))
+              Spacer()
+              Text(audioDuration)
+                .font(.custom("Lato-Regular", size: 14))
+                .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+              
+            }
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .customCornerRadius(12, corners: [.bottomLeft, .bottomRight])
+          }
+          .padding(.init(top: 0, leading: 12, bottom: 0, trailing: 12))
         }
-        .padding(.init(top: 0, leading: 12, bottom: 0, trailing: 12))
+        .frame(maxWidth: 250)
       }
     }
     .padding()

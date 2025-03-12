@@ -211,6 +211,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       self.messageInput = true
     })
   }
+  
+  func stopStreaming() {
+      networkCall.cancelStreaming()
+      streamStarted = false
+    }
+    
 }
 
 extension ChatViewModel: AVAudioRecorderDelegate  {

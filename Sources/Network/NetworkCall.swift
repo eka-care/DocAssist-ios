@@ -68,6 +68,12 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
     dataTask = session.dataTask(with: request)
     dataTask?.resume()
   }
+  
+  func cancelStreaming() {
+      dataTask?.cancel()
+      dataTask = nil
+      print("Streaming task canceled.")
+    }
 }
 
 
