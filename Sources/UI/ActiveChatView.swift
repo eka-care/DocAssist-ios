@@ -88,6 +88,7 @@ public struct ActiveChatView: View {
         Task {
           await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID!)
         }
+        viewModel.v2rxEnabled = true
       }
     }
     .onAppear {
@@ -97,7 +98,7 @@ public struct ActiveChatView: View {
         Task {
           await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID!)
         }
-        print("#BB delete recording is getting called")
+        viewModel.v2rxEnabled = true
       }
       Task {
           let result = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID)
