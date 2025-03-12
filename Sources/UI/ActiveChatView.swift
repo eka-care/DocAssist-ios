@@ -84,7 +84,7 @@ public struct ActiveChatView: View {
       if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
         viewModel.v2rxEnabled = true
       }
-      if newValue == .deleted {
+      if newValue == .deletedRecording {
         Task {
           DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(sessionId: voiceToRxViewModel.sessionID)
         }
@@ -96,7 +96,7 @@ public struct ActiveChatView: View {
       Task {
         viewModel.v2rxEnabled = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID) ? true : false
       }
-      if voiceToRxViewModel.screenState == .deleted {
+      if voiceToRxViewModel.screenState == .deletedRecording {
         DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(sessionId: voiceToRxViewModel.sessionID)
       }
     }
