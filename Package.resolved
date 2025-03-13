@@ -1,5 +1,5 @@
 {
-  "originHash" : "908776837848f0a7089a7466be83a431925f5f804a5d4ef91cf19b3a89e0f751",
+  "originHash" : "fa0f2fb31f47c51c5c5ec4c9badff65d62d05b180a1e9b23159841992bc08874",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaMedicalRecordsUI.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "6f312a526634d426eea65bd4914aecdc63ef2709"
+        "revision" : "6f312a526634d426eea65bd4914aecdc63ef2709",
+        "version" : "1.0.2"
       }
     },
     {
