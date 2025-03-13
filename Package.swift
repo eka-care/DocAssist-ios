@@ -26,7 +26,7 @@ let package = Package(
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
-    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", branch: "main")
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", .upToNextMinor(from: "1.0.3"))
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
