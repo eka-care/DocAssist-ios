@@ -123,6 +123,7 @@ struct MessageInputView: View {
               selectedImages = []
               selectedDocumentId = []
               DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+              isTextFieldFocused.toggle()
             }
           } label: {
             Image(systemName: "arrow.up")
@@ -137,11 +138,12 @@ struct MessageInputView: View {
             Button {
               viewModel.stopStreaming()
             } label: {
-              Image(systemName: "square.fill")
-                .foregroundStyle(Color.primaryprimary)
-                .fontWeight(.semibold)
+              Image(systemName: "stop.circle")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 24,height: 24)
+                .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
                 .padding(4)
-                .background(Circle().fill(Color.white))
             }
           } else {
             Menu {
