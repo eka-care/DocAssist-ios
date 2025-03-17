@@ -30,8 +30,8 @@ class AudioPlayerManager {
   func playAudio(
     sessionID: UUID
   ) {
-  //  prepareAudio(sessionID: sessionID)
     configureAudioSession()
+    audioPlayer?.currentTime = 0 
     audioPlayer?.play()
   }
   
@@ -52,7 +52,7 @@ class AudioPlayerManager {
     }
   }
 
-func stopAudio() {
+  func stopAudio() {
     audioPlayer?.stop()
   }
   
