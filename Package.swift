@@ -22,11 +22,11 @@ let package = Package(
    // Lottie dependency
     .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.1"),
     // Medical Record
-    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", .upToNextMinor(from: "1.0.2")),
+    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.0"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
-    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", .upToNextMinor(from: "1.0.3"))
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.0.0")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
