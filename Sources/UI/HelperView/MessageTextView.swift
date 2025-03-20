@@ -8,6 +8,7 @@
 import SwiftUI
 import MarkdownUI
 import EkaVoiceToRx
+import EkaPDFMaker
 
 struct MessageTextView: View {
   let text: String?
@@ -17,6 +18,8 @@ struct MessageTextView: View {
   let viewModel: ChatViewModel
   let createdAt: Date
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
+  @State private var showShareSheet = false
+  @State private var pdfURL: URL?
   
   var body: some View {
     VStack {
@@ -54,7 +57,7 @@ struct MessageTextView: View {
           .foregroundColor(foregroundColor)
           .contentTransition(.numericText())
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
-          .if(role == .Bot) { view in
+          .ifCondition(role == .Bot) { view in
             view.contextMenu {
               Button(action: {
                 UIPasteboard.general.string = text
@@ -67,15 +70,17 @@ struct MessageTextView: View {
                 }
               }
               
-              //            Button(action: {
-              //              DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "sharepdf", "session_id": message.sessionId,"text": text])
-              //            }) {
-              //              HStack {
-              //                Text("sharepdf")
-              //                Spacer()
-              //                Image(systemName: "document.on.document")
-              //              }
-              //            }
+              Button(action: {
+                DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "sharepdf", "session_id": message.sessionId,"text": text])
+                pdfURL = PDFRenderer().renderSinglePage(bodyView: AnyView(Markdown(text)))
+                showShareSheet = true
+              }) {
+                HStack {
+                  Text("sharepdf")
+                  Spacer()
+                  Image(systemName: "document.on.document")
+                }
+              }
               
               Button(action: {
                 DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "good", "session_id": message.sessionId,"text": text])
@@ -97,6 +102,9 @@ struct MessageTextView: View {
                 }
               }
             }
+          }
+          .sheet(isPresented: $showShareSheet) {
+            ShareSheet(activityItems: [pdfURL ?? URL(string: "")!])
           }
       }
       
@@ -121,11 +129,22 @@ struct MessageTextView: View {
 }
 
 extension View {
-    @ViewBuilder func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+    @ViewBuilder func ifCondition<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
         if condition {
             transform(self)
         } else {
             self
         }
     }
+}
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var activityItems: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
