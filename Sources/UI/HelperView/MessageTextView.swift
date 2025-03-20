@@ -9,6 +9,7 @@ import SwiftUI
 import MarkdownUI
 import EkaVoiceToRx
 import EkaPDFMaker
+import EkaUI
 
 struct MessageTextView: View {
   let text: String?
@@ -72,13 +73,20 @@ struct MessageTextView: View {
               
               Button(action: {
                 DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "sharepdf", "session_id": message.sessionId,"text": text])
-                pdfURL = PDFRenderer().renderSinglePage(bodyView: AnyView(Markdown(text)))
-                showShareSheet = true
+                let fileURL = PDFRenderer().renderSinglePage(
+                  headerView: AnyView( DTPDFHeaderView(
+                    data: DTPDFHeaderViewData.formDeepthoughtHeaderViewData(doctorName: "DR.\(SetUIComponents.shared.docName)", clinicName: "", address: "")
+                  )),
+                  bodyView: AnyView(PdfBodyView(text: text))
+                )
+                pdfURL = fileURL
+                shareText()
+                
               }) {
                 HStack {
-                  Text("sharepdf")
+                  Text("Share as PDF")
                   Spacer()
-                  Image(systemName: "document.on.document")
+                  Image(systemName: "square.and.arrow.up")
                 }
               }
               
@@ -103,9 +111,6 @@ struct MessageTextView: View {
               }
             }
           }
-          .sheet(isPresented: $showShareSheet) {
-            ShareSheet(activityItems: [pdfURL ?? URL(string: "")!])
-          }
       }
       
       if let v2RxAudioSessionId = message.v2RxAudioSessionId {
@@ -126,6 +131,16 @@ struct MessageTextView: View {
   private var foregroundColor: Color {
     role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (.neutrals800)
   }
+  
+  func shareText() {
+    guard let url = pdfURL else { return }
+    let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+      
+      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+         let rootViewController = windowScene.windows.first?.rootViewController {
+          rootViewController.present(activityVC, animated: true, completion: nil)
+      }
+  }
 }
 
 extension View {
@@ -138,13 +153,15 @@ extension View {
     }
 }
 
-struct ShareSheet: UIViewControllerRepresentable {
-    var activityItems: [Any]
-    
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
-        return controller
+struct PdfBodyView: View {
+  
+  let text: String
+  
+  var body: some View {
+    VStack {
+      Markdown(text)
     }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+    .padding(.horizontal, EkaSpacing.spacingM)
+    .padding(.top, EkaSpacing.spacingM)
+  }
 }

@@ -28,7 +28,7 @@ let package = Package(
     // VoiceToRx
     .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.0.0"),
     // PdfRender
-    .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", from: "1.0.0")
+    .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", branch: "main")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
