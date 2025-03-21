@@ -26,7 +26,9 @@ let package = Package(
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
-    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", branch: "main")
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", branch: "main"),
+    // EkaPDFMaker
+    .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", branch: "main")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -44,8 +46,10 @@ let package = Package(
         .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
         // Mixpanel
         .product(name: "Mixpanel", package: "mixpanel-swift"),
-        // VoiceToRx]
-        .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx")
+        // VoiceToRx
+        .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx"),
+        // PdfRender
+        .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
       ],
       resources: [
         .process("Resources")

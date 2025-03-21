@@ -201,15 +201,6 @@ struct MessageInputView: View {
         .stroke(Color.gray, lineWidth: 0.5)
     )
     .padding(8)
-    .onAppear {
-      setupFloatingVoiceToRxController()
-    }
-  }
-}
-
-extension MessageInputView {
-  private func setupFloatingVoiceToRxController() {
-    FloatingVoiceToRxViewController.shared.voiceToRxDelegate = V2RxInitConfigurations.shared.voiceToRxDelegate
   }
 }
 
