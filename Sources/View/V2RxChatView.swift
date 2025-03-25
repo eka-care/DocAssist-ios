@@ -22,17 +22,29 @@ struct V2RxChatView: View {
   @State var updatedSessionID: String?
   @State var audioDuration: String = ""
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
+  
+  private enum Constants {
+    static let draft = "Draft"
+    static let saved = "Saved"
+    static let tapToTryAgain = "Tap to try again"
+    static let recordAgain = "Record again"
+    static let viewClinicalNotes = "View clinical notes"
+    static let failedToAnalyze = "Failed to analyse"
+    static let somethingWentWrong = "Something went wrong"
+    static let recording = "Recording"
+    static let dateFormat = "dd MMM'yy"
+  }
     
   private var statusText: String {
     switch v2rxState {
     case .draft:
-      return "Draft"
+      return Constants.draft
     case .saved:
-      return "Saved"
+      return Constants.saved
     case .retry:
-      return "Tap to try again"
+      return Constants.tapToTryAgain
     default:
-      return "Record again"
+      return Constants.recordAgain
     }
   }
   
@@ -65,11 +77,11 @@ struct V2RxChatView: View {
   private var v2rxStateTitle: String {
     switch v2rxState {
     case .draft, .saved:
-      "View clinical notes"
+      Constants.viewClinicalNotes
     case .retry:
-      "Failed to analyse"
+      Constants.failedToAnalyze
     default:
-      "Something went wrong"
+      Constants.somethingWentWrong
     }
   }
   
@@ -104,9 +116,11 @@ struct V2RxChatView: View {
                 Image(uiImage: v2rximage)
                   .foregroundColor(.green)
                   .font(.system(size: 24))
-                Text(v2rxStateTitle)
-                  .font(.custom("Lato-Bold", size: 16))
-                  .foregroundColor(.black)
+                if v2rxStateTitle != Constants.somethingWentWrong {
+                  Text(v2rxStateTitle)
+                    .font(.custom("Lato-Bold", size: 16))
+                    .foregroundColor(.black)
+                }
               }
               HStack {
                 Text(formattedDate)
@@ -127,7 +141,7 @@ struct V2RxChatView: View {
           .padding()
           .background(Color.white)
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topRight])
-          if v2rxStateTitle != "Something went wrong" {
+          if v2rxStateTitle != Constants.somethingWentWrong {
             VStack(alignment: .center) {
               HStack {
                 Button(action: {
