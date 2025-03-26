@@ -158,12 +158,10 @@ extension DatabaseConfig {
     
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
-      
+      messageToUpdate.messageText = responseMessage
+      saveData()
       DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
-        
         NotificationCenter.default.post(name: .addedMessage, object: nil)
-        
       }
       return
     }
