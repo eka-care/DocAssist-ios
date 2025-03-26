@@ -100,14 +100,18 @@ struct V2RxChatView: View {
       } else {
         VStack(alignment: .leading, spacing: 0) {
           Button {
-            if v2rxState == .retry {
-              /// Retry file uploads if pending from local
-              v2rxViewModel.retryIfNeeded()
+            if v2rxStateTitle == Constants.somethingWentWrong {
+              print("Record again")
             } else {
-              if let updatedSessionID {
-                viewModel.navigateToDeepThought(id: updatedSessionID)
+              if v2rxState == .retry {
+                /// Retry file uploads if pending from local
+                v2rxViewModel.retryIfNeeded()
               } else {
-                viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
+                if let updatedSessionID {
+                  viewModel.navigateToDeepThought(id: updatedSessionID)
+                } else {
+                  viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
+                }
               }
             }
           } label: {
@@ -116,24 +120,24 @@ struct V2RxChatView: View {
                 Image(uiImage: v2rximage)
                   .foregroundColor(.green)
                   .font(.system(size: 24))
-                if v2rxStateTitle != Constants.somethingWentWrong {
-                  Text(v2rxStateTitle)
-                    .font(.custom("Lato-Bold", size: 16))
-                    .foregroundColor(.black)
-                }
+                Text(v2rxStateTitle)
+                  .font(.custom("Lato-Bold", size: 16))
+                  .foregroundColor(.black)
               }
               HStack {
                 Text(formattedDate)
                   .font(.custom("Lato-Regular", size: 13))
                   .foregroundColor(.gray)
                   .padding(.leading, 20)
-                Text(statusText)
-                  .font(.custom("Lato-Bold", size: 12))
-                  .foregroundColor(v2rxStateColor)
-                  .padding(.horizontal, 8)
-                  .padding(.vertical, 4)
-                  .background(v2rxStateColor.opacity(0.15))
-                  .cornerRadius(8)
+                if v2rxStateTitle != Constants.somethingWentWrong {
+                  Text(statusText)
+                    .font(.custom("Lato-Bold", size: 12))
+                    .foregroundColor(v2rxStateColor)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(v2rxStateColor.opacity(0.15))
+                    .cornerRadius(8)
+                }
                 Spacer()
               }
             }
