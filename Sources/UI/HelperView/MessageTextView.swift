@@ -73,7 +73,7 @@ struct MessageTextView: View {
               
               Button(action: {
                 DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "sharepdf", "session_id": message.sessionId,"text": text])
-                let fileURL = PDFRenderer().renderSinglePageWithoutA4Constraints(
+                let fileURL = PDFRenderer().renderSinglePage(
                   headerView: AnyView( DTPDFHeaderView(
                     data: DTPDFHeaderViewData.formDeepthoughtHeaderViewData(doctorName: "DR.\(SetUIComponents.shared.docName ?? "" )", clinicName: "", address: "")
                   )),
