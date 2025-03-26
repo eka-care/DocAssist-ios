@@ -18,6 +18,8 @@ struct MessageBubble: View {
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   @State private var thumsUpClicked: Bool = false
   @State private var thumsDownClicked: Bool = false
+  var onClickOfFeedback: () -> Void
+  var onClickOfCopy: () -> Void
   
   var body: some View {
     VStack {
@@ -49,7 +51,7 @@ struct MessageBubble: View {
       .padding(.top, 4)
     }
     
-    if message.role == .Bot {
+    if (message.role == .Bot && message.messageText != nil) {
       if  !viewModel.streamStarted {
         HStack (spacing: 20) {
           Button(action: {
@@ -57,6 +59,7 @@ struct MessageBubble: View {
             if thumsDownClicked {
               thumsDownClicked.toggle()
             }
+            onClickOfFeedback()
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "good", "session_id": message.sessionId,"text": m])
           }) {
             HStack {
@@ -70,6 +73,7 @@ struct MessageBubble: View {
             if thumsUpClicked {
               thumsUpClicked.toggle()
             }
+            onClickOfFeedback()
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "bad", "session_id": message.sessionId,"text": m])
           }) {
             HStack {
@@ -78,6 +82,7 @@ struct MessageBubble: View {
             }
           }
           Button(action: {
+            onClickOfCopy()
             UIPasteboard.general.string = m
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "copy", "session_id": message.sessionId,"text": m])
           }) {
@@ -119,5 +124,27 @@ struct MessageBubble: View {
          let rootViewController = windowScene.windows.first?.rootViewController {
           rootViewController.present(activityVC, animated: true, completion: nil)
       }
+  }
+}
+
+struct FeedbackView: View {
+  var showFeedback: Bool
+  var feedbackText: String
+  
+  var body: some View {
+    if showFeedback {
+      VStack {
+        Text(feedbackText)
+          .padding()
+          .background(.black)
+          .foregroundColor(.white)
+          .clipShape(RoundedRectangle(cornerRadius: 50))
+          .transition(.scale)
+          .zIndex(1)
+          .animation(.easeInOut, value: showFeedback)
+          .padding(.top, 60 )
+        Spacer()
+      }
+    }
   }
 }

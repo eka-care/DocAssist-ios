@@ -32,6 +32,8 @@ public struct ActiveChatView: View {
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo = RecordsRepo()
   let patientNameConstant = "General Chat"
+  @State private var showFeedback = false
+  @State private var feedbackText: String = ""
   
   init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
     self.session = session
@@ -81,6 +83,7 @@ public struct ActiveChatView: View {
       VStack {
         content
       }
+      FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
       if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
@@ -166,7 +169,21 @@ public struct ActiveChatView: View {
                   m: message.messageText,
                   url: message.imageUrls,
                   viewModel: viewModel,
-                  v2rxViewModel: voiceToRxViewModel
+                  v2rxViewModel: voiceToRxViewModel,
+                  onClickOfFeedback: {
+                    showFeedback = true
+                    feedbackText = "Thank you for your feedback!"
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                      showFeedback = false
+                    }
+                  },
+                  onClickOfCopy: {
+                    showFeedback = true
+                    feedbackText = "Text copied to clipboard!"
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                      showFeedback = false
+                    }
+                  }
                 )
                 .padding(.horizontal)
                 .id(message.id)
