@@ -139,12 +139,13 @@ extension DatabaseConfig {
       v2RxaudioFileString: v2RxaudioFileString,
       createdAtDate: .now
     )
+    
+    if let session = try? fetchSession(bySessionId: sessionId) {
+      session.lastUpdatedAt = .now
+    }
+    
     insertMessage(message: chat)
     saveData()
-    
-    DispatchQueue.main.async {
-      NotificationCenter.default.post(name: .addedMessage, object: nil)
-    }
     
     return chat
   }
@@ -161,8 +162,9 @@ extension DatabaseConfig {
       
       DispatchQueue.main.async {
         messageToUpdate.messageText = responseMessage
-        NotificationCenter.default.post(name: .addedMessage, object: nil)
       }
+      saveData()
+  
       return
     }
     

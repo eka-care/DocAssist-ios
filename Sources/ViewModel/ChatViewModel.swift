@@ -152,7 +152,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
               print("Failed to decode JSON: \(error.localizedDescription)")
           }
       }
-    await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
+    
+    await MainActor.run {
+      Task {
+        await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
+      }
+    }
   }
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {

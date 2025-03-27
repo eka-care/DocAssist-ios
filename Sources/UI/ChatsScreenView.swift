@@ -190,15 +190,35 @@ struct ChatsScreenView: View {
     let groupedThreads = Dictionary(grouping: filteredSessions.filter { !($0.oid?.isEmpty ?? true) }) { session in
       session.oid ?? ""
     }
+    let sortedKeys = groupedThreads.keys.sorted { key1, key2 in
+        guard let sessions1 = groupedThreads[key1],
+              let sessions2 = groupedThreads[key2],
+              let latestSession1 = sessions1.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }),
+              let latestSession2 = sessions2.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) else {
+            return false
+        }
+        return latestSession1.lastUpdatedAt > latestSession2.lastUpdatedAt
+    }
+    
     return VStack {
       Divider()
       ScrollView {
         VStack {
-          ForEach(groupedThreads.keys.sorted(), id: \.self) { key in
-            if let sessions = groupedThreads[key], let firstSession = sessions.first {
+          ForEach(sortedKeys, id: \.self) { key in
+            if let sessions = groupedThreads[key],
+               let firstSession = sessions.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) {
               Button {
-                selectedScreen = .selectedPatient(viewModel, firstSession.oid ?? "", firstSession.userBId, firstSession.userDocId, firstSession.subTitle ?? "")
-                DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: ["type": "start_new_chat"])
+                selectedScreen = .selectedPatient(
+                  viewModel,
+                  firstSession.oid ?? "",
+                  firstSession.userBId,
+                  firstSession.userDocId,
+                  firstSession.subTitle ?? ""
+                )
+                DocAssistEventManager.shared.trackEvent(
+                  event: .docAssistHistoryClicks,
+                  properties: ["type": "start_new_chat"]
+                )
               } label: {
                 GroupPatientView(
                   subTitle: firstSession.subTitle ?? "",
@@ -208,7 +228,7 @@ struct ChatsScreenView: View {
                   oid: firstSession.oid ?? "" ,
                   bid: firstSession.userBId,
                   docId: firstSession.userDocId,
-                  date:viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
+                  date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
                   authToken: authToken,
                   authRefreshToken: authRefreshToken
                 )
