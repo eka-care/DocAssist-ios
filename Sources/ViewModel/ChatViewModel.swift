@@ -366,3 +366,10 @@ extension ChatViewModel {
     }
   }
 }
+
+extension ChatViewModel {
+  public func createV2rxChat(oId: String, userDocId:String, userBId: String, sessionId: String) async {
+    let session = await createSession(subTitle: nil, oid: oId, userDocId: userDocId, userBId: userBId)
+    let _ = await DatabaseConfig.shared.createMessage(sessionId: sessionId, messageId: 0 , role: .Bot, imageUrls: nil)
+  }
+}
