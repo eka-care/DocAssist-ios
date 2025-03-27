@@ -53,7 +53,7 @@ struct MessageBubble: View {
     
     if (message.role == .Bot && message.messageText != nil) {
       if ((message.id != messages.last?.id) || (message.id == messages.last?.id && !viewModel.streamStarted)) {
-        HStack (spacing: 16) {
+        HStack (spacing: 8) {
           Button(action: {
             generateHapticFeedback()
             withAnimation {
