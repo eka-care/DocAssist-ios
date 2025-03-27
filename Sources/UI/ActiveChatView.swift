@@ -183,7 +183,8 @@ public struct ActiveChatView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                       showFeedback = false
                     }
-                  }
+                  },
+                  messages: messages
                 )
                 .padding(.horizontal)
                 .id(message.id)

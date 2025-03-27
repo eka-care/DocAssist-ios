@@ -20,6 +20,7 @@ struct MessageBubble: View {
   @State private var thumsDownClicked: Bool = false
   var onClickOfFeedback: () -> Void
   var onClickOfCopy: () -> Void
+  var messages: [ChatMessageModel]
   
   var body: some View {
     VStack {
@@ -52,7 +53,7 @@ struct MessageBubble: View {
     }
     
     if (message.role == .Bot && message.messageText != nil) {
-      if  !viewModel.streamStarted {
+      if ((message.id != messages.last?.id) || (message.id == messages.last?.id && !viewModel.streamStarted)) {
         HStack (spacing: 20) {
           Button(action: {
             thumsUpClicked.toggle()
