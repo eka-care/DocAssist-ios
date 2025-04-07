@@ -24,6 +24,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private var context: ModelContext
   private var delegate: ConvertVoiceToText? = nil
   private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
+  var liveActivityDelegate: LiveActivityDelegate? = nil
   
   private let networkCall = NetworkCall()
   var inputString = ""
@@ -53,10 +54,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil) {
+  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil, liveActivityDelegate: LiveActivityDelegate? = nil) {
     self.context = context
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
+    self.liveActivityDelegate = liveActivityDelegate
   }
   
   func sendMessage(

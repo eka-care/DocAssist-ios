@@ -22,6 +22,7 @@ struct MessageInputView: View {
   let messages: [ChatMessageModel]
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
+  var liveActivityDelegate: LiveActivityDelegate?
   
   var body: some View {
     VStack(spacing: 15) {
@@ -149,7 +150,12 @@ struct MessageInputView: View {
             Menu {
               Button {
                 voiceToRxViewModel.startRecording(conversationType: .dictation)
-                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+                if liveActivityDelegate != nil {
+                  print("#BB Live activity delegate is not nil")
+                } else {
+                  print("#BB Live activity delegate is nil")
+                }
+                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
                 viewModel.v2rxEnabled = false
                 Task {
                   guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
@@ -166,7 +172,7 @@ struct MessageInputView: View {
               
               Button {
                 voiceToRxViewModel.startRecording(conversationType: .conversation)
-                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel)
+                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
                 viewModel.v2rxEnabled = false
                 Task {
                   guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import EkaVoiceToRx
 
 enum ChatSegment: String, CaseIterable {
     case patients = "Patients"
@@ -40,6 +41,7 @@ struct ChatsScreenView: View {
   var searchForPatient: (() -> Void)
   var authToken: String
   var authRefreshToken: String
+  var liveActivityDelegate: LiveActivityDelegate?
   
   var thread: [SessionDataModel] {
     allSessions.filter { session in
@@ -74,11 +76,12 @@ struct ChatsScreenView: View {
        authToken: String,
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
-       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+       liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
-    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate)
+    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate, liveActivityDelegate: liveActivityDelegate)
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate
@@ -86,6 +89,13 @@ struct ChatsScreenView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
+    self.liveActivityDelegate = liveActivityDelegate
+    
+    if self.liveActivityDelegate != nil {
+      print("#BB liveActivityDelegate is not nil in csv")
+    } else {
+      print("#BB liveActivityDelegate is nil in csv")
+    }
   }
   
   var body: some View {
@@ -230,7 +240,8 @@ struct ChatsScreenView: View {
                   docId: firstSession.userDocId,
                   date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
                   authToken: authToken,
-                  authRefreshToken: authRefreshToken
+                  authRefreshToken: authRefreshToken,
+                  liveActivityDelegate: liveActivityDelegate
                 )
               }
             }
@@ -251,6 +262,7 @@ struct ChatsScreenView: View {
     var date: String
     var authToken: String
     var authRefreshToken: String
+    var liveActivityDelegate: LiveActivityDelegate?
     
     var body: some View {
       switch currentDevice {
@@ -265,7 +277,7 @@ struct ChatsScreenView: View {
     
     private var messageSubViewIPhone: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken, liveActivityDelegate: liveActivityDelegate)
           .modelContext( DatabaseConfig.shared.modelContext)
       } label: {
         messageSubView

@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsCore
 import EkaMedicalRecordsUI
+import EkaVoiceToRx
 
 public struct ExistingPatientChatsView: View {
   private let patientName: String
@@ -26,8 +27,9 @@ public struct ExistingPatientChatsView: View {
   @State private var path = NavigationPath()
   private let authToken: String
   private let authRefreshToken: String
+  var liveActivityDelegate: LiveActivityDelegate?
   
-  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String) {
+  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String, liveActivityDelegate: LiveActivityDelegate? = nil) {
     self.patientName = patientName
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
@@ -37,6 +39,7 @@ public struct ExistingPatientChatsView: View {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
+    self.liveActivityDelegate = liveActivityDelegate
     
     _chats = Query(
       filter: #Predicate<SessionDataModel> { eachChat in
@@ -47,6 +50,12 @@ public struct ExistingPatientChatsView: View {
     )
     
     setupView(oid: oid)
+    
+    if self.liveActivityDelegate != nil {
+      print("#BB liveActivityDelegate is not nil in ecv")
+    } else {
+      print("#BB liveActivityDelegate is nil in ecv")
+    }
   }
   
   public var body: some View {
@@ -156,17 +165,17 @@ class MRInitializer {
   static var shared = MRInitializer()
   
   func registerUISdk() {
-    registerFonts()
+//    registerFonts()
   }
-  
-  private func registerFonts() {
-    do {
-      try Fonts.registerAllFonts()
-    } catch {
-      debugPrint("Failed to fetch fonts")
-    }
-  }
-  
+//  
+//  private func registerFonts() {
+//    do {
+//      try Fonts.registerAllFonts()
+//    } catch {
+//      debugPrint("Failed to fetch fonts")
+//    }
+//  }
+//  
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
     registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
   }
