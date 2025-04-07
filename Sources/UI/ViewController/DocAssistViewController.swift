@@ -140,9 +140,9 @@ public class ActiveChatViewController: UIViewController {
     authToken: String,
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
-    liveAcitivityDelegate: LiveActivityDelegate? = nil
+    liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
-    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,liveActivityDelegate: liveAcitivityDelegate)
+    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,liveActivityDelegate: liveActivityDelegate)
     self.backgroundColor = backgroundColor
     self.ctx = ctx
     self.patientSubtitle = patientSubtitle
@@ -152,7 +152,7 @@ public class ActiveChatViewController: UIViewController {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveAcitivityDelegate
+    self.liveActivityDelegate = liveActivityDelegate
     
     super.init(nibName: nil, bundle: nil)
  //   registerUISdk()
