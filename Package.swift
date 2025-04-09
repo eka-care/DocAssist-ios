@@ -16,7 +16,7 @@ let package = Package(
   ],
   dependencies: [
     // MarkdownUI package dependency
-    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.0.2"),
+    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
    // Lottie dependency
@@ -26,7 +26,7 @@ let package = Package(
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
-    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.1.1"),
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.1.2"),
     // EkaPDFMaker
     .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", branch: "main")
   ],

@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import EkaVoiceToRx
 
 enum ChatSegment: String, CaseIterable {
     case patients = "Patients"
@@ -40,6 +41,7 @@ struct ChatsScreenView: View {
   var searchForPatient: (() -> Void)
   var authToken: String
   var authRefreshToken: String
+  var liveActivityDelegate: LiveActivityDelegate?
   
   var thread: [SessionDataModel] {
     allSessions.filter { session in
@@ -74,11 +76,12 @@ struct ChatsScreenView: View {
        authToken: String,
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
-       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+       liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
-    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate)
+    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate, liveActivityDelegate: liveActivityDelegate)
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate
@@ -86,6 +89,7 @@ struct ChatsScreenView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
+    self.liveActivityDelegate = liveActivityDelegate
   }
   
   var body: some View {
@@ -190,15 +194,35 @@ struct ChatsScreenView: View {
     let groupedThreads = Dictionary(grouping: filteredSessions.filter { !($0.oid?.isEmpty ?? true) }) { session in
       session.oid ?? ""
     }
+    let sortedKeys = groupedThreads.keys.sorted { key1, key2 in
+        guard let sessions1 = groupedThreads[key1],
+              let sessions2 = groupedThreads[key2],
+              let latestSession1 = sessions1.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }),
+              let latestSession2 = sessions2.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) else {
+            return false
+        }
+        return latestSession1.lastUpdatedAt > latestSession2.lastUpdatedAt
+    }
+    
     return VStack {
       Divider()
       ScrollView {
         VStack {
-          ForEach(groupedThreads.keys.sorted(), id: \.self) { key in
-            if let sessions = groupedThreads[key], let firstSession = sessions.first {
+          ForEach(sortedKeys, id: \.self) { key in
+            if let sessions = groupedThreads[key],
+               let firstSession = sessions.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) {
               Button {
-                selectedScreen = .selectedPatient(viewModel, firstSession.oid ?? "", firstSession.userBId, firstSession.userDocId, firstSession.subTitle ?? "")
-                DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: ["type": "start_new_chat"])
+                selectedScreen = .selectedPatient(
+                  viewModel,
+                  firstSession.oid ?? "",
+                  firstSession.userBId,
+                  firstSession.userDocId,
+                  firstSession.subTitle ?? ""
+                )
+                DocAssistEventManager.shared.trackEvent(
+                  event: .docAssistHistoryClicks,
+                  properties: ["type": "start_new_chat"]
+                )
               } label: {
                 GroupPatientView(
                   subTitle: firstSession.subTitle ?? "",
@@ -208,9 +232,10 @@ struct ChatsScreenView: View {
                   oid: firstSession.oid ?? "" ,
                   bid: firstSession.userBId,
                   docId: firstSession.userDocId,
-                  date:viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
+                  date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
                   authToken: authToken,
-                  authRefreshToken: authRefreshToken
+                  authRefreshToken: authRefreshToken,
+                  liveActivityDelegate: liveActivityDelegate
                 )
               }
             }
@@ -231,6 +256,7 @@ struct ChatsScreenView: View {
     var date: String
     var authToken: String
     var authRefreshToken: String
+    var liveActivityDelegate: LiveActivityDelegate?
     
     var body: some View {
       switch currentDevice {
@@ -245,7 +271,7 @@ struct ChatsScreenView: View {
     
     private var messageSubViewIPhone: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken, liveActivityDelegate: liveActivityDelegate)
           .modelContext( DatabaseConfig.shared.modelContext)
       } label: {
         messageSubView

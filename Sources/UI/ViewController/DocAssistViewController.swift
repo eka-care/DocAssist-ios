@@ -10,12 +10,14 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
+import EkaVoiceToRx
 
 public class ChatsVeiwController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory
   let ctx: ModelContext
+  var liveActivityDelegate: LiveActivityDelegate?
   
   public init(
     backgroundColor: Color? = nil,
@@ -30,11 +32,13 @@ public class ChatsVeiwController: UIViewController {
     patientDelegate: NavigateToPatientDirectory,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    liveActivityDelegate: LiveActivityDelegate? = nil
     
   ) {
     self.patientDelegate = patientDelegate
     self.ctx = ctx
+    self.liveActivityDelegate = liveActivityDelegate
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
     case "ipad":
@@ -70,7 +74,8 @@ public class ChatsVeiwController: UIViewController {
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         selectedScreen: Binding.constant(nil),
-        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
+        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+        liveActivityDelegate: liveActivityDelegate
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -121,6 +126,7 @@ public class ActiveChatViewController: UIViewController {
   
   var docAssistView: AnyView?
   var vm: ChatViewModel
+  var liveActivityDelegate: LiveActivityDelegate?
   
   public init(
     backgroundColor: Color? = nil,
@@ -133,9 +139,10 @@ public class ActiveChatViewController: UIViewController {
     calledFromPatientContext: Bool,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
-    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate)
+    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,liveActivityDelegate: liveActivityDelegate)
     self.backgroundColor = backgroundColor
     self.ctx = ctx
     self.patientSubtitle = patientSubtitle
@@ -145,9 +152,10 @@ public class ActiveChatViewController: UIViewController {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
+    self.liveActivityDelegate = liveActivityDelegate
     
     super.init(nibName: nil, bundle: nil)
-    registerUISdk()
+ //   registerUISdk()
     registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId)
   }
   
@@ -175,7 +183,8 @@ public class ActiveChatViewController: UIViewController {
             userBId: userBId,
             calledFromPatientContext: true,
             authToken: authToken,
-            authRefreshToken: authRefreshToken
+            authRefreshToken: authRefreshToken,
+            liveActivityDelegate: liveActivityDelegate
         )
         .navigationBarHidden(true)
       docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
@@ -219,17 +228,17 @@ public class ActiveChatViewController: UIViewController {
 
 extension ActiveChatViewController {
   
-  func registerUISdk() {
-    registerFonts()
-  }
-  
-  private func registerFonts() {
-    do {
-      try Fonts.registerAllFonts()
-    } catch {
-      debugPrint("Failed to fetch fonts")
-    }
-  }
+//  func registerUISdk() {
+//    registerFonts()
+//  }
+//  
+//  private func registerFonts() {
+//    do {
+//      try Fonts.registerAllFonts()
+//    } catch {
+//      debugPrint("Failed to fetch fonts")
+//    }
+//  }
   
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
     var ownerId: String = oid
@@ -250,17 +259,17 @@ extension ActiveChatViewController {
 
 extension ChatsVeiwController {
   
-  func registerUISdk() {
-    registerFonts()
-  }
+//  func registerUISdk() {
+//    registerFonts()
+//  }
   
-  func registerFonts() {
-    do {
-      try Fonts.registerAllFonts()
-    } catch {
-      debugPrint("Failed to fetch fonts")
-    }
-  }
+//  func registerFonts() {
+//    do {
+//      try Fonts.registerAllFonts()
+//    } catch {
+//      debugPrint("Failed to fetch fonts")
+//    }
+//  }
   
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
     var ownerId: String = oid

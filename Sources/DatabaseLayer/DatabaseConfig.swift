@@ -139,12 +139,13 @@ extension DatabaseConfig {
       v2RxaudioFileString: v2RxaudioFileString,
       createdAtDate: .now
     )
+    
+    if let session = try? fetchSession(bySessionId: sessionId) {
+      session.lastUpdatedAt = .now
+    }
+    
     insertMessage(message: chat)
     saveData()
-    
-    DispatchQueue.main.async {
-      NotificationCenter.default.post(name: .addedMessage, object: nil)
-    }
     
     return chat
   }
@@ -158,11 +159,12 @@ extension DatabaseConfig {
     
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
-      messageToUpdate.messageText = responseMessage
-      saveData()
+      
       DispatchQueue.main.async {
-        NotificationCenter.default.post(name: .addedMessage, object: nil)
+        messageToUpdate.messageText = responseMessage
       }
+      saveData()
+  
       return
     }
     

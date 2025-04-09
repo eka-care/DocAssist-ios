@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import EkaVoiceToRx
 
 public struct GeneralChatView: View {
   
@@ -24,6 +25,7 @@ public struct GeneralChatView: View {
   var authRefreshToken: String
   @Binding var selectedScreen: SelectedScreen?
   var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+  var liveActivityDelegate: LiveActivityDelegate?
   
   public init(
     backgroundColor: Color? = .white,
@@ -39,7 +41,8 @@ public struct GeneralChatView: View {
     authToken: String,
     authRefreshToken: String,
     selectedScreen: Binding<SelectedScreen?>,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
@@ -55,6 +58,7 @@ public struct GeneralChatView: View {
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
+    self.liveActivityDelegate = liveActivityDelegate
   }
   
   public var body: some View {
@@ -70,7 +74,8 @@ public struct GeneralChatView: View {
       authToken: authToken,
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen,
-      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
+      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+      liveActivityDelegate: liveActivityDelegate
     )
     .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
     .navigationBarHidden(true)

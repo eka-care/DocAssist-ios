@@ -24,6 +24,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private var context: ModelContext
   private var delegate: ConvertVoiceToText? = nil
   private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
+  var liveActivityDelegate: LiveActivityDelegate? = nil
   
   private let networkCall = NetworkCall()
   var inputString = ""
@@ -53,10 +54,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil) {
+  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil, liveActivityDelegate: LiveActivityDelegate? = nil) {
     self.context = context
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
+    self.liveActivityDelegate = liveActivityDelegate
   }
   
   func sendMessage(
@@ -152,7 +154,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
               print("Failed to decode JSON: \(error.localizedDescription)")
           }
       }
-    await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
+    
+    await MainActor.run {
+      Task {
+        await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
+      }
+    }
   }
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
@@ -359,5 +366,12 @@ extension ChatViewModel {
     } else { /// If no v2rx session is found means it was deleted and we enable mic again
       return true
     }
+  }
+}
+
+extension ChatViewModel {
+  public func createV2rxChat(oId: String, userDocId:String, userBId: String, sessionId: String) async {
+    let session = await createSession(subTitle: nil, oid: oId, userDocId: userDocId, userBId: userBId)
+    let _ = await DatabaseConfig.shared.createMessage(sessionId: sessionId, messageId: 0 , role: .Bot, imageUrls: nil)
   }
 }

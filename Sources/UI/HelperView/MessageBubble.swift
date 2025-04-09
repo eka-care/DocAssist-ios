@@ -18,9 +18,12 @@ struct MessageBubble: View {
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   @State private var thumsUpClicked: Bool = false
   @State private var thumsDownClicked: Bool = false
+  @State private var copyClicked: Bool = false
+  var onClickOfFeedback: () -> Void
+  var onClickOfCopy: () -> Void
+  var messages: [ChatMessageModel]
   
   var body: some View {
-    VStack {
       HStack(alignment: .top) {
         if message.role == .user {
           Spacer()
@@ -47,47 +50,72 @@ struct MessageBubble: View {
         }
       }
       .padding(.top, 4)
-    }
     
-    if message.role == .Bot {
-      if  !viewModel.streamStarted {
-        HStack (spacing: 20) {
+    if (message.role == .Bot && message.messageText != nil) {
+      if ((message.id != messages.last?.id) || (message.id == messages.last?.id && !viewModel.streamStarted)) {
+        HStack (spacing: 8) {
           Button(action: {
-            thumsUpClicked.toggle()
-            if thumsDownClicked {
-              thumsDownClicked.toggle()
+            generateHapticFeedback()
+            withAnimation {
+              thumsUpClicked.toggle()
+              if thumsDownClicked {
+                thumsDownClicked.toggle()
+              }
             }
+            onClickOfFeedback()
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "good", "session_id": message.sessionId,"text": m])
           }) {
-            HStack {
               Image(systemName: thumsUpClicked ? "hand.thumbsup.fill" : "hand.thumbsup")
-                .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-            }
+              .fontWeight(.medium)
+              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+              .frame(width: 34, height: 34)
           }
           
           Button(action: {
-            thumsDownClicked.toggle()
-            if thumsUpClicked {
-              thumsUpClicked.toggle()
+            generateHapticFeedback()
+            withAnimation {
+              thumsDownClicked.toggle()
+              if thumsUpClicked {
+                thumsUpClicked.toggle()
+              }
             }
+            onClickOfFeedback()
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "bad", "session_id": message.sessionId,"text": m])
           }) {
-            HStack {
               Image(systemName: thumsDownClicked ? "hand.thumbsdown.fill" : "hand.thumbsdown")
-                .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-            }
+              .scaledToFit()
+              .frame(width: 18)
+              .padding(.all, 4)
+              .fontWeight(.medium)
+              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+              .frame(width: 34, height: 34)
           }
+          
           Button(action: {
+            withAnimation {
+              copyClicked = true
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+              withAnimation {
+                copyClicked = false
+              }
+            }
+            generateHapticFeedback()
+            onClickOfCopy()
             UIPasteboard.general.string = m
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "copy", "session_id": message.sessionId,"text": m])
           }) {
-            HStack {
-              Image(systemName: "document.on.document")
-                .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-            }
+            Image(systemName: copyClicked ? "checkmark" : "document.on.document")
+              .scaledToFit()
+              .padding(.all, 4)
+              .contentTransition(.symbolEffect(.replace))
+              .fontWeight(.medium)
+              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+              .frame(width: 34, height: 34)
           }
           
           Button(action: {
+            generateHapticFeedback()
             DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "sharepdf", "session_id": message.sessionId,"text": m])
             let fileURL = PDFRenderer().renderSinglePage(
               headerView: AnyView( DTPDFHeaderView(
@@ -99,10 +127,10 @@ struct MessageBubble: View {
             shareText()
             
           }) {
-            HStack {
               Image(systemName: "square.and.arrow.up")
-                .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-            }
+              .fontWeight(.medium)
+              .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+              .frame(width: 34, height: 34)
           }
           Spacer()
         }
@@ -119,5 +147,33 @@ struct MessageBubble: View {
          let rootViewController = windowScene.windows.first?.rootViewController {
           rootViewController.present(activityVC, animated: true, completion: nil)
       }
+  }
+  
+  private func generateHapticFeedback() {
+    let feedbackGenerator = UIImpactFeedbackGenerator(style: .light)
+    feedbackGenerator.prepare()
+    feedbackGenerator.impactOccurred()
+  }
+}
+
+struct FeedbackView: View {
+  var showFeedback: Bool
+  var feedbackText: String
+  
+  var body: some View {
+    if showFeedback {
+      VStack {
+        Text(feedbackText)
+          .padding()
+          .background(.black)
+          .foregroundColor(.white)
+          .clipShape(RoundedRectangle(cornerRadius: 50))
+          .transition(.scale)
+          .zIndex(1)
+          .animation(.easeInOut, value: showFeedback)
+          .padding(.top, 60 )
+        Spacer()
+      }
+    }
   }
 }
