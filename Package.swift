@@ -22,7 +22,7 @@ let package = Package(
    // Lottie dependency
     .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.1"),
     // Medical Record
-    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.0"),
+    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.6"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
