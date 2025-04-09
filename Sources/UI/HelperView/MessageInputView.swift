@@ -150,11 +150,6 @@ struct MessageInputView: View {
             Menu {
               Button {
                 voiceToRxViewModel.startRecording(conversationType: .dictation)
-                if liveActivityDelegate != nil {
-                  print("#BB Live activity delegate is not nil")
-                } else {
-                  print("#BB Live activity delegate is nil")
-                }
                 FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
                 viewModel.v2rxEnabled = false
                 Task {
