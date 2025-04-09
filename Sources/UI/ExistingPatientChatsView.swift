@@ -50,12 +50,6 @@ public struct ExistingPatientChatsView: View {
     )
     
     setupView(oid: oid)
-    
-    if self.liveActivityDelegate != nil {
-      print("#BB liveActivityDelegate is not nil in ecv")
-    } else {
-      print("#BB liveActivityDelegate is nil in ecv")
-    }
   }
   
   public var body: some View {

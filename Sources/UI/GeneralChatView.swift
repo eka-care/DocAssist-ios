@@ -59,12 +59,6 @@ public struct GeneralChatView: View {
     _selectedScreen = selectedScreen
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
     self.liveActivityDelegate = liveActivityDelegate
-    
-    if self.liveActivityDelegate != nil {
-      print("#BB liveActivityDelegate is not nil in gcv")
-    } else {
-      print("#BB liveActivityDelegate is nil in gcv")
-    }
   }
   
   public var body: some View {

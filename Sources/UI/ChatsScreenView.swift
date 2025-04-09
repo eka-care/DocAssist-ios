@@ -90,12 +90,6 @@ struct ChatsScreenView: View {
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
     self.liveActivityDelegate = liveActivityDelegate
-    
-    if self.liveActivityDelegate != nil {
-      print("#BB liveActivityDelegate is not nil in csv")
-    } else {
-      print("#BB liveActivityDelegate is nil in csv")
-    }
   }
   
   var body: some View {
