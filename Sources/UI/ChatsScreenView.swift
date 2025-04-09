@@ -36,6 +36,8 @@ struct ChatsScreenView: View {
   @State private var selectedPatient: String?
   @Binding var selectedScreen: SelectedScreen?
   @State var selectedPatientThread: SessionDataModel?
+  @State private var messageMatches: [String: Bool] = [:]
+
   
   var patientDelegate: NavigateToPatientDirectory
   var searchForPatient: (() -> Void)
@@ -51,18 +53,30 @@ struct ChatsScreenView: View {
   }
   
   var filteredSessions: [SessionDataModel] {
-    return thread
-//    if searchText.isEmpty {
-//      return thread
-//    } else {
-//      return thread.filter { session in
-//        session.title.localizedCaseInsensitiveContains(searchText) ||
-//        (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false) ||
-//        session.chatMessages.contains { chatMessage in
-//          chatMessage.messageText?.localizedCaseInsensitiveContains(searchText) ?? false
-//        }
-//      }
-//    }
+    if searchText.isEmpty {
+      return thread
+    } else {
+      return thread.filter { session in
+        let basicMatch = session.title.localizedCaseInsensitiveContains(searchText) ||
+        (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false)
+        
+        let hasMatchingMessages = messageMatches[session.sessionId] ?? false
+        
+        if messageMatches[session.sessionId] == nil {
+          Task {
+            if let messages = try? await DatabaseConfig.shared.searchBotMessages(searchText: searchText) {
+              await MainActor.run {
+                messageMatches[session.sessionId] = messages.contains {
+                  $0.sessionId == session.sessionId && $0.role == .Bot
+                }
+              }
+            }
+          }
+        }
+        
+        return basicMatch || hasMatchingMessages
+      }
+    }
   }
   
   init(backgroundColor: Color? = nil,
