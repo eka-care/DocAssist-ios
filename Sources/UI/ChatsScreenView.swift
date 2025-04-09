@@ -372,7 +372,7 @@ struct ChatsScreenView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-          patientDelegate.navigateToPatientDirectory()
+  //        patientDelegate.navigateToPatientDirectory()
           searchForPatient()
         }) {
           Image(.newChatButton)

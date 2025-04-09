@@ -30,6 +30,7 @@ struct SearchBar: View {
           })
           .padding(.vertical, 8)
           .padding(.horizontal, 4)
+          .scrollDismissesKeyboard(.automatic)
           
           if !text.isEmpty {
             Button(action: {

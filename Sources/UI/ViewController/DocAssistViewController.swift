@@ -12,7 +12,7 @@ import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 import EkaVoiceToRx
 
-public class ChatsVeiwController: UIViewController {
+public class ChatsViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory
@@ -257,7 +257,7 @@ extension ActiveChatViewController {
 }
 
 
-extension ChatsVeiwController {
+extension ChatsViewController {
   
 //  func registerUISdk() {
 //    registerFonts()

@@ -47,6 +47,11 @@ struct MessageInputView: View {
         Button {
           showRecordsView = true
           DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
+          if patientName != "General Chat" {
+            InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
+          } else {
+            InitConfiguration.shared.recordsTitle = "My documents"
+          }
         } label: {
           Image(.paperClip)
             .foregroundStyle(Color.neutrals600)
@@ -54,12 +59,22 @@ struct MessageInputView: View {
         .sheet(isPresented: $showRecordsView) {
           NavigationStack {
             RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-              selectedImages = data.compactMap { record in
+//              selectedImages = data.compactMap { record in
+//                record.image
+//              }
+//              selectedDocumentId = data.compactMap { record in
+//                record.documentID
+//              }
+              
+              let images = data.compactMap { record in
                 record.image
               }
-              selectedDocumentId = data.compactMap { record in
+              let docIds = data.compactMap { record in
                 record.documentID
               }
+              
+              selectedImages = Array(images.prefix(3))
+              selectedDocumentId = Array(docIds.prefix(3))
               showRecordsView = false
             }
             .environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
