@@ -47,6 +47,12 @@ struct MessageInputView: View {
         Button {
           showRecordsView = true
           DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
+          if patientName != "General Chat" {
+            InitConfiguration.shared.recordsTitle =
+          patientName
+          } else {
+            InitConfiguration.shared.recordsTitle = nil
+          }
         } label: {
           Image(.paperClip)
             .foregroundStyle(Color.neutrals600)
