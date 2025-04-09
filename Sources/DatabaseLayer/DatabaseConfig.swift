@@ -113,6 +113,15 @@ final actor DatabaseConfig {
   func insertMessage(message: ChatMessageModel) {
     modelContext.insert(message)
   }
+  
+  func searchBotMessages(searchText: String) async throws -> [ChatMessageModel] {
+      let descriptor = FetchDescriptor<ChatMessageModel>(
+          predicate: #Predicate<ChatMessageModel> { message in
+            message.messageText?.contains(searchText) ?? false
+          }
+      )
+      return try modelContext.fetch(descriptor)
+  }
 }
 
 // Create
