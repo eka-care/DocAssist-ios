@@ -157,10 +157,13 @@ struct V2RxChatView: View {
                   }
                 }) {
                   Image(systemName: isPlaying ? "stop.fill" : "play.fill")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 16)
+                    .contentTransition(.symbolEffect(.replace))
                     .foregroundColor(.blue)
-                    .font(.system(size: 20))
                 }
-                Text("Recording")
+                Text(isPlaying ? "Playing" : "Audio File")
                   .foregroundColor(.gray)
                   .font(.custom("Lato-Regular", size: 14))
                 Spacer()
