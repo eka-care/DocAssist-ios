@@ -74,7 +74,7 @@ struct ChatsScreenView: View {
           }
         }
         
-        return basicMatch || hasMatchingMessages
+        return basicMatch
       }
     }
   }
