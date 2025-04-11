@@ -122,6 +122,14 @@ final actor DatabaseConfig {
       )
       return try modelContext.fetch(descriptor)
   }
+  
+  func isOidPreset(sessionId: String) async throws -> String {
+    let descriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate { $0.sessionId == sessionId && ($0.oid != nil || $0.oid != "")}
+      )
+    return try modelContext.fetch(descriptor).first?.oid ?? ""
+    
+  }
 }
 
 // Create

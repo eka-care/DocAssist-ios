@@ -10,7 +10,7 @@ import SwiftData
 
 public enum SelectedScreen {
   case selectedPatient(ChatViewModel, String, String, String, String)
-  case allPatient(SessionDataModel, ChatViewModel)
+  case allPatient(SessionDataModel, ChatViewModel, String, String)
   case emptyScreen
 }
 

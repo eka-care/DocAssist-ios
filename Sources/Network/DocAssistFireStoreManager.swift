@@ -8,7 +8,6 @@
 import Foundation
 import FirebaseFirestore
 
-@MainActor
 final class DocAssistFireStoreManager {
 
   static let shared = DocAssistFireStoreManager()
@@ -24,55 +23,80 @@ final class DocAssistFireStoreManager {
   private let sessionsCollectionName = "sessions"
   private let messagesCollectionName = "messages"
 
-  func sendMessageToFirestore(businessId: String, doctorId: String, context: String, sessionId: String, messageId: Int, message: FirebaseMessageModel, completion: @escaping (String) -> Void) {
+  func sendMessageToFirestore(businessId: String, doctorId: String, context: Bool, sessionId: String, messageId: Int, message: FirebaseMessageModel, completion: @escaping (String) -> Void) {
 
-    let db = Firestore.firestore()
+   // let db = Firestore.firestore()
     var patientContext: String = ""
+    patientContext = context ? "in_patient" : "out_of_patient"
     
-    if context != "General Chat" {
-      patientContext = "in_patient"
-    } else {
-      patientContext = "out_of_patient"
-    }
+//    let messageDocument = db?
+//      .collection("docassist")
+//      .document(businessId)
+//      .collection("doctors")
+//      .document(doctorId)
+//      .collection("context")
+//      .document("out_of_patient")
+//      .collection("sessions")
+//      .document(sessionId)
+//      .collection("messages")
+//      .document("\(messageId)")
     
-    let messageDocument = db
+    let baseRef = db?
       .collection("docassist")
       .document(businessId)
       .collection("doctors")
       .document(doctorId)
       .collection("context")
-      .document(context)
-      .collection("sessions")
-      .document(sessionId)
-      .collection("messages")
-      .document("\(messageId)")
+      .document(patientContext)
+    
+    let messageDocument: DocumentReference?
+    if context { // in_patient
+      messageDocument = baseRef?
+        .collection("patients")
+        .document("adfa")
+        .collection("sessions")
+        .document(sessionId)
+        .collection("messages")
+        .document("\(messageId)")
+    } else { // out_of_patient
+      messageDocument = baseRef?
+        .collection("sessions")
+        .document(sessionId)
+        .collection("messages")
+        .document("\(messageId)")
+    }
+
 
     let data: [String: Any] = [
-      "text": message.message,
-      "sessionId": message.sessionId,
-      "doctorId": message.doctorId,
-      "patientId": message.patientId,
+      "message": message.message,
+      "session_id": message.sessionId,
+      "doctor_oid": message.doctorId ?? "",
+      "patient_oid": message.patientId ?? "",
       "status": message.status,
       "role": message.role,
-      "vaultFiles": message.vaultFiles,
-      "userAgent": message.userAgent,
-      "sessionIdentity": message.sessionIdentity,
-      "ownerId": message.ownerId,
-      "createdAt": message.createdAt,
-      "chatContext": patientContext,
+      "vault_files": message.vaultFiles,
+      "user_agent": message.userAgent,
+      "session_identity": message.sessionIdentity,
+      "owner_id": message.ownerId,
+      "created_at": message.createdAt,
+      "chat_context": "",
       "timestamp": message.timeStamp
     ]
     
-    print("#BB \(messageDocument.path)")
+    print("#BB \(messageDocument?.path)")
     
-    messageDocument.setData(data) { error in
+    messageDocument?.setData(data) { error in
       if let error = error {
-        print("Error writing message to Firestore: \(error.localizedDescription)")
+        print("#BB Error writing message to Firestore: \(error.localizedDescription)")
         completion("Error received")
       } else {
-        print("Message successfully sent to Firestore!")
-        completion("Successfully set the value")
+        print("#BB Message successfully sent to Firestore!")
+        completion("#BB Successfully set the value")
       }
     }
+  }
+  
+  func listenToFirestor() {
+    
   }
 }

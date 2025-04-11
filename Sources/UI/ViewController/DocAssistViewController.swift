@@ -142,7 +142,7 @@ public class ActiveChatViewController: UIViewController {
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
     liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
-    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,liveActivityDelegate: liveActivityDelegate)
+    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,liveActivityDelegate: liveActivityDelegate,userBid: userBId, userDocId: userDocId, patientName: patientSubtitle ?? "")
     self.backgroundColor = backgroundColor
     self.ctx = ctx
     self.patientSubtitle = patientSubtitle
@@ -195,7 +195,11 @@ public class ActiveChatViewController: UIViewController {
             viewModel: vm,
             backgroundColor: backgroundColor,
             patientName: patientSubtitle ?? "",
-            calledFromPatientContext: true
+            calledFromPatientContext: true,
+            userDocId: userDocId,
+            userBId: userBId,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
         )
         .navigationBarHidden(true)
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))

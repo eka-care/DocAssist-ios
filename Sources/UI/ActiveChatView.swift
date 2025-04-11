@@ -34,8 +34,13 @@ public struct ActiveChatView: View {
   let patientNameConstant = "General Chat"
   @State private var showFeedback = false
   @State private var feedbackText: String = ""
+  @State var isOidPresent: String?
+  private let userDocId: String
+  private let userBId: String
+  private let authToken: String
+  private let authRefreshToken: String
   
-  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat") {
+  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -69,6 +74,10 @@ public struct ActiveChatView: View {
         voiceToRxDelegate: SetUIComponents.shared.v2rxDelegate
       )
     }
+    self.userDocId = userDocId
+    self.userBId = userBId
+    self.authToken = authToken
+    self.authRefreshToken = authRefreshToken
   }
   
   public var body: some View {
@@ -98,6 +107,12 @@ public struct ActiveChatView: View {
     }
     .onAppear {
       viewModel.switchToSession(session)
+      print("#BB session \(session)")
+      Task {
+        isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: session)
+        print("#BB isOidPresent: \(isOidPresent)")
+        setupView()
+      }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       
       Task {
@@ -296,6 +311,14 @@ public struct ActiveChatView: View {
       AnyView(
         VoiceInputView(viewModel: viewModel)
       )
+    }
+  }
+  
+  private func setupView() {
+    Task {
+      let isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: viewModel.vmssid)
+      viewModel.updateQueryParamsIfNeeded(isOidPresent)
+      MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: isOidPresent, bid: userBId)
     }
   }
 }

@@ -18,6 +18,12 @@ public struct ExistingChatResponse {
 
 @Observable
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
+  
+  /// Constant Strings
+  private let role = "user"
+  private let sessionId = "session_id"
+  private let userAgent = "d-iOS"
+  
   var streamStarted: Bool = false
   
   private(set) var vmssid: String = ""
@@ -37,6 +43,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var alertMessage = ""
   var audioRecorder: AVAudioRecorder?
   var v2rxEnabled: Bool = true
+  var userBid: String
+  var userDocId: String
+  var patientName: String
+  var isOidPresent: String? = ""
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -54,11 +64,22 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  init(context: ModelContext, delegate: ConvertVoiceToText? = nil, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil, liveActivityDelegate: LiveActivityDelegate? = nil) {
+  init(
+    context: ModelContext,
+    delegate: ConvertVoiceToText? = nil,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
+    liveActivityDelegate: LiveActivityDelegate? = nil,
+    userBid: String,
+    userDocId: String,
+    patientName: String = ""
+  ) {
     self.context = context
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
     self.liveActivityDelegate = liveActivityDelegate
+    self.userBid = userBid
+    self.userDocId = userDocId
+    self.patientName = patientName
   }
   
   func sendMessage(
@@ -111,11 +132,55 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   static let dispatchSemaphore = DispatchSemaphore(value: 1)
   
   func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
+    
     guard let userChat else { return }
+    
+//    Task {
+//      do {
+//        isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
+//        print("#BB oid is \(isOidPresent)")
+//      } catch {
+//        
+//      }
+//    }
+//    
+//    var patientContext: Bool {
+//      (isOidPresent != nil)
+//    }
+//    
+////    var patientId: String? {
+////    }
+//    
+//    var ownerId = userDocId+"_"+userBid
+//    DocAssistFireStoreManager.shared
+//      .sendMessageToFirestore(
+//        businessId: userBid,
+//        doctorId: userDocId,
+//        context: patientContext,
+//        sessionId: userChat.sessionId ,
+//        messageId: userChat.msgId - 1,
+//        message: .init(
+//          message: userChat.messageText ?? "",
+//          sessionId: userChat.sessionId,
+//          doctorId: userDocId,
+//          patientId: "",
+//          role: role,
+//          vaultFiles: userChat.imageUrls,
+//          userAgent: userAgent,
+//          ownerId: ownerId,
+//          createdAt: Int64(Date().timeIntervalSince1970 * 1000)
+//        )
+//      ) { [weak self] str in
+//        guard let self else {
+//          return
+//        }
+//        print("Message sent to Firestore: \(str)")
+//      }
+    
     DispatchQueue.main.async { [weak self] in
       self?.streamStarted = true
     }
-    NetworkConfig.shared.queryParams["session_id"] = userChat.sessionId
+    NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
     networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
       
       DispatchQueue.main.async { [weak self] in

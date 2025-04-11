@@ -91,11 +91,20 @@ struct ChatsScreenView: View {
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
-       liveActivityDelegate: LiveActivityDelegate? = nil
+       liveActivityDelegate: LiveActivityDelegate? = nil,
+       patientName: String? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
-    self.viewModel = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate, liveActivityDelegate: liveActivityDelegate)
+    self.viewModel = ChatViewModel(
+      context: ctx,
+      delegate: delegate,
+      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+      liveActivityDelegate: liveActivityDelegate,
+      userBid: userBid,
+      userDocId: userDocId,
+      patientName: patientName ?? "General Chat"
+    )
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate
@@ -104,6 +113,7 @@ struct ChatsScreenView: View {
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
     self.liveActivityDelegate = liveActivityDelegate
+    self.patientName = patientName
   }
   
   var body: some View {
@@ -122,7 +132,11 @@ struct ChatsScreenView: View {
               backgroundColor: .white,
               patientName: selectedPatientThread?.subTitle ?? "General Chat",
               calledFromPatientContext: false,
-              title: selectedPatientThread?.title
+              title: selectedPatientThread?.title,
+              userDocId: userDocId,
+              userBId: userBId,
+              authToken: authToken,
+              authRefreshToken: authRefreshToken
             )
             .modelContext( DatabaseConfig.shared.modelContext)
           }
@@ -329,7 +343,7 @@ struct ChatsScreenView: View {
     selectedSessionId = thread.sessionId
     viewModel.switchToSession(thread.sessionId)
     selectedPatientThread = thread
-    selectedScreen = .allPatient(thread, viewModel)
+    selectedScreen = .allPatient(thread, viewModel, userDocId, userBId)
   }
   
   private func threadItemView(for thread: SessionDataModel, allChats: Bool) -> some View {

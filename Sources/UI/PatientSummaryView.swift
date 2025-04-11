@@ -176,17 +176,25 @@ struct ChatRow: View {
     let vm: ChatViewModel
     let sessionId: String
     let patientName: String
+    let userDocId: String
+    let userBId: String
+    let authToken: String
+    let authRefreshToken: String
     
     var body: some View {
         NavigationLink {
-            ActiveChatView(
-              session: sessionId,
-                viewModel: vm,
-                backgroundColor: .white,
-                patientName: patientName,
-                calledFromPatientContext: false,
-                title: title
-            )
+          ActiveChatView(
+            session: sessionId,
+            viewModel: vm,
+            backgroundColor: .white,
+            patientName: patientName,
+            calledFromPatientContext: false,
+            title: title,
+            userDocId: userDocId,
+            userBId: userBId,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
+          )
             .modelContext( DatabaseConfig.shared.modelContext)
             
         } label: {

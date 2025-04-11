@@ -15,7 +15,7 @@ public struct ExistingPatientChatsView: View {
   private let patientName: String
   private let viewModel: ChatViewModel
   private let backgroundColor: Color?
-  private let oid: String
+  @State private var oid: String
   private let userDocId: String
   private let userBId: String
   @State private var createNewSession: String? = "createNewSession"
@@ -40,7 +40,6 @@ public struct ExistingPatientChatsView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     self.liveActivityDelegate = liveActivityDelegate
-    
     _chats = Query(
       filter: #Predicate<SessionDataModel> { eachChat in
         eachChat.oid == oid
@@ -48,8 +47,6 @@ public struct ExistingPatientChatsView: View {
       sort: \.lastUpdatedAt,
       order: .reverse
     )
-    
-    setupView(oid: oid)
   }
   
   public var body: some View {
@@ -103,7 +100,11 @@ public struct ExistingPatientChatsView: View {
           viewModel: viewModel,
           backgroundColor: backgroundColor,
           patientName: patientName,
-          calledFromPatientContext: false
+          calledFromPatientContext: false,
+          userDocId: userDocId,
+          userBId: userBId,
+          authToken: authToken,
+          authRefreshToken: authRefreshToken
         )
         .modelContext( DatabaseConfig.shared.modelContext)
       }
@@ -128,7 +129,11 @@ public struct ExistingPatientChatsView: View {
               time: viewModel.getFormatedDateToDDMMYYYY(date: chat.lastUpdatedAt),
               vm: viewModel,
               sessionId: chat.sessionId,
-              patientName: patientName
+              patientName: patientName,
+              userDocId: userDocId,
+              userBId: userBId,
+              authToken: authToken,
+              authRefreshToken: authRefreshToken
             )
             Divider()
           }
@@ -144,12 +149,6 @@ public struct ExistingPatientChatsView: View {
       DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "particular_pt"])
     }
   }
-  
-  private func setupView(oid: String) {
-    MRInitializer.shared.registerUISdk()
-    MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
-    viewModel.updateQueryParamsIfNeeded(oid)
-  }
 }
 
 class MRInitializer {
@@ -158,18 +157,6 @@ class MRInitializer {
   
   static var shared = MRInitializer()
   
-  func registerUISdk() {
-//    registerFonts()
-  }
-//  
-//  private func registerFonts() {
-//    do {
-//      try Fonts.registerAllFonts()
-//    } catch {
-//      debugPrint("Failed to fetch fonts")
-//    }
-//  }
-//  
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
     registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
   }
