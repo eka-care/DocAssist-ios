@@ -23,46 +23,35 @@ final class DocAssistFireStoreManager {
   private let sessionsCollectionName = "sessions"
   private let messagesCollectionName = "messages"
 
-  func sendMessageToFirestore(businessId: String, doctorId: String, context: Bool, sessionId: String, messageId: Int, message: FirebaseMessageModel, completion: @escaping (String) -> Void) {
-
-   // let db = Firestore.firestore()
+  func sendMessageToFirestore(businessId: String, doctorId: String, context: Bool, sessionId: String, messageId: Int, message: FirestoreMessageModel, completion: @escaping (String) -> Void) {
+    
     var patientContext: String = ""
     patientContext = context ? "in_patient" : "out_of_patient"
     
-//    let messageDocument = db?
-//      .collection("docassist")
-//      .document(businessId)
-//      .collection("doctors")
-//      .document(doctorId)
-//      .collection("context")
-//      .document("out_of_patient")
-//      .collection("sessions")
-//      .document(sessionId)
-//      .collection("messages")
-//      .document("\(messageId)")
-    
     let baseRef = db?
-      .collection("docassist")
+      .collection(docAssistCollectionName)
       .document(businessId)
-      .collection("doctors")
+      .collection(docIdCollectionName)
       .document(doctorId)
-      .collection("context")
+      .collection(chatSessionsCollectionName)
       .document(patientContext)
     
     let messageDocument: DocumentReference?
-    if context { // in_patient
+    /// patinet context
+    if context {
       messageDocument = baseRef?
         .collection("patients")
-        .document("adfa")
-        .collection("sessions")
+        .document(message.patientId ?? "")
+        .collection(sessionsCollectionName)
         .document(sessionId)
-        .collection("messages")
+        .collection(messagesCollectionName)
         .document("\(messageId)")
-    } else { // out_of_patient
+      /// out of patient context
+    } else {
       messageDocument = baseRef?
-        .collection("sessions")
+        .collection(sessionsCollectionName)
         .document(sessionId)
-        .collection("messages")
+        .collection(messagesCollectionName)
         .document("\(messageId)")
     }
 
@@ -90,13 +79,60 @@ final class DocAssistFireStoreManager {
         print("#BB Error writing message to Firestore: \(error.localizedDescription)")
         completion("Error received")
       } else {
-        print("#BB Message successfully sent to Firestore!")
         completion("#BB Successfully set the value")
       }
     }
   }
   
-  func listenToFirestor() {
+  func listenToFirestoreMessages(businessId: String, doctorId: String, sessionId: String, context: Bool = false, patientId: String = "", messageId: Int, completion: @escaping ([String: Any]) -> Void) {
+    var patientContext = context ? "in_patient" : "out_of_patient"
+    let baseRef = db?
+      .collection(docAssistCollectionName)
+      .document(businessId)
+      .collection(docIdCollectionName)
+      .document(doctorId)
+      .collection(chatSessionsCollectionName)
+      .document(patientContext)
     
+    let messagesRef: DocumentReference?
+    if context {
+      messagesRef = baseRef?
+        .collection("patients")
+        .document(patientId)
+        .collection(sessionsCollectionName)
+        .document(sessionId)
+        .collection(messagesCollectionName)
+        .document("\(messageId)")  // Document reference for messageId
+    } else {
+      messagesRef = baseRef?
+        .collection(sessionsCollectionName)
+        .document(sessionId)
+        .collection(messagesCollectionName)
+        .document("\(messageId)")  // Document reference for messageId
+    }
+    print("#BB path is \(messagesRef?.path)")
+    
+    messagesRef?.addSnapshotListener { snapshot, error in
+      if let error = error {
+        print("#BB Firestore listen error: \(error.localizedDescription)")
+        return
+      }
+      
+      guard let document = snapshot else {
+        print("#BB Snapshot was nil")
+        return
+      }
+      
+      if !document.exists {
+        print("#BB Document does not exist at path: \(document.reference.path)")
+        return
+      }
+      
+      if let data = document.data(), !data.isEmpty {
+        completion(data)
+      } else {
+        print("#BB Document exists but data was empty at path: \(document.reference.path)")
+      }
+    }
   }
 }

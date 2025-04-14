@@ -110,7 +110,6 @@ public struct ActiveChatView: View {
       print("#BB session \(session)")
       Task {
         isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: session)
-        print("#BB isOidPresent: \(isOidPresent)")
         setupView()
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)

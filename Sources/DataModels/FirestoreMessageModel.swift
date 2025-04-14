@@ -1,5 +1,5 @@
 //
-//  FirebaseMessageModel.swift
+//  FirestoreMessageModel.swift
 //  DocAssist-ios
 //
 //  Created by Brunda B on 10/04/25.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct FirebaseMessageModel: Codable {
+struct FirestoreMessageModel: Codable {
     var message: String = ""
     var sessionId: String
     var doctorId: String? = nil
