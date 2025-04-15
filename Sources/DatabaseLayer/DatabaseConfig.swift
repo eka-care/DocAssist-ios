@@ -13,7 +13,7 @@ public final actor DatabaseConfig {
   private let lock = NSLock()
   private let upsertLock = NSLock()
   
-  static var shared: DatabaseConfig!
+  public static var shared: DatabaseConfig!
   
   public static func setup(modelContainer: ModelContainer) {
     shared = DatabaseConfig(modelContainer: modelContainer)
