@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 
 @ModelActor
-final actor DatabaseConfig {
+public final actor DatabaseConfig {
   private let lock = NSLock()
   private let upsertLock = NSLock()
   
@@ -197,16 +197,39 @@ extension DatabaseConfig {
 
 extension DatabaseConfig {
   
-  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
+  public func createSession(
+    subTitle: String?,
+    oid: String = "",
+    userDocId: String,
+    userBId: String
+  ) async -> String {
     let currentDate = Date()
     let ssid = UUID().uuidString
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    await DatabaseConfig.shared.saveData()
+    let createSessionModel = SessionDataModel(
+      sessionId: ssid,
+      createdAt: currentDate,
+      lastUpdatedAt: currentDate,
+      title: "New Chat",
+      subTitle: subTitle,
+      oid: oid,
+      userDocId: userDocId,
+      userBId: userBId
+    )
+    await DatabaseConfig.shared
+      .insertSession(
+        session: createSessionModel
+      )
+    await DatabaseConfig.shared
+      .saveData()
     return ssid
   }
   
-  public func createChat(oId: String, userDocId:String, userBId: String, v2RxAudioSessionId: UUID) async {
+  public func createChat(
+    oId: String,
+    userDocId:String,
+    userBId: String,
+    v2RxAudioSessionId: UUID
+  ) async {
     let session = await createSession(
       subTitle: nil,
       oid: oId,
