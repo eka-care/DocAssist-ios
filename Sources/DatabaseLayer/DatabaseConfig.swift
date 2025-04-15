@@ -194,3 +194,32 @@ extension DatabaseConfig {
     )
   }
 }
+
+extension DatabaseConfig {
+  
+  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
+    let currentDate = Date()
+    let ssid = UUID().uuidString
+    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
+    await DatabaseConfig.shared.insertSession(session: createSessionModel)
+    await DatabaseConfig.shared.saveData()
+    return ssid
+  }
+  
+  public func createChat(oId: String, userDocId:String, userBId: String, v2RxAudioSessionId: UUID) async {
+    let session = await createSession(
+      subTitle: nil,
+      oid: oId,
+      userDocId: userDocId,
+      userBId: userBId
+    )
+    let _ = await DatabaseConfig.shared.createMessage(
+      sessionId: session,
+      messageId: 0 ,
+      role: .Bot,
+      imageUrls: nil,
+      v2RxAudioSessionId: v2RxAudioSessionId
+    )
+  }
+  
+}

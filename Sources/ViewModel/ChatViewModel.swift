@@ -137,8 +137,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       guard let userChat else { return }
       
     ///Firestore handlinghello
-//      let ownerId = userDocId + "_" + userBid
-//      
+    let ownerId = userDocId + "_" + userBid
+    DispatchQueue.main.async { [weak self] in
+        self?.streamStarted = true
+    }
 //      Task {
 //          do {
 //              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
@@ -188,10 +190,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 //              print("#BB Error determining OID presence: \(error)")
 //          }
 //      }
-//      
-      DispatchQueue.main.async { [weak self] in
-          self?.streamStarted = true
-      }
+
       
     /// Stream api
       NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
@@ -288,14 +287,15 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     return false
   }
   
-  func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    let currentDate = Date()
-    let ssid = UUID().uuidString
-    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    await DatabaseConfig.shared.saveData()
-    switchToSession(ssid)
-    return ssid
+  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
+    //    let currentDate = Date()
+    //    let ssid = UUID().uuidString
+    //    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
+    //    await DatabaseConfig.shared.insertSession(session: createSessionModel)
+    //    await DatabaseConfig.shared.saveData()
+    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
+    switchToSession(session)
+    return session
   }
   
   func switchToSession(_ id: String) {
@@ -477,24 +477,6 @@ extension ChatViewModel {
     } else { /// If no v2rx session is found means it was deleted and we enable mic again
       return true
     }
-  }
-}
-
-extension ChatViewModel {
-  public func createV2rxChat(oId: String, userDocId:String, userBId: String, v2RxAudioSessionId: UUID) async {
-    let session = await createSession(
-      subTitle: nil,
-      oid: oId,
-      userDocId: userDocId,
-      userBId: userBId
-    )
-    let _ = await DatabaseConfig.shared.createMessage(
-      sessionId: session,
-      messageId: 0 ,
-      role: .Bot,
-      imageUrls: nil,
-      v2RxAudioSessionId: v2RxAudioSessionId
-    )
   }
 }
 
