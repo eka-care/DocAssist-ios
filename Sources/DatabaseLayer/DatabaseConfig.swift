@@ -225,13 +225,14 @@ extension DatabaseConfig {
   }
   
   public func createChat(
+    title: String? = nil,
     oId: String,
     userDocId:String,
     userBId: String,
     v2RxAudioSessionId: UUID
   ) async {
     let session = await createSession(
-      subTitle: nil,
+      subTitle: title,
       oid: oId,
       userDocId: userDocId,
       userBId: userBId
