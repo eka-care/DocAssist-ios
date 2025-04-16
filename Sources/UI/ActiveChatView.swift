@@ -148,7 +148,7 @@ public struct ActiveChatView: View {
   }
   
   var EmptyChatView: some View {
-    VStack {
+    VStack(spacing: 0) {
       VStack {
         Spacer()
         if let image = SetUIComponents.shared.emptyChatImage {
@@ -163,7 +163,7 @@ public struct ActiveChatView: View {
         Spacer()
       }
       chatInputView
-        .padding(.bottom, 5)
+        //.padding(.bottom, 5)
     }
   }
   
@@ -230,7 +230,6 @@ public struct ActiveChatView: View {
           }
         }
         chatInputView
-          .padding(.bottom, 5)
       }
     }
     .toolbarBackground(
@@ -325,6 +324,15 @@ public struct ActiveChatView: View {
 extension View {
   func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
     clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
+  }
+  
+  func customCornerBorder(_ radius: CGFloat, corners: UIRectCorner, color: Color, lineWidth: CGFloat = 1) -> some View {
+    self
+      .overlay(
+        CustomCornerShape(cornerRadius: radius, corners: corners)
+           .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+      )
+      .clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
   }
 }
 

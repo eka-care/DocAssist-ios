@@ -9,32 +9,41 @@ import SwiftUI
 
 struct SuggestionView: View {
   
-  var suggestionText: String = ""
+  var suggestionText: [String]?
   var viewModel: ChatViewModel
   
-  init(suggestionText: String, viewModel: ChatViewModel) {
+  private var constantSuggestionString = "Suggested questions you can ask me-"
+  
+  init(suggestionText: [String]?, viewModel: ChatViewModel) {
     self.suggestionText = suggestionText
     self.viewModel = viewModel
   }
   
   var body: some View {
-    ZStack {
-      RoundedRectangle(cornerRadius: 20)
-        .frame(width: 360, height: 40)
-        .foregroundStyle(Color.nuetralWhite)
-      Button(action: {
-       // viewModel.sendMessage(newMessage: suggestionText)
-      }) {
-        HStack {
-          Text(suggestionText)
-            .foregroundColor(Color.primaryprimary)
-            .lineLimit(1)
-            .padding(.leading, 10)
-          Spacer()
+    VStack {
+      Text(constantSuggestionString)
+        .font(.custom("Lato-Regular", size: 12))
+        .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+        .frame(width: 306, height: 16, alignment: .topLeading)
+      ForEach(suggestionText ?? ["Show HbA1c trend of this patient", "List Lab investigations prescribed in past 1 year"], id: \.self) { suggestionText in
+        Button(action: {
+          Task {
+            await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: nil)
+          }
+        }) {
+          HStack {
+            Text(suggestionText)
+              .foregroundColor(Color.primaryprimary)
+              .multilineTextAlignment(.leading)
+              .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .background(Color.white)
+              .clipShape(RoundedRectangle(cornerRadius: 12))
+            Spacer()
+          }
         }
       }
     }
-    .frame(width: 360, height: 40)
   }
 }
 

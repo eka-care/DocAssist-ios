@@ -59,12 +59,6 @@ struct MessageInputView: View {
         .sheet(isPresented: $showRecordsView) {
           NavigationStack {
             RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-//              selectedImages = data.compactMap { record in
-//                record.image
-//              }
-//              selectedDocumentId = data.compactMap { record in
-//                record.documentID
-//              }
               
               let images = data.compactMap { record in
                 record.image
@@ -212,12 +206,8 @@ struct MessageInputView: View {
     .focused($isTextFieldFocused)
     .padding(8)
     .background(Color(.white))
-    .cornerRadius(20)
-    .overlay(
-      RoundedRectangle(cornerRadius: 20)
-        .stroke(Color.gray, lineWidth: 0.5)
-    )
-    .padding(8)
+    .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
+    .customCornerBorder(20, corners: [.topLeft, .topRight], color: Color.gray, lineWidth: 0.5)
   }
 }
 

@@ -31,6 +31,7 @@ public enum ChatMessageV1: VersionedSchema {
     public var v2RxAudioSessionId: UUID?
     public var v2RxaudioFileString: String?
     public var createdAtDate: Date?
+    public var suggestions: [String]?
     
     init(
       msgId: Int,
@@ -43,7 +44,8 @@ public enum ChatMessageV1: VersionedSchema {
       imageUrls: [String]? = nil,
       v2RxAudioSessionId: UUID? = nil,
       v2RxaudioFileString: String? = nil,
-      createdAtDate: Date? = nil
+      createdAtDate: Date? = nil,
+      suggestions: [String]? = nil
     ) {
       self.msgId = msgId
       self.role = role
@@ -56,6 +58,7 @@ public enum ChatMessageV1: VersionedSchema {
       self.v2RxAudioSessionId = v2RxAudioSessionId
       self.v2RxaudioFileString = v2RxaudioFileString
       self.createdAtDate = createdAtDate ?? Date()
+      self.suggestions = suggestions
     }
   }
 }

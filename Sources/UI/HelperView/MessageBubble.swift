@@ -137,6 +137,10 @@ struct MessageBubble: View {
         .padding(.leading, 30)
       }
     }
+    
+    if message.role == .Bot {
+      SuggestionView(suggestionText: message.suggestions, viewModel: viewModel)
+    }
   }
   
   func shareText() {
