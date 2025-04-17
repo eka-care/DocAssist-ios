@@ -23,17 +23,12 @@ struct SuggestionView: View {
   
   var body: some View {
     VStack {
+      Text(constantSuggestionString)
+        .font(.custom("Lato-Regular", size: 12))
+        .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+        .frame(width: 306, height: 16, alignment: .topLeading)
       
-      HStack {
-        BotAvatarImage()
-          .alignmentGuide(.top) { d in d[.top] }
-        Text(constantSuggestionString)
-          .font(.custom("Lato-Regular", size: 12))
-          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-          .frame(width: 306, height: 16, alignment: .topLeading)
-      }
-      
-      ForEach(suggestionText ?? ["Show HbA1c trend of this patient", "List Lab investigations prescribed in past 1 year"], id: \.self) { suggestionText in
+      ForEach(suggestionText ?? ["Show HbA1c trend of this patient", "List Lab investigations prescribed in past 1 year", "What are the side effects of the drug Paracetamol?"], id: \.self) { suggestionText in
         Button(action: {
           guard let lastMessageId else { return }
           Task {
@@ -51,10 +46,8 @@ struct SuggestionView: View {
               .clipShape(RoundedRectangle(cornerRadius: 12))
             Spacer()
           }
-          .padding(.leading, 16)
         }
       }
     }
   }
 }
-

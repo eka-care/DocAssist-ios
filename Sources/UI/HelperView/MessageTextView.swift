@@ -54,6 +54,7 @@ struct MessageTextView: View {
         Markdown(text)
           .font(.body)
           .padding(8)
+          .font(.custom("Lato-Regular", size: 16))
           .background(backgroundColor)
           .foregroundColor(foregroundColor)
           .contentTransition(.numericText())

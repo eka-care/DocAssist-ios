@@ -139,7 +139,11 @@ struct MessageBubble: View {
     }
     
     if message.role == .Bot {
-      SuggestionView(suggestionText: message.suggestions, viewModel: viewModel, lastMessageId: messages.last?.msgId)
+      HStack (alignment: .top) {
+        BotAvatarImage()
+          .alignmentGuide(.top) { d in d[.top] }
+        SuggestionView(suggestionText: message.suggestions, viewModel: viewModel, lastMessageId: messages.last?.msgId)
+      }
     }
   }
   
