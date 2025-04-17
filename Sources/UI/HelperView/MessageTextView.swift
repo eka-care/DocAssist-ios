@@ -56,7 +56,7 @@ struct MessageTextView: View {
           .padding(8)
           .font(.custom("Lato-Regular", size: 16))
           .background(backgroundColor)
-          .foregroundColor(foregroundColor)
+          .markdownTheme(.custom(role: role))
           .contentTransition(.numericText())
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
           .ifCondition(role == .Bot) { view in
@@ -164,5 +164,22 @@ struct PdfBodyView: View {
     }
     .padding(.horizontal, EkaSpacing.spacingM)
     .padding(.top, EkaSpacing.spacingM)
+  }
+}
+
+extension Theme {
+  static func custom(role: MessageRole) -> Theme {
+    let foregroundColor = role == .user ?
+      (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) :
+      Color.neutrals800
+    
+    return Theme()
+      .text {
+        ForegroundColor(foregroundColor)
+        FontSize(.em(1))
+      }
+      .strong {
+        ForegroundColor(foregroundColor)
+      }
   }
 }

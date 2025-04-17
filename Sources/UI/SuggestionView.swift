@@ -14,6 +14,9 @@ struct SuggestionView: View {
   var lastMessageId: Int?
   
   private var constantSuggestionString = "Suggested questions you can ask me-"
+  private var constantGetMoreSuggestion = "Get more suggestions"
+  private var constantLoadingSuggestion = "Loading more suggestions..."
+  private var constantNoSuggestion = "No more new suggestions found :("
   
   init(suggestionText: [String]?, viewModel: ChatViewModel, lastMessageId: Int? = nil) {
     self.suggestionText = suggestionText
@@ -48,6 +51,8 @@ struct SuggestionView: View {
           }
         }
       }
+      
+      Text(constantNoSuggestion)
     }
   }
 }
