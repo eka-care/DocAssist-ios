@@ -176,6 +176,7 @@ extension Theme {
     return Theme()
       .text {
         ForegroundColor(foregroundColor)
+        FontFamily(.custom("Lato-Regular"))
         FontSize(.em(1))
       }
       .strong {

@@ -141,74 +141,74 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     DispatchQueue.main.async { [weak self] in
         self?.streamStarted = true
     }
-//      Task {
-//          do {
-//              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
-//              
-//              // Calculate patientContext after getting isOidPresent
-//              let patientContext = isOidPresent != nil && isOidPresent != ""
-//              
-//            /// if patient context is true then chat context should be a json object which as field oid and patientName
-//            
-//            var chatContext: String? = nil
-//            if let oid = isOidPresent, !oid.isEmpty {
-//                let contextDict: [String: String] = [
-//                    "patientId": oid,
-//                    "patientName": patientName
-//                ]
-//                if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
-//                   let jsonString = String(data: jsonData, encoding: .utf8) {
-//                    chatContext = jsonString
-//                }
-//            }
-//
-//              DocAssistFireStoreManager.shared
-//                  .sendMessageToFirestore(
-//                      businessId: userBid,
-//                      doctorId: userDocId,
-//                      context: patientContext,
-//                      sessionId: userChat.sessionId,
-//                      messageId: userChat.msgId - 1,
-//                      message: .init(
-//                          message: userChat.messageText ?? "",
-//                          sessionId: userChat.sessionId,
-//                          doctorId: userDocId,
-//                          patientId: isOidPresent ?? "", // Use the fetched OID
-//                          role: role,
-//                          vaultFiles: userChat.imageUrls,
-//                          userAgent: userAgent,
-//                          ownerId: ownerId,
-//                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
-//                          chatContext: chatContext
-//                      )
-//                  ) { [weak self] str in
-//                      guard let self else { return }
-//                      print("Message sent to Firestore: \(str)")
-//                      self.startFirestoreListener(userChat: userChat)
-//                  }
-//          } catch {
-//              print("#BB Error determining OID presence: \(error)")
-//          }
-//      }
+      Task {
+          do {
+              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
+              
+              // Calculate patientContext after getting isOidPresent
+              let patientContext = isOidPresent != nil && isOidPresent != ""
+              
+            /// if patient context is true then chat context should be a json object which as field oid and patientName
+            
+            var chatContext: String? = nil
+            if let oid = isOidPresent, !oid.isEmpty {
+                let contextDict: [String: String] = [
+                    "patientId": oid,
+                    "patientName": patientName
+                ]
+                if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
+                   let jsonString = String(data: jsonData, encoding: .utf8) {
+                    chatContext = jsonString
+                }
+            }
+
+              DocAssistFireStoreManager.shared
+                  .sendMessageToFirestore(
+                      businessId: userBid,
+                      doctorId: userDocId,
+                      context: patientContext,
+                      sessionId: userChat.sessionId,
+                      messageId: userChat.msgId - 1,
+                      message: .init(
+                          message: userChat.messageText ?? "",
+                          sessionId: userChat.sessionId,
+                          doctorId: userDocId,
+                          patientId: isOidPresent ?? "", // Use the fetched OID
+                          role: role,
+                          vaultFiles: userChat.imageUrls,
+                          userAgent: userAgent,
+                          ownerId: ownerId,
+                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
+                          chatContext: chatContext
+                      )
+                  ) { [weak self] str in
+                      guard let self else { return }
+                      print("Message sent to Firestore: \(str)")
+                      self.startFirestoreListener(userChat: userChat)
+                  }
+          } catch {
+              print("#BB Error determining OID presence: \(error)")
+          }
+      }
 
       
     /// Stream api
-      NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
-      networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
-          DispatchQueue.main.async { [weak self] in
-              self?.streamStarted = false
-          }
-      }) { [weak self] result in
-          guard let self else { return }
-          Task {
-              switch result {
-              case .success(let responseString):
-                  await self.handleStreamResponse(responseString: responseString, userChat: userChat)
-              case .failure(let error):
-                  print("Error streaming: \(error)")
-              }
-          }
-      }
+//      NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
+//      networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
+//          DispatchQueue.main.async { [weak self] in
+//              self?.streamStarted = false
+//          }
+//      }) { [weak self] result in
+//          guard let self else { return }
+//          Task {
+//              switch result {
+//              case .success(let responseString):
+//                  await self.handleStreamResponse(responseString: responseString, userChat: userChat)
+//              case .failure(let error):
+//                  print("Error streaming: \(error)")
+//              }
+//          }
+//      }
   }
   
   func startFirestoreListener(userChat: ChatMessageModel) {
@@ -226,16 +226,20 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       
       if let message = data["message"] as? String,
          let status = data["status"] as? String,
+         let suggestions = data["suggestions"] as? [String],
          let role = data["role"] as? String,
          role == "assistant" {
         Task { @MainActor in
             await DatabaseConfig.shared.upsertMessageV2(
-              responseMessage: message,
+              suggestions: suggestions, responseMessage: message,
               userChat: userChat
             )
         }
       }
       
+      if let suggestions = data["suggestions"] as? [String] {
+      }
+        
       if let eof = data["is_eof"] as? Bool, eof == true {
         DispatchQueue.main.async { [weak self] in
           self?.streamStarted = false
@@ -243,6 +247,22 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       }
       
     }
+  }
+  
+  /// update firestoreMessage to stop streaming
+  func updateFireStore(key: String, with value: Bool) {
+    let patientContext = isOidPresent != nil && !isOidPresent!.isEmpty
+    DocAssistFireStoreManager.shared
+      .updateFireStore(
+        key: key,
+        with: value,
+        businessId: userBid,
+        doctorId: userDocId,
+        sessionId: vmssid,
+        context: patientContext,  // Added context parameter
+        patientId: self.isOidPresent ?? "",
+        messageId: 1
+      )
   }
   
   /// Stream response handling
@@ -267,7 +287,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     
     await MainActor.run {
       Task {
-        await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
+        await DatabaseConfig.shared.upsertMessageV2(suggestions: nil, responseMessage: message?.text ?? "", userChat: userChat)
       }
     }
   }
@@ -487,9 +507,8 @@ extension Data {
 }
 
 extension ChatViewModel {
-  func stopFirestoreStream() {
-    firestoreListener?.remove()
-    firestoreListener = nil
+  func stopFirestoreStream(key: String, with value: Bool) {
     streamStarted = false
+    updateFireStore(key: key, with: value)
   }
 }

@@ -141,7 +141,8 @@ extension DatabaseConfig {
     role: MessageRole,
     imageUrls: [String]?,
     v2RxAudioSessionId: UUID? = nil,
-    v2RxaudioFileString: String? = nil
+    v2RxaudioFileString: String? = nil,
+    suggestions: [String]? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
       msgId: messageId,
@@ -154,7 +155,8 @@ extension DatabaseConfig {
       imageUrls: imageUrls,
       v2RxAudioSessionId: v2RxAudioSessionId,
       v2RxaudioFileString: v2RxaudioFileString,
-      createdAtDate: .now
+      createdAtDate: .now,
+      suggestions: suggestions
     )
     
     if let session = try? fetchSession(bySessionId: sessionId) {
@@ -170,7 +172,7 @@ extension DatabaseConfig {
 
 // Upsert
 extension DatabaseConfig {
-  func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel) {
+  func upsertMessageV2(suggestions: [String]?, responseMessage: String, userChat: ChatMessageModel) {
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
     
@@ -190,7 +192,8 @@ extension DatabaseConfig {
       sessionId: sessionId,
       messageId: streamMessageId,
       role: .Bot,
-      imageUrls: nil
+      imageUrls: nil,
+      suggestions: suggestions
     )
   }
 }

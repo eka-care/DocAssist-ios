@@ -51,8 +51,6 @@ struct SuggestionView: View {
           }
         }
       }
-      
-      Text(constantNoSuggestion)
     }
   }
 }

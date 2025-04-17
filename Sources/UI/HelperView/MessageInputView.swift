@@ -147,7 +147,7 @@ struct MessageInputView: View {
           if viewModel.streamStarted {
             Button {
               viewModel.stopStreaming()
-              viewModel.stopFirestoreStream()
+              viewModel.stopFirestoreStream(key: "stop_stream", with: true)
             } label: {
               Image(systemName: "stop.circle")
                 .resizable()
