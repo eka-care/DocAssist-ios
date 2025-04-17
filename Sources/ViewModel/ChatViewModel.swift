@@ -136,7 +136,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
       guard let userChat else { return }
       
-    ///Firestore handlinghello
+    ///Firestore handling
     let ownerId = userDocId + "_" + userBid
     DispatchQueue.main.async { [weak self] in
         self?.streamStarted = true

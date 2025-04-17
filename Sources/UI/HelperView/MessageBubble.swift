@@ -138,9 +138,9 @@ struct MessageBubble: View {
       }
     }
     
-    if message.role == .Bot {
-      SuggestionView(suggestionText: message.suggestions, viewModel: viewModel)
-    }
+//    if message.role == .Bot {
+//      SuggestionView(suggestionText: message.suggestions, viewModel: viewModel)
+//    }
   }
   
   func shareText() {
