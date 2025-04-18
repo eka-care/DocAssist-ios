@@ -39,17 +39,19 @@ struct SuggestionView: View {
         ForEach(suggestionText, id: \.self) { suggestionText in
           Button(action: {
             guard let lastMessageId else { return }
-            Task {
-              await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
+            if !viewModel.streamStarted {
+              Task {
+                await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
+              }
             }
           }) {
             Text(suggestionText)
-              .foregroundColor(Color.primaryprimary)
+              .foregroundColor(viewModel.streamStarted ? Color.white : Color.primaryprimary)
               .font(.custom("Lato-Regular", size: 14))
               .multilineTextAlignment(.leading)
               .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))
               .frame(maxWidth: .infinity, alignment: .leading)
-              .background(Color.white)
+              .background(viewModel.streamStarted ? Color.gray.opacity(0.3) : .white)
               .clipShape(RoundedRectangle(cornerRadius: 12))
           }
         }
