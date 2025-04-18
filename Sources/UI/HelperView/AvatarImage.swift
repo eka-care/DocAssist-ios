@@ -52,7 +52,10 @@ struct LoadingView: View {
     HStack {
       BotAvatarImage()
         .padding()
-      ProgressView()
+      Text("Thinking...")
+        .font(.custom("Lato-Regular", size: 18))
+        .foregroundColor(.neutrals800)
+        .shimmer()
       Spacer()
     }
   }

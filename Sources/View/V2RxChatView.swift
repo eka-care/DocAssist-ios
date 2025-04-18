@@ -122,7 +122,7 @@ struct V2RxChatView: View {
                   .font(.system(size: 24))
                 Text(v2rxStateTitle)
                   .font(.custom("Lato-Bold", size: 16))
-                  .foregroundColor(.black)
+                  .foregroundColor(.neutrals1000)
               }
               HStack {
                 Text(formattedDate)

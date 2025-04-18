@@ -32,4 +32,5 @@ extension Color {
   static let neutrals800 = Color(.neutrals800)
   static let neutrals600 = Color(.neutrals600)
   static let neutrals400 = Color(.neutrals400)
+  static let neutrals1000 = Color(.neutrals1000)
 }
