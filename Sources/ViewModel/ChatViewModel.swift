@@ -161,31 +161,45 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
                     chatContext = jsonString
                 }
             }
+            
+            DocAssistFireStoreManager.shared.syncAllMessages(
+                businessId: userBid,
+                doctorId: userDocId
+            ) { messages in
+                if messages.isEmpty {
+                    print("#BB No messages found. Please verify:")
+                    print("1. Business ID and Doctor ID are correct")
+                    print("2. Firebase paths are correct")
+                    print("3. Collections exist in Firebase")
+                } else {
+                    print("#BB Synced \(messages.count) messages")
+                }
+            }
 
-              DocAssistFireStoreManager.shared
-                  .sendMessageToFirestore(
-                      businessId: userBid,
-                      doctorId: userDocId,
-                      context: patientContext,
-                      sessionId: userChat.sessionId,
-                      messageId: userChat.msgId - 1,
-                      message: .init(
-                          message: userChat.messageText ?? "",
-                          sessionId: userChat.sessionId,
-                          doctorId: userDocId,
-                          patientId: isOidPresent ?? "", // Use the fetched OID
-                          role: role,
-                          vaultFiles: userChat.imageUrls,
-                          userAgent: userAgent,
-                          ownerId: ownerId,
-                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
-                          chatContext: chatContext
-                      )
-                  ) { [weak self] str in
-                      guard let self else { return }
-                      print("Message sent to Firestore: \(str)")
-                      self.startFirestoreListener(userChat: userChat)
-                  }
+//              DocAssistFireStoreManager.shared
+//                  .sendMessageToFirestore(
+//                      businessId: userBid,
+//                      doctorId: userDocId,
+//                      context: patientContext,
+//                      sessionId: userChat.sessionId,
+//                      messageId: userChat.msgId - 1,
+//                      message: .init(
+//                          message: userChat.messageText ?? "",
+//                          sessionId: userChat.sessionId,
+//                          doctorId: userDocId,
+//                          patientId: isOidPresent ?? "", // Use the fetched OID
+//                          role: role,
+//                          vaultFiles: userChat.imageUrls,
+//                          userAgent: userAgent,
+//                          ownerId: ownerId,
+//                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
+//                          chatContext: chatContext
+//                      )
+//                  ) { [weak self] str in
+//                      guard let self else { return }
+//                      print("Message sent to Firestore: \(str)")
+//                      self.startFirestoreListener(userChat: userChat)
+//                  }
           } catch {
               print("#BB Error determining OID presence: \(error)")
           }

@@ -190,4 +190,72 @@ final class DocAssistFireStoreManager {
       print("#BB Successfully updated Firestore")
     }
   }
+  
+  func syncAllMessages(
+    businessId: String,
+    doctorId: String,
+    completion: @escaping ([FireStoreChatResponse]) -> Void
+  ) {
+    let outPatientRef = getBaseReference(businessId: businessId, doctorId: doctorId, context: false)
+    let inPatientRef = getBaseReference(businessId: businessId, doctorId: doctorId, context: true)
+    var allMessages: [FireStoreChatResponse] = []
+    
+    
+    print("#BB Out-patient path: \(outPatientRef?.path ?? "nil")")
+    print("#BB In-patient path: \(inPatientRef?.path ?? "nil")")
+    
+    print("#BB Starting sync...")
+    
+    // Fetch out-patient messages
+    outPatientRef?
+      .collection(sessionsCollectionName)
+      .getDocuments { snapshot, error in
+        if let error = error {
+          print("#BB Error fetching out-patient sessions: \(error.localizedDescription)")
+          return
+        }
+        
+        guard let sessions = snapshot?.documents else {
+          print("#BB No out-patient sessions found")
+          return
+        }
+        
+        print("#BB Found \(sessions.count) out-patient sessions")
+        
+        for session in sessions {
+          let sessionId = session.documentID
+          print("#BB Processing session: \(sessionId)")
+          
+          outPatientRef?
+            .collection(self.sessionsCollectionName)
+            .document(sessionId)
+            .collection(self.messagesCollectionName)
+            .getDocuments { messagesSnapshot, messagesError in
+              if let error = messagesError {
+                print("#BB Error fetching messages: \(error.localizedDescription)")
+                return
+              }
+              
+              if let messages = messagesSnapshot?.documents {
+                print("#BB Found \(messages.count) messages in session \(sessionId)")
+                
+                for messageDoc in messages {
+                  let data = messageDoc.data()
+                  do {
+                    let jsonData = try JSONSerialization.data(withJSONObject: data)
+                    let messageResponse = try JSONDecoder().decode(FireStoreChatResponse.self, from: jsonData)
+                    allMessages.append(messageResponse)
+                    print("#BB Successfully decoded message")
+                  } catch {
+                    print("#BB Error decoding message: \(error.localizedDescription)")
+                    print("#BB Data: \(data)")
+                  }
+                }
+                
+                completion(allMessages)
+              }
+            }
+        }
+      }
+  }
 }

@@ -46,12 +46,12 @@ struct SuggestionView: View {
             }
           }) {
             Text(suggestionText)
-              .foregroundColor(viewModel.streamStarted ? Color.white : Color.primaryprimary)
+              .foregroundColor(viewModel.streamStarted ? Color.neutrals400 : Color.primaryprimary)
               .font(.custom("Lato-Regular", size: 14))
               .multilineTextAlignment(.leading)
               .padding(.init(top: 8, leading: 12, bottom: 8, trailing: 12))
               .frame(maxWidth: .infinity, alignment: .leading)
-              .background(viewModel.streamStarted ? Color.gray.opacity(0.3) : .white)
+              .background(.white)
               .clipShape(RoundedRectangle(cornerRadius: 12))
           }
         }
