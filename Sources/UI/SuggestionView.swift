@@ -9,7 +9,7 @@ import SwiftUI
 
 struct SuggestionView: View {
   
-  var suggestionText: [String]?
+  var suggestionText: [String]
   var viewModel: ChatViewModel
   var lastMessageId: Int?
   
@@ -18,27 +18,31 @@ struct SuggestionView: View {
   private var constantLoadingSuggestion = "Loading more suggestions..."
   private var constantNoSuggestion = "No more new suggestions found :("
   
-  init(suggestionText: [String]?, viewModel: ChatViewModel, lastMessageId: Int? = nil) {
+  init(suggestionText: [String], viewModel: ChatViewModel, lastMessageId: Int? = nil) {
     self.suggestionText = suggestionText
     self.viewModel = viewModel
     self.lastMessageId = lastMessageId
   }
   
   var body: some View {
-    VStack {
-      Text(constantSuggestionString)
-        .font(.custom("Lato-Regular", size: 12))
-        .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-        .frame(width: 306, height: 16, alignment: .topLeading)
+    VStack(alignment: .leading) {
+      HStack(alignment: .center, spacing: 8) {
+        BotAvatarImage()
+        
+        Text(constantSuggestionString)
+          .font(.custom("Lato-Regular", size: 12))
+          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
+      }
+      .padding(.bottom, 4)
       
-      ForEach(suggestionText ?? ["Show HbA1c trend of this patient", "List Lab investigations prescribed in past 1 year", "What are the side effects of the drug Paracetamol?"], id: \.self) { suggestionText in
-        Button(action: {
-          guard let lastMessageId else { return }
-          Task {
-            await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
-          }
-        }) {
-          HStack {
+      VStack(alignment: .leading, spacing: 8) {
+        ForEach(suggestionText, id: \.self) { suggestionText in
+          Button(action: {
+            guard let lastMessageId else { return }
+            Task {
+              await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
+            }
+          }) {
             Text(suggestionText)
               .foregroundColor(Color.primaryprimary)
               .font(.custom("Lato-Regular", size: 14))
@@ -47,10 +51,11 @@ struct SuggestionView: View {
               .frame(maxWidth: .infinity, alignment: .leading)
               .background(Color.white)
               .clipShape(RoundedRectangle(cornerRadius: 12))
-            Spacer()
           }
         }
       }
+      .padding(.leading, 20)
+      .padding(.trailing, 20)
     }
   }
 }

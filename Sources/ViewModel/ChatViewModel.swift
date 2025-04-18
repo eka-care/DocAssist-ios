@@ -237,7 +237,13 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
         }
       }
       
-      if let suggestions = data["suggestions"] as? [String] {
+      if let suggestions = data["suggestions"] as? [String], let message = data["message"] as? String {
+        Task { @MainActor in
+            await DatabaseConfig.shared.upsertMessageV2(
+              suggestions: [ "What diagnostic tests have been performed in the last year?", "What are the side effects of the drug Paracetamol?", "What is the recommended dosage for children?"], responseMessage: message,
+              userChat: userChat
+            )
+        }
       }
         
       if let eof = data["is_eof"] as? Bool, eof == true {
@@ -308,11 +314,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    //    let currentDate = Date()
-    //    let ssid = UUID().uuidString
-    //    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    //    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    //    await DatabaseConfig.shared.saveData()
     let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
     switchToSession(session)
     return session

@@ -137,10 +137,8 @@ struct MessageBubble: View {
           }
           .padding(.leading, 30)
           
-          HStack {
-            BotAvatarImage()
-              .alignmentGuide(.top) { d in d[.top] }
-            SuggestionView(suggestionText: message.suggestions, viewModel: viewModel, lastMessageId: messages.last?.msgId)
+          if let suggestions = message.suggestions {
+            SuggestionView(suggestionText: suggestions, viewModel: viewModel, lastMessageId: messages.last?.msgId)
           }
         }
       }
