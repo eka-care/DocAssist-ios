@@ -206,7 +206,6 @@ struct MessageInputView: View {
     .focused($isTextFieldFocused)
     .padding(8)
     .background(Color(.white))
-    .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
     .customCornerBorder(20, corners: [.topLeft, .topRight], color: Color.gray, lineWidth: 0.5)
   }
 }
