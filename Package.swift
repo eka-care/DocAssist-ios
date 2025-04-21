@@ -19,8 +19,6 @@ let package = Package(
     .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
-   // Lottie dependency
-    .package(url: "https://github.com/airbnb/lottie-ios.git", from: "4.5.1"),
     // Medical Record
     .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.9"),
     // Mixpanel
@@ -40,8 +38,6 @@ let package = Package(
         .product(name: "MarkdownUI", package: "swift-markdown-ui"),
         // FireBase
         .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
-        // Lottie dependency
-        .product(name: "Lottie", package: "lottie-ios"),
         // Medical Record
         .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
         // Mixpanel
