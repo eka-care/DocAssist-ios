@@ -107,6 +107,11 @@ public class ChatsViewController: UIViewController {
     DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
   }
   
+  override public func viewWillAppear(_ animated: Bool) {
+      super.viewWillAppear(animated)
+      self.navigationController?.setNavigationBarHidden(true, animated: false)
+  }
+  
   private func searchForPatient() {
     patientDelegate.navigateToPatientDirectory()
   }
@@ -205,6 +210,11 @@ public class ActiveChatViewController: UIViewController {
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
+  }
+  
+  override public func viewWillAppear(_ animated: Bool) {
+      super.viewWillAppear(animated)
+      self.navigationController?.setNavigationBarHidden(true, animated: false)
   }
   
   private func setupSubViews() {
