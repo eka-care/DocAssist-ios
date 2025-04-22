@@ -15,7 +15,7 @@ import EkaVoiceToRx
 public class ChatsViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
-  private var patientDelegate: NavigateToPatientDirectory
+  private var patientDelegate: NavigateToPatientDirectory?
   let ctx: ModelContext
   var liveActivityDelegate: LiveActivityDelegate?
   
@@ -28,11 +28,11 @@ public class ChatsViewController: UIViewController {
     deviceType: String? = "phone",
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText,
-    patientDelegate: NavigateToPatientDirectory,
+    delegate: ConvertVoiceToText?,
+    patientDelegate: NavigateToPatientDirectory?,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
     liveActivityDelegate: LiveActivityDelegate? = nil
     
   ) {
@@ -113,7 +113,7 @@ public class ChatsViewController: UIViewController {
   }
   
   private func searchForPatient() {
-    patientDelegate.navigateToPatientDirectory()
+    patientDelegate?.navigateToPatientDirectory()
   }
 }
 

@@ -39,11 +39,12 @@ struct ChatsScreenView: View {
   @State private var messageMatches: [String: Bool] = [:]
 
   
-  var patientDelegate: NavigateToPatientDirectory
-  var searchForPatient: (() -> Void)
+  var patientDelegate: NavigateToPatientDirectory?
+  var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
   var liveActivityDelegate: LiveActivityDelegate?
+  var delegate: ConvertVoiceToText?
   
   var thread: [SessionDataModel] {
     allSessions.filter { session in
@@ -84,13 +85,13 @@ struct ChatsScreenView: View {
        userDocId: String,
        userBid: String,
        ctx: ModelContext,
-       delegate: ConvertVoiceToText,
-       patientDelegate: NavigateToPatientDirectory,
-       searchForPatient: @escaping (() -> Void),
+       delegate: ConvertVoiceToText?,
+       patientDelegate: NavigateToPatientDirectory?,
+       searchForPatient: (() -> Void)?,
        authToken: String,
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
-       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
        liveActivityDelegate: LiveActivityDelegate? = nil,
        patientName: String? = nil
   ) {
@@ -386,8 +387,8 @@ struct ChatsScreenView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-  //        patientDelegate.navigateToPatientDirectory()
-          searchForPatient()
+          patientDelegate?.navigateToPatientDirectory()
+         // searchForPatient()
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {

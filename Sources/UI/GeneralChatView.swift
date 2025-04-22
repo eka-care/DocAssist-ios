@@ -16,15 +16,15 @@ public struct GeneralChatView: View {
   var editButtonColor: Color?
   var subTitle: String?
   var ctx: ModelContext
-  var delegate: ConvertVoiceToText
+  var delegate: ConvertVoiceToText?
   var userDocId: String
   var userBId: String
-  var patientDelegate: NavigateToPatientDirectory
-  var searchForPatient: (() -> Void)
+  var patientDelegate: NavigateToPatientDirectory?
+  var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
   @Binding var selectedScreen: SelectedScreen?
-  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
   var liveActivityDelegate: LiveActivityDelegate?
   
   public init(
@@ -35,13 +35,13 @@ public struct GeneralChatView: View {
     ctx: ModelContext,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText,
-    patientDelegate: NavigateToPatientDirectory,
-    searchForPatient: @escaping (() -> Void),
+    delegate: ConvertVoiceToText?,
+    patientDelegate: NavigateToPatientDirectory?,
+    searchForPatient: (() -> Void)?,
     authToken: String,
     authRefreshToken: String,
     selectedScreen: Binding<SelectedScreen?>,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
     liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
     self.backgroundColor = backgroundColor

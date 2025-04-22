@@ -23,14 +23,14 @@ public struct IpadChatView: View {
   var editButtonColor: Color?
   var subTitle: String?
   var ctx: ModelContext
-  var delegate: ConvertVoiceToText
+  var delegate: ConvertVoiceToText?
   var userDocId: String
   var userBId: String
-  var patientDelegate: NavigateToPatientDirectory
+  var patientDelegate: NavigateToPatientDirectory?
   var searchForPatient: (()->Void)
   var authToken: String
   var authRefreshToken: String
-  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
   
   public init(
     backgroundColor: Color? = nil,
@@ -40,13 +40,13 @@ public struct IpadChatView: View {
     ctx: ModelContext,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText,
-    patientDelegate: NavigateToPatientDirectory,
+    delegate: ConvertVoiceToText?,
+    patientDelegate: NavigateToPatientDirectory?,
     searchForPatient: @escaping (()->Void),
     authToken: String,
     authRefreshToken: String,
     selectedScreen: SelectedScreen? = .emptyScreen,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
