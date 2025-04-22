@@ -40,7 +40,7 @@ public struct ActiveChatView: View {
   private let authToken: String
   private let authRefreshToken: String
   
-  init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
+  public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in

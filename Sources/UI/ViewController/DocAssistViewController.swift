@@ -147,7 +147,15 @@ public class ActiveChatViewController: UIViewController {
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
     liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
-    self.vm = ChatViewModel(context: ctx, delegate: delegate, deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,liveActivityDelegate: liveActivityDelegate,userBid: userBId, userDocId: userDocId, patientName: patientSubtitle ?? "")
+    self.vm = ChatViewModel(
+      context: ctx,
+      delegate: delegate,
+      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+      liveActivityDelegate: liveActivityDelegate,
+      userBid: userBId,
+      userDocId: userDocId,
+      patientName: patientSubtitle ?? ""
+    )
     self.backgroundColor = backgroundColor
     self.ctx = ctx
     self.patientSubtitle = patientSubtitle
@@ -172,7 +180,6 @@ public class ActiveChatViewController: UIViewController {
     super.viewDidLoad()
     
     setupSubViews()
-    
     DatabaseConfig.setup(modelContainer: ctx.container)
     DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
   }
