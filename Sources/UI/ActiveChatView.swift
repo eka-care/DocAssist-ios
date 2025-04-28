@@ -110,7 +110,9 @@ public struct ActiveChatView: View {
       print("#BB session \(session)")
       Task {
         isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: session)
-        setupView()
+        if isOidPresent == "" {
+          setupView()
+        }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       
@@ -316,7 +318,6 @@ public struct ActiveChatView: View {
     Task {
       let isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: viewModel.vmssid)
       viewModel.updateQueryParamsIfNeeded(isOidPresent)
-      MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: isOidPresent, bid: userBId)
     }
   }
 }

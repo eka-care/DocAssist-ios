@@ -150,22 +150,3 @@ public struct ExistingPatientChatsView: View {
     }
   }
 }
-
-class MRInitializer {
-  
-  init() {}
-  
-  static var shared = MRInitializer()
-  
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
-  }
-  
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
-    CoreInitConfigurations.shared.authToken = authToken
-    CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.filterID = oid
-    CoreInitConfigurations.shared.ownerID = bid
-  }
-  
-}

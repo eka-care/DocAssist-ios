@@ -248,62 +248,13 @@ public class ActiveChatViewController: UIViewController {
 }
 
 extension ActiveChatViewController {
-  
-//  func registerUISdk() {
-//    registerFonts()
-//  }
-//  
-//  private func registerFonts() {
-//    do {
-//      try Fonts.registerAllFonts()
-//    } catch {
-//      debugPrint("Failed to fetch fonts")
-//    }
-//  }
-  
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
-    var ownerId: String = oid
-    if oid == "" {
-      ownerId = userDocId
-    }
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
-  }
-  
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
-    CoreInitConfigurations.shared.authToken = authToken
-    CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.filterID = oid
-    CoreInitConfigurations.shared.ownerID = bid
+    MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
   }
 }
 
-
 extension ChatsViewController {
-  
-//  func registerUISdk() {
-//    registerFonts()
-//  }
-  
-//  func registerFonts() {
-//    do {
-//      try Fonts.registerAllFonts()
-//    } catch {
-//      debugPrint("Failed to fetch fonts")
-//    }
-//  }
-  
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
-    var ownerId: String = oid
-    if oid.isEmpty {
-      ownerId = userDocId
-    }
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
-  }
-  
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
-    CoreInitConfigurations.shared.authToken = authToken
-    CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.filterID = oid
-    CoreInitConfigurations.shared.ownerID = bid
+    MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
   }
 }
