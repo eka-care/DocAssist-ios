@@ -107,12 +107,10 @@ public struct ActiveChatView: View {
     }
     .onAppear {
       viewModel.switchToSession(session)
-      print("#BB session \(session)")
       Task {
         isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: session)
-        if isOidPresent == "" {
-          setupView()
-        }
+        print("#BB oid on appear is \(String(describing: isOidPresent))")
+        setupNetworkQuery(oid: isOidPresent)
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       
@@ -314,10 +312,13 @@ public struct ActiveChatView: View {
     }
   }
   
-  private func setupView() {
+  private func setupNetworkQuery(oid: String?) {
     Task {
-      let isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: viewModel.vmssid)
-      viewModel.updateQueryParamsIfNeeded(isOidPresent)
+      print("#BB oid setup network call is \(String(describing: isOidPresent))")
+      if let oid, oid != "" {
+        viewModel.updateQueryParamsIfNeeded(oid)
+        MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
+      }
     }
   }
 }
