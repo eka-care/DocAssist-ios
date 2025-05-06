@@ -66,7 +66,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  init(
+  public init(
     context: ModelContext,
     delegate: ConvertVoiceToText? = nil,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
