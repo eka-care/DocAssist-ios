@@ -24,10 +24,9 @@ public struct DocAssistChatWrapperView: View {
     let authToken: String
     let authRefreshToken: String
     let deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-    let liveActivityDelegate: LiveActivityDelegate?
     let deviceType: String?
     
-  init(backgroundColor: Color?, emptyMessageColor: Color?, editButtonColor: Color?, subTitle: String?, ctx: ModelContext, userDocId: String, userBId: String, delegate: ConvertVoiceToText?, patientDelegate: NavigateToPatientDirectory?, authToken: String, authRefreshToken: String, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?, liveActivityDelegate: LiveActivityDelegate?, deviceType: String?) {
+  init(backgroundColor: Color?, emptyMessageColor: Color?, editButtonColor: Color?, subTitle: String?, ctx: ModelContext, userDocId: String, userBId: String, delegate: ConvertVoiceToText?, patientDelegate: NavigateToPatientDirectory?, authToken: String, authRefreshToken: String, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?, deviceType: String?) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
@@ -40,7 +39,6 @@ public struct DocAssistChatWrapperView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.liveActivityDelegate = liveActivityDelegate
     self.deviceType = deviceType
   }
   
@@ -78,7 +76,6 @@ public struct DocAssistChatWrapperView: View {
                     authRefreshToken: authRefreshToken,
                     selectedScreen: .constant(nil),
                     deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-                    liveActivityDelegate: liveActivityDelegate
                 ).modelContext(ctx)
             }
         }
@@ -101,7 +98,6 @@ public struct ActiveChatWrapperView: View {
     let authToken: String
     let authRefreshToken: String
     let deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-    let liveCActivityDelegate: LiveActivityDelegate?
 
     @State private var viewModel: ChatViewModel
      @State private var session: String?
@@ -119,7 +115,6 @@ public struct ActiveChatWrapperView: View {
         authToken: String,
         authRefreshToken: String,
         deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
-        liveActivityDelegate: LiveActivityDelegate? = nil
     ) {
         self.ctx = ctx
         self.backgroundColor = backgroundColor
@@ -132,17 +127,15 @@ public struct ActiveChatWrapperView: View {
         self.authToken = authToken
         self.authRefreshToken = authRefreshToken
         self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-        self.liveActivityDelegate = liveActivityDelegate
         _viewModel = State(initialValue: ChatViewModel(
             context: ctx,
             delegate: delegate,
             deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-            liveActivityDelegate: liveActivityDelegate,
             userBid: userBId,
             userDocId: userDocId,
             patientName: patientSubtitle ?? ""
         ))
-      registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: StringuserDocId)
+      registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId)
       registerAuthToken(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
     }
 
@@ -182,7 +175,6 @@ public struct ActiveChatWrapperView: View {
                         calledFromPatientContext: true,
                         authToken: authToken,
                         authRefreshToken: authRefreshToken,
-                        liveActivityDelegate: liveActivityDelegate
                     ).modelContext(ctx)
                 } else if let session = session {
                     ActiveChatView(
