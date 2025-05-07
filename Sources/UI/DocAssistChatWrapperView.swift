@@ -42,8 +42,6 @@ public struct DocAssistChatWrapperView: View {
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
     self.liveActivityDelegate = liveActivityDelegate
     self.deviceType = deviceType
-    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: StringuserDocId)
-    registerAuthToken(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
   }
   
     public var body: some View {
@@ -89,21 +87,6 @@ public struct DocAssistChatWrapperView: View {
    func searchForPatient() {
         patientDelegate?.navigateToPatientDirectory()
     }
-  
-  private func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
-    var ownerId: String = oid
-    if oid.isEmpty {
-      ownerId = userDocId
-    }
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
-  }
-  
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
-    CoreInitConfigurations.shared.authToken = authToken
-    CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.filterID = oid
-    CoreInitConfigurations.shared.ownerID = bid
-  }
 }
 
 public struct ActiveChatWrapperView: View {
