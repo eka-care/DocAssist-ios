@@ -101,10 +101,10 @@ public struct ActiveChatWrapperView: View {
     let authToken: String
     let authRefreshToken: String
     let deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-    let liveActivityDelegate: LiveActivityDelegate?
+    let liveCActivityDelegate: LiveActivityDelegate?
 
     @State private var viewModel: ChatViewModel
-    @State private var session: Session?
+     @State private var session: String?
     @State private var isLoading = true
 
     public init(
