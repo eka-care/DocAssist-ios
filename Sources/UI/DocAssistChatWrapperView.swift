@@ -75,7 +75,7 @@ public struct DocAssistChatWrapperView: View {
                     authToken: authToken,
                     authRefreshToken: authRefreshToken,
                     selectedScreen: .constant(nil),
-                    deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+                    deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
                 ).modelContext(ctx)
             }
         }
@@ -114,7 +114,7 @@ public struct ActiveChatWrapperView: View {
         calledFromPatientContext: Bool,
         authToken: String,
         authRefreshToken: String,
-        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
     ) {
         self.ctx = ctx
         self.backgroundColor = backgroundColor
@@ -174,7 +174,7 @@ public struct ActiveChatWrapperView: View {
                         userBId: userBId,
                         calledFromPatientContext: true,
                         authToken: authToken,
-                        authRefreshToken: authRefreshToken,
+                        authRefreshToken: authRefreshToken
                     ).modelContext(ctx)
                 } else if let session = session {
                     ActiveChatView(
