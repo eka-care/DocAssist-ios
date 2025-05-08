@@ -24,9 +24,8 @@ public struct DocAssistChatWrapperView: View {
     let authToken: String
     let authRefreshToken: String
     let deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-    let deviceType: String?
     
-  init(backgroundColor: Color?, emptyMessageColor: Color?, editButtonColor: Color?, subTitle: String?, ctx: ModelContext, userDocId: String, userBId: String, delegate: ConvertVoiceToText?, patientDelegate: NavigateToPatientDirectory?, authToken: String, authRefreshToken: String, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?, deviceType: String?) {
+  public init(backgroundColor: Color?, emptyMessageColor: Color?, editButtonColor: Color?, subTitle: String?, ctx: ModelContext, userDocId: String, userBId: String, delegate: ConvertVoiceToText?, patientDelegate: NavigateToPatientDirectory?, authToken: String, authRefreshToken: String, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?, deviceType: String?) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
@@ -39,12 +38,11 @@ public struct DocAssistChatWrapperView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.deviceType = deviceType
   }
   
     public var body: some View {
         Group {
-            if deviceType?.lowercased() == "ipad" {
+          if UIDevice.current.userInterfaceIdiom == .pad {
                 IpadChatView(
                     backgroundColor: backgroundColor,
                     emptyMessageColor: emptyMessageColor,
