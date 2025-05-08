@@ -25,7 +25,20 @@ public struct DocAssistChatWrapperView: View {
     let authRefreshToken: String
     let deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
     
-  public init(backgroundColor: Color?, emptyMessageColor: Color?, editButtonColor: Color?, subTitle: String?, ctx: ModelContext, userDocId: String, userBId: String, delegate: ConvertVoiceToText?, patientDelegate: NavigateToPatientDirectory?, authToken: String, authRefreshToken: String, deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?, deviceType: String?) {
+  public init(
+    backgroundColor: Color?,
+    emptyMessageColor: Color?,
+    editButtonColor: Color?,
+    subTitle: String?,
+    ctx: ModelContext,
+    userDocId: String,
+    userBId: String,
+    delegate: ConvertVoiceToText?,
+    patientDelegate: NavigateToPatientDirectory?,
+    authToken: String,
+    authRefreshToken: String,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
+  ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
@@ -98,7 +111,7 @@ public struct ActiveChatWrapperView: View {
     let deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
 
     @State private var viewModel: ChatViewModel
-     @State private var session: String?
+    @State private var session: String?
     @State private var isLoading = true
 
     public init(
@@ -108,11 +121,11 @@ public struct ActiveChatWrapperView: View {
         oid: String,
         userDocId: String,
         userBId: String,
-        delegate: ConvertVoiceToText,
+        delegate: ConvertVoiceToText?,
         calledFromPatientContext: Bool,
         authToken: String,
         authRefreshToken: String,
-        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate
+        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
     ) {
         self.ctx = ctx
         self.backgroundColor = backgroundColor
@@ -137,59 +150,58 @@ public struct ActiveChatWrapperView: View {
       registerAuthToken(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId)
     }
 
-    public var body: some View {
-        Group {
-            if isLoading {
-                ProgressView()
-                    .onAppear {
-                        Task {
-                            let sessionPresent = await viewModel.isSessionsPresent(
-                                oid: oid,
-                                userDocId: userDocId,
-                                userBId: userBId
-                            )
-
-                            if calledFromPatientContext, sessionPresent {
-                                // no need to create session
-                            } else {
-                                session = await viewModel.createSession(
-                                    subTitle: patientSubtitle,
-                                    oid: oid,
-                                    userDocId: userDocId,
-                                    userBId: userBId
-                                )
-                            }
-                            isLoading = false
-                        }
-                    }
-            } else {
-                if calledFromPatientContext, session == nil {
-                    ExistingPatientChatsView(
-                        patientName: patientSubtitle ?? "",
-                        viewModel: viewModel,
-                        oid: oid,
-                        userDocId: userDocId,
-                        userBId: userBId,
-                        calledFromPatientContext: true,
-                        authToken: authToken,
-                        authRefreshToken: authRefreshToken
-                    ).modelContext(ctx)
-                } else if let session = session {
-                    ActiveChatView(
-                        session: session,
-                        viewModel: viewModel,
-                        backgroundColor: backgroundColor,
-                        patientName: patientSubtitle ?? "",
-                        calledFromPatientContext: true,
-                        userDocId: userDocId,
-                        userBId: userBId,
-                        authToken: authToken,
-                        authRefreshToken: authRefreshToken
-                    ).modelContext(ctx)
-                }
+  public var body: some View {
+    Group {
+      if isLoading {
+        ProgressView()
+          .onAppear {
+            Task {
+              let sessionPresent = await viewModel.isSessionsPresent(
+                oid: oid,
+                userDocId: userDocId,
+                userBId: userBId
+              )
+              
+              if calledFromPatientContext, sessionPresent {
+              } else {
+                session = await viewModel.createSession(
+                  subTitle: patientSubtitle,
+                  oid: oid,
+                  userDocId: userDocId,
+                  userBId: userBId
+                )
+              }
+              isLoading = false
             }
+          }
+      } else {
+        if calledFromPatientContext, session == nil {
+          ExistingPatientChatsView(
+            patientName: patientSubtitle ?? "",
+            viewModel: viewModel,
+            oid: oid,
+            userDocId: userDocId,
+            userBId: userBId,
+            calledFromPatientContext: true,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
+          ).modelContext(ctx)
+        } else if let session = session {
+          ActiveChatView(
+            session: session,
+            viewModel: viewModel,
+            backgroundColor: backgroundColor,
+            patientName: patientSubtitle ?? "",
+            calledFromPatientContext: true,
+            userDocId: userDocId,
+            userBId: userBId,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
+          ).modelContext(ctx)
         }
+      }
     }
+  }
   
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
     var ownerId: String = oid

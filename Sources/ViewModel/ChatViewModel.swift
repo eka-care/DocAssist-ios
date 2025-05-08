@@ -49,6 +49,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var userDocId: String
   var patientName: String
   var isOidPresent: String? = ""
+  var navigateToMarkDownPage: Bool = false
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -449,7 +450,11 @@ extension Notification.Name {
 extension ChatViewModel {
   func navigateToDeepThought(id: String?) {
     guard let id else { return }
-    deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
+    if let deepThoughtNavigationDelegate {
+      deepThoughtNavigationDelegate.navigateToDeepThoughtPage(id: id)
+    } else {
+      navigateToMarkDownPage = true
+    }
   }
 }
 

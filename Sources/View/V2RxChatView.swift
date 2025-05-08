@@ -22,6 +22,7 @@ struct V2RxChatView: View {
   @State var updatedSessionID: String?
   @State var audioDuration: String = ""
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
+  @State private var showMarkDownPage = false
   
   private enum Constants {
     static let draft = "Draft"
@@ -183,6 +184,12 @@ struct V2RxChatView: View {
       }
     }
     .padding()
+    .onChange(of: viewModel.navigateToMarkDownPage) { _, newValue in
+                showMarkDownPage = newValue
+            }
+    .navigationDestination(isPresented: $showMarkDownPage, destination: {
+      Text("MarkDown view")
+    })
     .onAppear {
       Task {
         if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
