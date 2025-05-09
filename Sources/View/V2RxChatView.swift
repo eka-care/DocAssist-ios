@@ -197,6 +197,7 @@ struct V2RxChatView: View {
           v2rxState = state
         }
         let models = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: EkaVoiceToRx.QueryHelper.queryForFetch(with: v2rxSessionId))
+        print("#BB models\(models.first?.transcriptionText)")
         if let sessionId = models.first?.updatedSessionID?.uuidString {
           updatedSessionID = "P-PP-\(sessionId)"
         }

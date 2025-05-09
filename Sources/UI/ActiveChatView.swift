@@ -74,6 +74,8 @@ public struct ActiveChatView: View {
         voiceToRxDelegate: SetUIComponents.shared.v2rxDelegate
       )
     }
+    EkaVoiceToRx.AuthTokenHolder.shared.authToken = authToken
+    EkaVoiceToRx.AuthTokenHolder.shared.refreshToken = authRefreshToken
     self.userDocId = userDocId
     self.userBId = userBId
     self.authToken = authToken
