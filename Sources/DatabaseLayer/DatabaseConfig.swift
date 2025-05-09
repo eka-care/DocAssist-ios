@@ -130,6 +130,15 @@ public final actor DatabaseConfig {
     return try modelContext.fetch(descriptor).first?.oid ?? ""
     
   }
+  
+  func addTranscript(sessionId: String, transcript: String, messageId: Int) {
+    // For particalur sessiond id add the transcript
+    let descriptor = FetchDescriptor<ChatMessageModel>(
+      predicate: #Predicate { $0.sessionId == sessionId && $0.msgId == messageId }
+    )
+    let message = try? modelContext.fetch(descriptor).first
+    message?.transript = transcript
+  }
 }
 
 // Create

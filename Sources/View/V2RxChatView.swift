@@ -23,6 +23,7 @@ struct V2RxChatView: View {
   @State var audioDuration: String = ""
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   @State private var showMarkDownPage = false
+  @State var transcript: String = ""
   
   private enum Constants {
     static let draft = "Draft"
@@ -108,10 +109,14 @@ struct V2RxChatView: View {
                 /// Retry file uploads if pending from local
                 v2rxViewModel.retryIfNeeded()
               } else {
-                if let updatedSessionID {
-                  viewModel.navigateToDeepThought(id: updatedSessionID)
+                if let deepThoughtEnabled = viewModel.deepThoughtNavigationDelegate {
+                  if let updatedSessionID {
+                    viewModel.navigateToDeepThought(id: updatedSessionID)
+                  } else {
+                    viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
+                  }
                 } else {
-                  viewModel.navigateToDeepThought(id: v2rxSessionId.uuidString)
+                showMarkDownPage = true
                 }
               }
             }
@@ -184,11 +189,8 @@ struct V2RxChatView: View {
       }
     }
     .padding()
-    .onChange(of: viewModel.navigateToMarkDownPage) { _, newValue in
-                showMarkDownPage = newValue
-            }
     .navigationDestination(isPresented: $showMarkDownPage, destination: {
-      Text("MarkDown view")
+      MarkDownView(text: transcript)
     })
     .onAppear {
       Task {
@@ -197,7 +199,7 @@ struct V2RxChatView: View {
           v2rxState = state
         }
         let models = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: EkaVoiceToRx.QueryHelper.queryForFetch(with: v2rxSessionId))
-        print("#BB models\(models.first?.transcriptionText)")
+        transcript = models.first?.transcriptionText ?? "Transcription"
         if let sessionId = models.first?.updatedSessionID?.uuidString {
           updatedSessionID = "P-PP-\(sessionId)"
         }
@@ -212,6 +214,9 @@ struct V2RxChatView: View {
           if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
             v2rxState = state
           }
+          let models = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: EkaVoiceToRx.QueryHelper.queryForFetch(with: v2rxSessionId))
+          transcript = models.first?.transcriptionText ?? "Transcription"
+ //         await DatabaseConfig.shared.addTranscript(sessionId: viewModel.vmssid, transcript: transcript)
         }
         audioManger.prepareAudio(sessionID: v2rxSessionId)
         audioDuration = audioManger.getDuration() ?? ""

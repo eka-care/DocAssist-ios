@@ -31,7 +31,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private(set) var vmssid: String = ""
   private var context: ModelContext
   private var delegate: ConvertVoiceToText? = nil
-  private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
+  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
   var liveActivityDelegate: LiveActivityDelegate? = nil
   
   private let networkCall = NetworkCall()
