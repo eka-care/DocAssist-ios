@@ -306,6 +306,7 @@ public struct ActiveChatView: View {
           voiceToRxViewModel: voiceToRxViewModel,
           recordsRepo: recordsRepo
         )
+        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )
     } else {
       AnyView(

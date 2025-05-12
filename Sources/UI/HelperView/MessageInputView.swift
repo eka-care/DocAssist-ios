@@ -43,7 +43,7 @@ struct MessageInputView: View {
       TextField("Start typing...", text: $inputString, axis: .vertical)
         .frame(minHeight: 25)
       
-      HStack(spacing: 10) {
+      HStack(spacing: 12) {
         Button {
           showRecordsView = true
           DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
@@ -54,6 +54,9 @@ struct MessageInputView: View {
           }
         } label: {
           Image(.paperClip)
+            .resizable()
+            .scaledToFit()
+            .frame(width: 16)
             .foregroundStyle(Color.neutrals600)
         }
         .sheet(isPresented: $showRecordsView) {
@@ -102,7 +105,7 @@ struct MessageInputView: View {
           Image(.mic)
             .resizable()
             .scaledToFit()
-            .frame(width: 14)
+            .frame(width: 16)
             .foregroundStyle(Color.neutrals600)
         }
         .alert(isPresented: viewModel.showPermissionAlertBinding) {
@@ -195,8 +198,9 @@ struct MessageInputView: View {
               Image(systemName: "waveform.circle.fill")
                 .resizable()
                 .scaledToFit()
-                .frame(width: 24,height: 24)
+                .frame(width: 30,height: 30)
                 .foregroundStyle(viewModel.v2rxEnabled ? Color.primaryprimary : Color.gray.opacity(0.5))
+                .frame(width: 36,height: 36)
             }
             .disabled(!viewModel.v2rxEnabled)
           }
@@ -204,9 +208,8 @@ struct MessageInputView: View {
       }
     }
     .focused($isTextFieldFocused)
-    .padding(8)
+    .padding(16)
     .background(Color(.white))
-    .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
     .customCornerBorder(20, corners: [.topLeft, .topRight], color: Color.gray, lineWidth: 0.5)
   }
 }
