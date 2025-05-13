@@ -151,56 +151,58 @@ public struct ActiveChatWrapperView: View {
     }
 
   public var body: some View {
-    Group {
-      if isLoading {
-        ProgressView()
-          .onAppear {
-            Task {
-              let sessionPresent = await viewModel.isSessionsPresent(
-                oid: oid,
-                userDocId: userDocId,
-                userBId: userBId
-              )
-              
-              if calledFromPatientContext, sessionPresent {
-              } else {
-                session = await viewModel.createSession(
-                  subTitle: patientSubtitle,
-                  oid: oid,
-                  userDocId: userDocId,
-                  userBId: userBId
-                )
-              }
-              isLoading = false
-            }
-          }
-      } else {
-        if calledFromPatientContext, session == nil {
-          ExistingPatientChatsView(
-            patientName: patientSubtitle ?? "",
-            viewModel: viewModel,
-            oid: oid,
-            userDocId: userDocId,
-            userBId: userBId,
-            calledFromPatientContext: true,
-            authToken: authToken,
-            authRefreshToken: authRefreshToken
-          ).modelContext(ctx)
-        } else if let session = session {
-          ActiveChatView(
-            session: session,
-            viewModel: viewModel,
-            backgroundColor: backgroundColor,
-            patientName: patientSubtitle ?? "",
-            calledFromPatientContext: true,
-            userDocId: userDocId,
-            userBId: userBId,
-            authToken: authToken,
-            authRefreshToken: authRefreshToken
-          ).modelContext(ctx)
-        }
-      }
-    }
+//    Group {
+//      if isLoading {
+//        ProgressView()
+//          .onAppear {
+//            Task {
+//              let sessionPresent = await viewModel.isSessionsPresent(
+//                oid: oid,
+//                userDocId: userDocId,
+//                userBId: userBId
+//              )
+//              
+//              if calledFromPatientContext, sessionPresent {
+//              } else {
+//                session = await viewModel.createSession(
+//                  subTitle: patientSubtitle,
+//                  oid: oid,
+//                  userDocId: userDocId,
+//                  userBId: userBId
+//                )
+//              }
+//              isLoading = false
+//            }
+//          }
+//      } else {
+//        if calledFromPatientContext, session == nil {
+//          ExistingPatientChatsView(
+//            patientName: patientSubtitle ?? "",
+//            viewModel: viewModel,
+//            oid: oid,
+//            userDocId: userDocId,
+//            userBId: userBId,
+//            calledFromPatientContext: true,
+//            authToken: authToken,
+//            authRefreshToken: authRefreshToken
+//          ).modelContext(ctx)
+//        } else if let session = session {
+//          ActiveChatView(
+//            session: session,
+//            viewModel: viewModel,
+//            backgroundColor: backgroundColor,
+//            patientName: patientSubtitle ?? "",
+//            calledFromPatientContext: true,
+//            userDocId: userDocId,
+//            userBId: userBId,
+//            authToken: authToken,
+//            authRefreshToken: authRefreshToken
+//          ).modelContext(ctx)
+//        }
+//      }
+//    }
+    Text("Hello world")
+    Text("patient is \(patientSubtitle ?? "")")
   }
   
   func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
