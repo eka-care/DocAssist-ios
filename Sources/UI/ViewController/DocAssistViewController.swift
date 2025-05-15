@@ -144,7 +144,7 @@ public class ActiveChatViewController: UIViewController {
     calledFromPatientContext: Bool,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
     liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
     self.vm = ChatViewModel(
@@ -207,13 +207,13 @@ public class ActiveChatViewController: UIViewController {
             viewModel: vm,
             backgroundColor: backgroundColor,
             patientName: patientSubtitle ?? "",
-            calledFromPatientContext: true,
+            calledFromPatientContext: false,
             userDocId: userDocId,
             userBId: userBId,
             authToken: authToken,
             authRefreshToken: authRefreshToken
         )
-        .navigationBarHidden(true)
+       // .navigationBarHidden(true)
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }

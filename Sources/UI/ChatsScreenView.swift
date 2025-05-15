@@ -37,7 +37,7 @@ struct ChatsScreenView: View {
   @Binding var selectedScreen: SelectedScreen?
   @State var selectedPatientThread: SessionDataModel?
   @State private var messageMatches: [String: Bool] = [:]
-
+  @State var newViewChat: Bool = false
   
   var patientDelegate: NavigateToPatientDirectory?
   var searchForPatient: (() -> Void)?
@@ -134,6 +134,20 @@ struct ChatsScreenView: View {
               patientName: selectedPatientThread?.subTitle ?? "General Chat",
               calledFromPatientContext: false,
               title: selectedPatientThread?.title,
+              userDocId: userDocId,
+              userBId: userBId,
+              authToken: authToken,
+              authRefreshToken: authRefreshToken
+            )
+            .modelContext( DatabaseConfig.shared.modelContext)
+          }
+          .navigationDestination(item: $newSessionId) { sessionId in
+            ActiveChatView(
+              session: sessionId,
+              viewModel: viewModel,
+              backgroundColor: .white,
+              patientName: "General Chat",
+              calledFromPatientContext: false,
               userDocId: userDocId,
               userBId: userBId,
               authToken: authToken,
@@ -387,8 +401,23 @@ struct ChatsScreenView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-          patientDelegate?.navigateToPatientDirectory()
-         // searchForPatient()
+          newViewChat = true
+          if let patientDelegate {
+            print("#BB navigate to pd")
+            patientDelegate.navigateToPatientDirectory()
+          } else {
+            Task {
+              let sessionId = await viewModel.createSession(
+                subTitle: "",
+                userDocId: userDocId,
+                userBId: userBId
+              )
+              
+              await MainActor.run {
+                self.newSessionId = sessionId
+              }
+            }
+          }
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
@@ -502,3 +531,10 @@ func nameInitialsView(initials: String) -> some View {
   }
   .clipShape(Circle())
 }
+
+struct NewView: View {
+  var body: some View {
+    Text("Hello world")
+  }
+}
+
