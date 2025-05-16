@@ -74,6 +74,8 @@ public struct ActiveChatView: View {
         voiceToRxDelegate: SetUIComponents.shared.v2rxDelegate
       )
     }
+    print("#BB authtoken is \(authToken)")
+    print("#BB refreshToken is \(authRefreshToken)")
     EkaVoiceToRx.AuthTokenHolder.shared.authToken = authToken
     EkaVoiceToRx.AuthTokenHolder.shared.refreshToken = authRefreshToken
     self.userDocId = userDocId
@@ -112,7 +114,9 @@ public struct ActiveChatView: View {
       print("#BB session \(session)")
       Task {
         isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: session)
-        setupView()
+        if isOidPresent == "" {
+          setupView()
+        }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       
@@ -306,6 +310,7 @@ public struct ActiveChatView: View {
           voiceToRxViewModel: voiceToRxViewModel,
           recordsRepo: recordsRepo
         )
+        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )
     } else {
       AnyView(

@@ -198,7 +198,7 @@ public class ActiveChatViewController: UIViewController {
             authRefreshToken: authRefreshToken,
             liveActivityDelegate: liveActivityDelegate
         )
-        .navigationBarHidden(true)
+        //.navigationBarHidden(true)
       docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
     } else {
       let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)

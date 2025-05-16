@@ -403,7 +403,6 @@ struct ChatsScreenView: View {
           }
           newViewChat = true
           if let patientDelegate {
-            print("#BB navigate to pd")
             patientDelegate.navigateToPatientDirectory()
           } else {
             Task {
