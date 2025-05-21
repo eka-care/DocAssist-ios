@@ -1,10 +1,10 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 5.10
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
-  name: "ChatBotAiPackage",
+  name: "DocAssist-ios",
   platforms: [
     .iOS(.v17)
   ],
@@ -16,9 +16,17 @@ let package = Package(
   ],
   dependencies: [
     // MarkdownUI package dependency
-    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.0.2"),
+    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
-    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1")
+    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
+    // Medical Record
+    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.9"),
+    // Mixpanel
+    .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
+    // VoiceToRx
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.1.6"),
+    // EkaPDFMaker
+    .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", branch: "main")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -29,7 +37,15 @@ let package = Package(
         // MarkdownUI
         .product(name: "MarkdownUI", package: "swift-markdown-ui"),
         // FireBase
-        .product(name: "FirebaseFirestore", package: "firebase-ios-sdk")
+        .product(name: "FirebaseFirestore", package: "firebase-ios-sdk"),
+        // Medical Record
+        .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
+        // Mixpanel
+        .product(name: "Mixpanel", package: "mixpanel-swift"),
+        // VoiceToRx
+        .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx"),
+        // PdfRender
+        .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
       ],
       resources: [
         .process("Resources")

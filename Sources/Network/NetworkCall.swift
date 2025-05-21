@@ -8,39 +8,53 @@
 import Foundation
 import Network
 
-public final class NwConfig {
+public final class NetworkConfig {
   public var baseUrl: String = ""
   public var queryParams: [String: String] = [:]
   public var httpMethod: String = ""
   
-  @MainActor public static let shared = NwConfig()
+  public static let shared = NetworkConfig()
   private init() {}
 }
 
 final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
-  @MainActor func startStreamingPostRequest(query: String, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
-    
+  private var dataTask: URLSessionDataTask?
+  
+  override init() {
+    super.init()
+    dataTask?.delegate = self
+  }
+  
+  func startStreamingPostRequest(query: String?, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
     let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
-    
-    guard var urlComponents = URLComponents(string: NwConfig.shared.baseUrl) else {
+    guard var urlComponents = URLComponents(string: NetworkConfig.shared.baseUrl) else {
       fatalError("Invalid URL")
     }
-    let queryItems = NwConfig.shared.queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
+    let queryItems = NetworkConfig.shared.queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
     urlComponents.queryItems = queryItems
     guard let url = urlComponents.url else {
       fatalError("Invalid URL")
     }
     
     var request = URLRequest(url: url)
-    request.httpMethod = NwConfig.shared.httpMethod
+    request.httpMethod = NetworkConfig.shared.httpMethod
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
     
+    var messageData: [String: Any] = ["role": "user"]
+    
+    if let text = query, !text.isEmpty {
+      messageData["text"] = text
+    }
+    
+    if let vaultFiles = vault_files, !vaultFiles.isEmpty {
+      messageData["vault_files"] = vaultFiles
+    }
+        
+    
     let jsonData: [String: Any] = [
-      "messages": [
-        ["role": "user", "text": query]
-      ]
+      "messages": [messageData]
     ]
     
     do {
@@ -50,34 +64,42 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
       return
     }
     
-    let session = URLSession(configuration: .default, delegate: streamDelegate, delegateQueue: nil)
-    let dataTask = session.dataTask(with: request)
-    
-    if #available(iOS 15.0, *) {
-      dataTask.delegate = self
-    } else {
-    }
-    dataTask.resume()
+    let session = URLSession(configuration: .default, delegate: streamDelegate, delegateQueue: .main)
+    dataTask = session.dataTask(with: request)
+    dataTask?.resume()
   }
+  
+  func cancelStreaming() {
+      dataTask?.cancel()
+      dataTask = nil
+      print("Streaming task canceled.")
+    }
 }
 
 
 final class StreamDelegate: NSObject, URLSessionDataDelegate {
   
+  // MARK: - Properties
+  
   private let completion: @Sendable (Result<String, Error>) -> Void
   private let onStreamComplete: @Sendable () -> Void
+  private var receivedData = Data()
+  
+  // MARK: - Init
+  
   init(
-         completion: @escaping @Sendable (Result<String, Error>) -> Void,
-         onStreamComplete: @escaping @Sendable () -> Void
-     ) {
-         self.completion = completion
-         self.onStreamComplete = onStreamComplete
-     }
+    completion: @escaping @Sendable (Result<String, Error>) -> Void,
+    onStreamComplete: @escaping @Sendable () -> Void
+  ) {
+    self.completion = completion
+    self.onStreamComplete = onStreamComplete
+  }
   
   func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    let receivedString = String(data: data, encoding: .utf8) ?? ""
-    completion(.success(receivedString))
-    
+    receivedData.append(data)
+    if let receivedString = String(data: receivedData, encoding: .utf8) {
+      completion(.success(receivedString))
+    }
   }
   
   func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
@@ -86,28 +108,31 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
     } else {
       print("Streaming complete")
     }
-    onStreamComplete()
+    DispatchQueue.main.async { [weak self] in
+      guard let self else { return }
+      onStreamComplete()
+    }
   }
 }
 
 @MainActor
 class NetworkMonitor: ObservableObject {
-    @Published var isConnected: Bool = true
-    
-    private var monitor: NWPathMonitor
-    private let queue = DispatchQueue.global(qos: .background)
-    
-    init() {
-        monitor = NWPathMonitor()
-        monitor.pathUpdateHandler = { path in
-            DispatchQueue.main.async {
-                self.isConnected = path.status == .satisfied
-            }
-        }
-        monitor.start(queue: queue)
+  @Published var isConnected: Bool = true
+  
+  private var monitor: NWPathMonitor
+  private let queue = DispatchQueue.global(qos: .background)
+  
+  init() {
+    monitor = NWPathMonitor()
+    monitor.pathUpdateHandler = { path in
+      DispatchQueue.main.async {
+        self.isConnected = path.status == .satisfied
+      }
     }
-    
-    deinit {
-        monitor.cancel()
-    }
+    monitor.start(queue: queue)
+  }
+  
+  deinit {
+    monitor.cancel()
+  }
 }

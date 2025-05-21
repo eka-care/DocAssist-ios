@@ -1,8 +1,8 @@
 //
 //  DocAssistFireStoreManager.swift
-//  ChatBotAiPackage
+//  DocAssist-ios
 //
-//  Created by Brunda B on 09/01/25.
+//  Created by Brunda B on 10/04/25.
 //
 
 import Foundation
@@ -12,7 +12,6 @@ import FirebaseFirestore
 final class DocAssistFireStoreManager {
 
   static let shared = DocAssistFireStoreManager()
-  
   private let databaseName = "doctool"
   private lazy var db: Firestore? = {
     Firestore.firestore(database: databaseName)

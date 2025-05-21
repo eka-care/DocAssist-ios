@@ -12,14 +12,14 @@ public typealias SessionDataModel = SessionDataV1.SessionDataModelV1
 
 public enum SessionDataV1: VersionedSchema {
   
-  public nonisolated(unsafe) static let versionIdentifier: Schema.Version = Schema.Version(1, 0, 0)
+  public nonisolated(unsafe) static let versionIdentifier: Schema.Version = Schema.Version(2, 0, 0)
   
   public static var models: [any PersistentModel.Type] {
     [SessionDataModelV1.self]
   }
   
   @Model
-  public class SessionDataModelV1 {
+  public final class SessionDataModelV1: Sendable {
     public var userId = UUID()
     @Attribute(.unique) public var sessionId: String
     public var createdAt: Date
@@ -29,9 +29,8 @@ public enum SessionDataV1: VersionedSchema {
     public var oid: String?
     public var userDocId: String
     public var userBId: String
-    @Relationship(deleteRule: .cascade) var chatMessages: [ChatMessageModel]
     
-    init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", subTitle: String?, oid: String?, userDocId: String, userBId: String, chatMessages: [ChatMessageModel] = []) {
+    init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", subTitle: String?, oid: String?, userDocId: String, userBId: String) {
       self.userId = userId
       self.sessionId = sessionId
       self.createdAt = createdAt
@@ -41,7 +40,6 @@ public enum SessionDataV1: VersionedSchema {
       self.oid = oid
       self.userDocId = userDocId
       self.userBId = userBId
-      self.chatMessages = chatMessages
     }
   }
 }
