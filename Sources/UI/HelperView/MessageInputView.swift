@@ -139,11 +139,12 @@ struct MessageInputView: View {
               isTextFieldFocused.toggle()
             }
           } label: {
-            Image(systemName: "arrow.up")
-              .foregroundStyle(Color.white)
-              .fontWeight(.semibold)
-              .padding(4)
-              .background((inputString.isEmpty || viewModel.streamStarted) ? Circle().fill(Color.gray.opacity(0.5)) : Circle().fill(Color.primaryprimary))
+            Image(systemName: "arrow.up.circle.fill")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 30,height: 30)
+              .foregroundStyle((inputString.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.5) : Color.primaryprimary)
+              .frame(width: 36,height: 36)
           }
           .disabled(inputString.isEmpty || viewModel.streamStarted)
         } else {
