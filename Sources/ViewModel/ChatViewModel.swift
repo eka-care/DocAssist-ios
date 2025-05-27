@@ -49,6 +49,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var userDocId: String
   var patientName: String
   var isOidPresent: String? = ""
+  var lastMsgId: Int?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -116,6 +117,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     if let lastMessageId = lastMessageId {
       messageId = lastMessageId + 1
     }
+      print("#BB msgId in send \(messageId)")
+      self.lastMsgId = messageId + 1
       let chat = await DatabaseConfig.shared.createMessage(
       message: query,
       sessionId: sessionId,
@@ -231,7 +234,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
         Task { @MainActor in
             await DatabaseConfig.shared.upsertMessageV2(
               responseMessage: message,
-              userChat: userChat
+              userChat: userChat, suggestions: nil
             )
         }
       }
@@ -264,10 +267,9 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
               print("Failed to decode JSON: \(error.localizedDescription)")
           }
       }
-    
     await MainActor.run {
       Task {
-        await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat)
+          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
       }
     }
   }

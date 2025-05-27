@@ -9,11 +9,18 @@ import SwiftUI
 import EkaVoiceToRx
 import EkaPDFMaker
 
+enum SuggestionsState {
+    case generate
+    case loading
+    case noMore
+}
+
 struct MessageBubble: View {
   let message: ChatMessageModel
   let m: String?
   let url: [String]?
   let viewModel: ChatViewModel
+  @State var suggestionViewModel = SuggestionsViewModel()
   @State private var pdfURL: URL?
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   @State private var thumsUpClicked: Bool = false
@@ -137,10 +144,57 @@ struct MessageBubble: View {
         .padding(.leading, 30)
       }
     }
-    
-//    if message.role == .Bot {
-//      SuggestionView(suggestionText: message.suggestions, viewModel: viewModel)
-//    }
+      if message.role == .Bot {
+          if let suggestions = message.suggestions {
+              VStack(alignment: .leading) {
+                  SuggestionView(suggestionText: suggestions, viewModel: viewModel)
+                  if ( message.id == messages.last?.id && !viewModel.streamStarted) {
+                      Button {
+                          suggestionViewModel.stateOfSuggestions = .loading
+                          
+                          // fetch
+                          let newSuggestions = ["hello", "how can i help u"]
+                          if newSuggestions.isEmpty {
+                              suggestionViewModel.stateOfSuggestions = .noMore
+                          } else {
+                          // store
+                              print("#BB msgId in suggestions is \(viewModel.lastMsgId)")
+                          DatabaseConfig.shared.appendSuggestions(sessionId: viewModel.vmssid, msgId: (viewModel.lastMsgId ?? 0) + 1 , suggestions: newSuggestions)
+                              suggestionViewModel.stateOfSuggestions = .generate
+                          }
+                      } label: {
+                          switch suggestionViewModel.stateOfSuggestions {
+                          case .generate:
+                              HStack(spacing: 6) {
+                                  Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                                      .resizable()
+                                      .scaledToFit()
+                                      .frame(width: 16)
+                                      .foregroundStyle(Color.primaryprimary)
+
+                                      .padding(.all, 4)
+                                  Text("Get more suggestions")
+                                      .font(Font.custom("Lato-Regular", size: 14))
+                                      .foregroundStyle(Color.primaryprimary)
+                              }
+                              .padding(.leading, 30)
+
+                          case .loading:
+                              Text("Loading more suggestions...")
+                                  .font(Font.custom("Lato-Regular", size: 14))
+                                  .foregroundStyle(Color.neutrals600)
+                          case .noMore:
+                              Text("No more new suggestions found :(")
+                                  .font(Font.custom("Lato-Regular", size: 14))
+                                  .foregroundStyle(Color.neutrals600)
+                          }
+                      }
+                  }
+              }
+              .padding(.bottom, 16)
+              .padding(.top, 16)
+          }
+      }
   }
   
   func shareText() {
@@ -160,24 +214,3 @@ struct MessageBubble: View {
   }
 }
 
-struct FeedbackView: View {
-  var showFeedback: Bool
-  var feedbackText: String
-  
-  var body: some View {
-    if showFeedback {
-      VStack {
-        Text(feedbackText)
-          .padding()
-          .background(.black)
-          .foregroundColor(.white)
-          .clipShape(RoundedRectangle(cornerRadius: 50))
-          .transition(.scale)
-          .zIndex(1)
-          .animation(.easeInOut, value: showFeedback)
-          .padding(.top, 60 )
-        Spacer()
-      }
-    }
-  }
-}

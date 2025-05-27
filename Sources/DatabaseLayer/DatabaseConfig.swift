@@ -141,7 +141,8 @@ extension DatabaseConfig {
     role: MessageRole,
     imageUrls: [String]?,
     v2RxAudioSessionId: UUID? = nil,
-    v2RxaudioFileString: String? = nil
+    v2RxaudioFileString: String? = nil,
+    suggestions: [String]? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
       msgId: messageId,
@@ -154,7 +155,8 @@ extension DatabaseConfig {
       imageUrls: imageUrls,
       v2RxAudioSessionId: v2RxAudioSessionId,
       v2RxaudioFileString: v2RxaudioFileString,
-      createdAtDate: .now
+      createdAtDate: .now,
+      suggestions: suggestions
     )
     
     if let session = try? fetchSession(bySessionId: sessionId) {
@@ -170,15 +172,16 @@ extension DatabaseConfig {
 
 // Upsert
 extension DatabaseConfig {
-  func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel) {
+    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
-    
+    print("#BB msgId in bot message \(streamMessageId)")
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
       DispatchQueue.main.async {
         messageToUpdate.messageText = responseMessage
+          messageToUpdate.suggestions = suggestions
       }
       saveData()
   
@@ -190,12 +193,27 @@ extension DatabaseConfig {
       sessionId: sessionId,
       messageId: streamMessageId,
       role: .Bot,
-      imageUrls: nil
+      imageUrls: nil,
+      suggestions: suggestions
     )
   }
 }
 
 extension DatabaseConfig {
+    
+    public func appendSuggestions(sessionId: String, msgId: Int, suggestions: [String]) {
+        if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: msgId) {
+            
+            DispatchQueue.main.async {
+                for suggestion in suggestions {
+                    messageToUpdate.suggestions?.append(suggestion)
+                }
+            }
+            saveData()
+            
+            return
+        }
+    }
   
   public func createSession(
     subTitle: String?,
