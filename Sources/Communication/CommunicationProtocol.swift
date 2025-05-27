@@ -18,3 +18,7 @@ public protocol ConvertVoiceToText {
 public protocol DeepThoughtsViewDelegate: AnyObject {
   func navigateToDeepThoughtPage(id: String)
 }
+
+public protocol GetMoreSuggestions {
+    func getMoreSuggestions(sessionId: String, ptOid: String?, completion: @escaping ([String]?)-> Void)
+}

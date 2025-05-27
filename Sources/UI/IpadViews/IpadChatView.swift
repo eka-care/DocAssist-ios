@@ -31,6 +31,7 @@ public struct IpadChatView: View {
   var authToken: String
   var authRefreshToken: String
   var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
+  var suggestionsDelegate: GetMoreSuggestions?
   
   public init(
     backgroundColor: Color? = nil,
@@ -46,7 +47,8 @@ public struct IpadChatView: View {
     authToken: String,
     authRefreshToken: String,
     selectedScreen: SelectedScreen? = .emptyScreen,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
+    suggestionsDelegate: GetMoreSuggestions? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
@@ -62,6 +64,7 @@ public struct IpadChatView: View {
     self.authRefreshToken = authRefreshToken
     self.selectedScreen = selectedScreen
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
+    self.suggestionsDelegate = suggestionsDelegate
   }
   
   public var body: some View {
@@ -80,7 +83,8 @@ public struct IpadChatView: View {
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         selectedScreen: $selectedScreen,
-        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
+        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+        suggestionsDelegate: suggestionsDelegate
       )
       .modelContext( DatabaseConfig.shared.modelContext)
     } detail: {

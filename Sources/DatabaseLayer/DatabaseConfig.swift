@@ -202,17 +202,29 @@ extension DatabaseConfig {
 extension DatabaseConfig {
     
     public func appendSuggestions(sessionId: String, msgId: Int, suggestions: [String]) {
+        print("#BB msgId appendSuggestions msgId is \(msgId)")
         if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: msgId) {
             
             DispatchQueue.main.async {
-                for suggestion in suggestions {
-                    messageToUpdate.suggestions?.append(suggestion)
-                }
+                messageToUpdate.suggestions?.append(contentsOf: suggestions)
             }
             saveData()
-            
-            return
         }
+    }
+    
+    func fetchLatestMessage(bySessionId sessionId: String) throws -> Int {
+        lock.lock()
+        defer { lock.unlock() }
+
+        var descriptor = FetchDescriptor<ChatMessageModel>(
+            predicate: #Predicate<ChatMessageModel> { session in
+                session.sessionId == sessionId
+            },
+            sortBy: [SortDescriptor(\.msgId, order: .reverse)] 
+        )
+        descriptor.fetchLimit = 1
+
+        return try modelContext.fetch(descriptor).first?.msgId ?? 0
     }
   
   public func createSession(

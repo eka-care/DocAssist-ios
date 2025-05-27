@@ -26,6 +26,7 @@ public struct GeneralChatView: View {
   @Binding var selectedScreen: SelectedScreen?
   var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
   var liveActivityDelegate: LiveActivityDelegate?
+  var suggestionsDelegate: GetMoreSuggestions? = nil
   
   public init(
     backgroundColor: Color? = .white,
@@ -42,7 +43,8 @@ public struct GeneralChatView: View {
     authRefreshToken: String,
     selectedScreen: Binding<SelectedScreen?>,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    liveActivityDelegate: LiveActivityDelegate? = nil
+    liveActivityDelegate: LiveActivityDelegate? = nil,
+    suggestionsDelegate: GetMoreSuggestions? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.emptyMessageColor = emptyMessageColor
@@ -59,6 +61,7 @@ public struct GeneralChatView: View {
     _selectedScreen = selectedScreen
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
     self.liveActivityDelegate = liveActivityDelegate
+    self.suggestionsDelegate = suggestionsDelegate
   }
   
   public var body: some View {
@@ -75,7 +78,8 @@ public struct GeneralChatView: View {
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate
+      liveActivityDelegate: liveActivityDelegate,
+      suggestionsDelegate: suggestionsDelegate
     )
     .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
     .navigationBarHidden(true)

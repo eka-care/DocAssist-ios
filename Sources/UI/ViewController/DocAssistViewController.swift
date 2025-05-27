@@ -18,6 +18,7 @@ public class ChatsViewController: UIViewController {
   private var patientDelegate: NavigateToPatientDirectory?
   let ctx: ModelContext
   var liveActivityDelegate: LiveActivityDelegate?
+  var suggestionsDelegate: GetMoreSuggestions?
   
   public init(
     backgroundColor: Color? = nil,
@@ -33,7 +34,8 @@ public class ChatsViewController: UIViewController {
     authToken: String,
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    liveActivityDelegate: LiveActivityDelegate? = nil
+    liveActivityDelegate: LiveActivityDelegate? = nil,
+    suggestionsDelegate: GetMoreSuggestions? = nil
     
   ) {
     self.patientDelegate = patientDelegate
@@ -55,7 +57,8 @@ public class ChatsViewController: UIViewController {
         searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
-        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate
+        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
+        suggestionsDelegate: suggestionsDelegate
       )
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
@@ -75,7 +78,8 @@ public class ChatsViewController: UIViewController {
         authRefreshToken: authRefreshToken,
         selectedScreen: Binding.constant(nil),
         deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-        liveActivityDelegate: liveActivityDelegate
+        liveActivityDelegate: liveActivityDelegate,
+        suggestionsDelegate: suggestionsDelegate
       )
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
@@ -132,7 +136,8 @@ public class ActiveChatViewController: UIViewController {
   var docAssistView: AnyView?
   var vm: ChatViewModel
   var liveActivityDelegate: LiveActivityDelegate?
-  
+  var suggestionsDelegae: GetMoreSuggestions?
+    
   public init(
     backgroundColor: Color? = nil,
     ctx: ModelContext,
@@ -145,7 +150,8 @@ public class ActiveChatViewController: UIViewController {
     authToken: String,
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
-    liveActivityDelegate: LiveActivityDelegate? = nil
+    liveActivityDelegate: LiveActivityDelegate? = nil,
+    suggestionsDelegate: GetMoreSuggestions? = nil
   ) {
     self.vm = ChatViewModel(
       context: ctx,
@@ -154,7 +160,8 @@ public class ActiveChatViewController: UIViewController {
       liveActivityDelegate: liveActivityDelegate,
       userBid: userBId,
       userDocId: userDocId,
-      patientName: patientSubtitle ?? ""
+      patientName: patientSubtitle ?? "",
+      suggestionsDelegate: suggestionsDelegate
     )
     self.backgroundColor = backgroundColor
     self.ctx = ctx

@@ -148,20 +148,31 @@ struct MessageBubble: View {
           if let suggestions = message.suggestions {
               VStack(alignment: .leading) {
                   SuggestionView(suggestionText: suggestions, viewModel: viewModel)
+                  
                   if ( message.id == messages.last?.id && !viewModel.streamStarted) {
                       Button {
                           suggestionViewModel.stateOfSuggestions = .loading
-                          
                           // fetch
-                          let newSuggestions = ["hello", "how can i help u"]
-                          if newSuggestions.isEmpty {
-                              suggestionViewModel.stateOfSuggestions = .noMore
-                          } else {
-                          // store
-                              print("#BB msgId in suggestions is \(viewModel.lastMsgId)")
-                          DatabaseConfig.shared.appendSuggestions(sessionId: viewModel.vmssid, msgId: (viewModel.lastMsgId ?? 0) + 1 , suggestions: newSuggestions)
-                              suggestionViewModel.stateOfSuggestions = .generate
-                          }
+                          viewModel.suggestionsDelegate?.getMoreSuggestions(sessionId: viewModel.vmssid, ptOid: "", completion: { suggestions in
+                              if let suggestions {
+                                  if suggestions.isEmpty {
+                                      suggestionViewModel.stateOfSuggestions = .noMore
+                                  } else {
+                                      // store
+                                      print("#BB msgId in suggestions is \(viewModel.lastMsgId)")
+                                      withAnimation {
+                                          DatabaseConfig.shared.appendSuggestions(
+                                            sessionId: viewModel.vmssid,
+                                            msgId: viewModel.lastMsgId ?? 0,
+                                            suggestions: suggestions
+                                          )
+                                          suggestionViewModel.stateOfSuggestions = .generate
+                                      }
+                                  }
+                              } else {
+                                  suggestionViewModel.stateOfSuggestions = .noMore
+                              }
+                          })
                       } label: {
                           switch suggestionViewModel.stateOfSuggestions {
                           case .generate:
@@ -171,22 +182,31 @@ struct MessageBubble: View {
                                       .scaledToFit()
                                       .frame(width: 16)
                                       .foregroundStyle(Color.primaryprimary)
-
+                                  
                                       .padding(.all, 4)
                                   Text("Get more suggestions")
                                       .font(Font.custom("Lato-Regular", size: 14))
                                       .foregroundStyle(Color.primaryprimary)
                               }
                               .padding(.leading, 30)
-
+                              .padding(.top, 8)
                           case .loading:
-                              Text("Loading more suggestions...")
-                                  .font(Font.custom("Lato-Regular", size: 14))
-                                  .foregroundStyle(Color.neutrals600)
+                              HStack(spacing: 8) {
+                                  ProgressView()
+                                      .scaleEffect(0.5)
+                                      .frame(width: 4, height: 4)
+                                  Text("Loading more suggestions...")
+                                      .font(Font.custom("Lato-Regular", size: 14))
+                                      .foregroundStyle(Color.neutrals600)
+                              }
+                              .padding(.leading, 35)
+                              .padding(.top, 8)
                           case .noMore:
                               Text("No more new suggestions found :(")
                                   .font(Font.custom("Lato-Regular", size: 14))
                                   .foregroundStyle(Color.neutrals600)
+                                  .padding(.leading, 35)
+                                  .padding(.top, 8)
                           }
                       }
                   }

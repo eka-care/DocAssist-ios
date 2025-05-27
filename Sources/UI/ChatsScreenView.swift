@@ -45,6 +45,7 @@ struct ChatsScreenView: View {
   var authRefreshToken: String
   var liveActivityDelegate: LiveActivityDelegate?
   var delegate: ConvertVoiceToText?
+  var suggestionsDelegate: GetMoreSuggestions?
   
   var thread: [SessionDataModel] {
     allSessions.filter { session in
@@ -93,7 +94,8 @@ struct ChatsScreenView: View {
        selectedScreen: Binding<SelectedScreen?>,
        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
        liveActivityDelegate: LiveActivityDelegate? = nil,
-       patientName: String? = nil
+       patientName: String? = nil,
+       suggestionsDelegate: GetMoreSuggestions? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
@@ -104,7 +106,8 @@ struct ChatsScreenView: View {
       liveActivityDelegate: liveActivityDelegate,
       userBid: userBid,
       userDocId: userDocId,
-      patientName: patientName ?? "General Chat"
+      patientName: patientName ?? "General Chat",
+      suggestionsDelegate: suggestionsDelegate
     )
     self.userDocId = userDocId
     self.userBId = userBid
