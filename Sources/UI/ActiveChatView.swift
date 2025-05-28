@@ -109,7 +109,7 @@ public struct ActiveChatView: View {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
       Task {
-        isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: session)
+        isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
         if isOidPresent == "" {
           setupView()
         }
@@ -150,22 +150,20 @@ public struct ActiveChatView: View {
   }
   
   var EmptyChatView: some View {
-    VStack(spacing: 0) {
-      VStack {
-        Spacer()
-        if let image = SetUIComponents.shared.emptyChatImage {
-          Image(uiImage: image)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 40)
-        }
-        DocSuggestion(image: UIImage(resource: .chatMsgGray), title: "Ask anything from DocAssist AI", subTitle: "Medical fact checks, prescriptions and more..")
-          .padding()
-        DocSuggestion(image: UIImage(resource: .voiceToRxBW), title: "Create medical document", subTitle: "DocAssist AI can either listen to your live consultation or your dictation to create a medical document")
-        Spacer()
-      }
+      VStack(alignment: .leading, spacing: 8) {          
+          Text("Hello Dr \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
+          .font(Font.custom("Lato-Regular", size: 16))
+          .foregroundStyle(Color.neutrals600)
+          .padding(.bottom, 8)
+          .padding(.top, 20)
+          .padding(.leading, 16)
+        
+        let suggestions = ["hello", "How can i help you"]
+          SuggestionsComponentView(suggestionText: SetUIComponents.shared.generalChatDefaultSuggestion ?? [], viewModel: viewModel)
+            .padding(.leading, 16)
+        
+      Spacer()
       chatInputView
-        //.padding(.bottom, 5)
     }
   }
   
@@ -317,7 +315,7 @@ public struct ActiveChatView: View {
   
   private func setupView() {
     Task {
-      let isOidPresent =  try await DatabaseConfig.shared.isOidPreset(sessionId: viewModel.vmssid)
+      let isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: viewModel.vmssid)
       viewModel.updateQueryParamsIfNeeded(isOidPresent)
     }
   }

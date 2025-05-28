@@ -153,13 +153,16 @@ struct MessageBubble: View {
                       Button {
                           suggestionViewModel.stateOfSuggestions = .loading
                           // fetch
-                          viewModel.suggestionsDelegate?.getMoreSuggestions(sessionId: viewModel.vmssid, ptOid: "", completion: { suggestions in
+                          var isOidPresent = ""
+                          Task {
+                              isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: viewModel.vmssid)
+                          }
+                          viewModel.suggestionsDelegate?.getMoreSuggestions(sessionId: viewModel.vmssid, ptOid: isOidPresent, completion: { suggestions in
                               if let suggestions {
                                   if suggestions.isEmpty {
                                       suggestionViewModel.stateOfSuggestions = .noMore
                                   } else {
                                       // store
-                                      print("#BB msgId in suggestions is \(viewModel.lastMsgId)")
                                       withAnimation {
                                           DatabaseConfig.shared.appendSuggestions(
                                             sessionId: viewModel.vmssid,
@@ -185,7 +188,7 @@ struct MessageBubble: View {
                                   
                                       .padding(.all, 4)
                                   Text("Get more suggestions")
-                                      .font(Font.custom("Lato-Regular", size: 14))
+                                      .font(Font.custom("Lato-Regular", size: 16))
                                       .foregroundStyle(Color.primaryprimary)
                               }
                               .padding(.leading, 30)
