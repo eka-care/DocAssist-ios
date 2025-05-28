@@ -129,7 +129,6 @@ struct VoiceToRxMethodView: View {
         Spacer()
       }
       .frame(width: 200)
-      .background(Color.red)
       .padding(.trailing, 8)
     
       VStack {
@@ -150,6 +149,7 @@ struct VoiceToRxMethodView: View {
             .background(Color.primaryprimary)
             .cornerRadius(40)
         }
+        Spacer()
       }
     }
   }

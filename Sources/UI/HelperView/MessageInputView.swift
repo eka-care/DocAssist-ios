@@ -23,6 +23,7 @@ struct MessageInputView: View {
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
   var liveActivityDelegate: LiveActivityDelegate?
+  @State var showVoiceToRxPopUp: Bool = false
   
   var body: some View {
     VStack(spacing: 15) {
@@ -161,40 +162,42 @@ struct MessageInputView: View {
                 .padding(4)
             }
           } else {
-            Menu {
+//            Menu {
+//              Button {
+//                voiceToRxViewModel.startRecording(conversationType: .dictation)
+//                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
+//                viewModel.v2rxEnabled = false
+//                Task {
+//                  guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
+//                  let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
+//                  let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
+//                }
+//              } label: {
+//                Image(.micMenu)
+//                Text("Dictation mode")
+//                  .font(Font.custom("Lato-Regular", size: 14))
+//                  .foregroundStyle(Color.neutrals400)
+//                  .frame(maxWidth: .infinity, alignment: .leading)
+//              }
+//
+//              Button {
+//                voiceToRxViewModel.startRecording(conversationType: .conversation)
+//                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
+//                viewModel.v2rxEnabled = false
+//                Task {
+//                  guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
+//                  let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
+//                  let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
+//                }
+//              } label: {
+//                Image(.v2RxMenu)
+//                Text("Conversation mode")
+//                  .font(Font.custom("Lato-Regular", size: 14))
+//                  .foregroundStyle(Color.neutrals400)
+//                  .frame(maxWidth: .infinity, alignment: .leading)
+//           }
               Button {
-                voiceToRxViewModel.startRecording(conversationType: .dictation)
-                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
-                viewModel.v2rxEnabled = false
-                Task {
-                  guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-                  let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
-                  let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
-                }
-              } label: {
-                Image(.micMenu)
-                Text("Dictation mode")
-                  .font(Font.custom("Lato-Regular", size: 14))
-                  .foregroundStyle(Color.neutrals400)
-                  .frame(maxWidth: .infinity, alignment: .leading)
-              }
-              
-              Button {
-                voiceToRxViewModel.startRecording(conversationType: .conversation)
-                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
-                viewModel.v2rxEnabled = false
-                Task {
-                  guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-                  let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
-                  let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
-                }
-              } label: {
-                Image(.v2RxMenu)
-                Text("Conversation mode")
-                  .font(Font.custom("Lato-Regular", size: 14))
-                  .foregroundStyle(Color.neutrals400)
-                  .frame(maxWidth: .infinity, alignment: .leading)
-              }
+                  showVoiceToRxPopUp = true
             } label: {
               Image(systemName: "waveform.circle.fill")
                 .resizable()
@@ -204,6 +207,16 @@ struct MessageInputView: View {
                 .frame(width: 36,height: 36)
             }
             .disabled(!viewModel.v2rxEnabled)
+            .sheet(isPresented: $showVoiceToRxPopUp) {
+                VoiceToRxPopUpView(
+                    viewModel: viewModel,
+                    session: session,
+                    voiceToRxViewModel: voiceToRxViewModel,
+                    messages: messages,
+                    startVoicetoRx: $showVoiceToRxPopUp
+                )
+                 .presentationDetents([.height(400)])
+            }
           }
         }
       }

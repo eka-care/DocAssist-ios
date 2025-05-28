@@ -13,7 +13,7 @@ struct SuggestionView: View {
     var suggestionText: [String]
     var viewModel: ChatViewModel
     
-    private var constantSuggestionString = "Suggested questions you can ask me-"
+    private var constantSuggestionString = "Suggested questions you can ask me:"
     
     init(suggestionText: [String], viewModel: ChatViewModel) {
         self.suggestionText = suggestionText

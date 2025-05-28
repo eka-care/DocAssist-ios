@@ -158,8 +158,9 @@ public struct ActiveChatView: View {
           .padding(.top, 20)
           .padding(.leading, 16)
         
-        let suggestions = ["hello", "How can i help you"]
-          SuggestionsComponentView(suggestionText: SetUIComponents.shared.generalChatDefaultSuggestion ?? [], viewModel: viewModel)
+          ScrollView {
+              SuggestionsComponentView(suggestionText: SetUIComponents.shared.generalChatDefaultSuggestion ?? [], viewModel: viewModel)
+          }
             .padding(.leading, 16)
         
       Spacer()
