@@ -84,9 +84,9 @@ struct VoiceToRxMethodView: View {
   var subTitle: String {
     switch voiceType {
     case .conversation:
-      return "DocAssist will listen to your conversation and create a medical document."
+      return "AI listens to your conversation and creates notes."
     case .dictation:
-      return "Dictate your notes to DocAssist and create clinical notes."
+      return "AI listens to your dictation and creates notes."
     }
   }
   
@@ -128,9 +128,11 @@ struct VoiceToRxMethodView: View {
           .foregroundStyle(Color.neutrals600)
         Spacer()
       }
-      .frame(width: 200)
       .padding(.trailing, 8)
-    
+     
+      Spacer()
+        .layoutPriority(-1)
+        
       VStack {
         Button {
           print("#BB \(voiceType) button clicked")
@@ -144,7 +146,7 @@ struct VoiceToRxMethodView: View {
           }
           startVoicetoRx = false
         } label: {
-          Text("Start Now")
+          Text("Start")
             .foregroundStyle(Color.white)
             .padding(.init(top: 7, leading: 14, bottom: 7, trailing: 14))
             .background(Color.primaryprimary)
@@ -152,6 +154,7 @@ struct VoiceToRxMethodView: View {
         }
         Spacer()
       }
+      .frame(width: 100)
     }
   }
 }
