@@ -178,7 +178,6 @@ public struct ActiveChatView: View {
           ScrollView {
             VStack {
               ForEach(messages) { message in
-                
                 MessageBubble(
                   message: message,
                   m: message.messageText,

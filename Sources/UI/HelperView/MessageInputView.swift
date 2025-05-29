@@ -1,5 +1,5 @@
 //
-//  SwiftUIView.swift
+//  MessageInputView.swift
 //  ChatBotAiPackage
 //
 //  Created by Brunda B on 03/03/25.
@@ -285,5 +285,40 @@ struct VoiceInputView: View {
         )
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
+    }
+}
+
+struct CoachMarkView: View {
+    let message: String
+    let highlightRect: CGRect
+    let onDismiss: () -> Void
+
+    var body: some View {
+        ZStack {
+            // Dimmed background
+            Color.black.opacity(0.5)
+                .ignoresSafeArea()
+                .onTapGesture { onDismiss() }
+
+            // Transparent hole for highlight
+            Rectangle()
+                .fill(Color.clear)
+                .frame(width: highlightRect.width, height: highlightRect.height)
+                .position(x: highlightRect.midX, y: highlightRect.midY)
+                .blendMode(.destinationOut)
+
+            // Coach mark message
+            VStack {
+                Spacer().frame(height: highlightRect.maxY + 20)
+                Text(message)
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .padding()
+                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue))
+                Spacer()
+            }
+        }
+        .compositingGroup() // Needed for blendMode to work
+        .animation(.easeInOut, value: highlightRect)
     }
 }
