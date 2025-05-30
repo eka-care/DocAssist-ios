@@ -10,6 +10,7 @@ import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 import EkaVoiceToRx
+import TipKit
 
 @MainActor
 public struct ActiveChatView: View {
@@ -39,6 +40,7 @@ public struct ActiveChatView: View {
   private let userBId: String
   private let authToken: String
   private let authRefreshToken: String
+    @State var voiceToRxTip = VoiceToRxTip()
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -302,7 +304,8 @@ public struct ActiveChatView: View {
           session: session,
           messages: messages,
           voiceToRxViewModel: voiceToRxViewModel,
-          recordsRepo: recordsRepo
+          recordsRepo: recordsRepo,
+          voiceToRxtip: $voiceToRxTip
         )
         .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )

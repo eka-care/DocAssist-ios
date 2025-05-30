@@ -11,6 +11,7 @@ import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 import EkaVoiceToRx
+import TipKit
 
 public class ChatsViewController: UIViewController {
   private var docAssistView: UIView!
@@ -60,6 +61,12 @@ public class ChatsViewController: UIViewController {
         deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
         suggestionsDelegate: suggestionsDelegate
       )
+            .task {
+                try? Tips.configure([
+                    .displayFrequency(.immediate),
+                    .datastoreLocation(.applicationDefault)
+                ])
+            }
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
     default:
@@ -81,6 +88,12 @@ public class ChatsViewController: UIViewController {
         liveActivityDelegate: liveActivityDelegate,
         suggestionsDelegate: suggestionsDelegate
       )
+            .task {
+                try? Tips.configure([
+                    .displayFrequency(.immediate),
+                    .datastoreLocation(.applicationDefault)
+                ])
+            }
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
   }
@@ -206,6 +219,12 @@ public class ActiveChatViewController: UIViewController {
             liveActivityDelegate: liveActivityDelegate
         )
         .navigationBarHidden(true)
+        .task {
+            try? Tips.configure([
+                .displayFrequency(.immediate),
+                .datastoreLocation(.applicationDefault)
+            ])
+        }
       docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
     } else {
       let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
@@ -221,6 +240,11 @@ public class ActiveChatViewController: UIViewController {
             authRefreshToken: authRefreshToken
         )
         .navigationBarHidden(true)
+        .task {
+            try? Tips.configure([
+            .datastoreLocation(.applicationDefault)
+            ])
+        }
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }

@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import EkaVoiceToRx
+import TipKit
 
 public struct GeneralChatView: View {
   

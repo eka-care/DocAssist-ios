@@ -7,6 +7,7 @@
 
 import SwiftUI
 import SwiftData
+import TipKit
 
 public enum SelectedScreen {
   case selectedPatient(ChatViewModel, String, String, String, String)
@@ -96,6 +97,13 @@ public struct IpadChatView: View {
       .modelContext( DatabaseConfig.shared.modelContext)
     }
     .navigationSplitViewStyle(.balanced)
+    .task {
+        try? Tips.resetDatastore()
+        try? Tips.configure([
+            .displayFrequency(.immediate),
+            .datastoreLocation(.applicationDefault)
+        ])
+    }
     
   }
   

@@ -30,32 +30,6 @@ struct SuggestionView: View {
                     .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
                     .frame(width: 306, height: 16, alignment: .topLeading)
                 SuggestionsComponentView(suggestionText: suggestionText, viewModel: viewModel)
-//                ForEach(suggestionText, id: \.self) { suggestionText in
-//                    Button {
-//                        Task {
-//                            do {
-//                                let lastMessageId = try await DatabaseConfig.shared.fetchLatestMessage(bySessionId: viewModel.vmssid)
-//                                await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
-//                            } catch {
-//                                print("Error fetching last message id")
-//                            }
-//                        }
-//                    } label: {
-//                        HStack {
-//                            Text(suggestionText)
-//                                .font(Font.custom("Lato-Regular", size: 14))
-//                                .foregroundColor(viewModel.streamStarted ? Color.neutrals400 : Color.primaryprimary)
-//                                .multilineTextAlignment(.leading)
-//                                .frame(maxWidth: .infinity, alignment: .leading)
-//                                .padding(.horizontal, EkaSpacing.spacingS)
-//                                .padding(.vertical, EkaSpacing.spacingXs)
-//                                .background(Color.white)
-//                                .clipShape(RoundedRectangle(cornerRadius: 12))
-//                            Spacer()
-//                        }
-//                    }
-//                    .disabled(viewModel.streamStarted)
-//                }
             }
             
         }

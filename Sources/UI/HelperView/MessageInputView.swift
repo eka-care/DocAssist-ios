@@ -24,6 +24,7 @@ struct MessageInputView: View {
   let recordsRepo: RecordsRepo
   var liveActivityDelegate: LiveActivityDelegate?
   @State var showVoiceToRxPopUp: Bool = false
+  @Binding var voiceToRxtip: VoiceToRxTip
   
   var body: some View {
     VStack(spacing: 15) {
@@ -162,40 +163,6 @@ struct MessageInputView: View {
                 .padding(4)
             }
           } else {
-//            Menu {
-//              Button {
-//                voiceToRxViewModel.startRecording(conversationType: .dictation)
-//                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
-//                viewModel.v2rxEnabled = false
-//                Task {
-//                  guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-//                  let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
-//                  let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
-//                }
-//              } label: {
-//                Image(.micMenu)
-//                Text("Dictation mode")
-//                  .font(Font.custom("Lato-Regular", size: 14))
-//                  .foregroundStyle(Color.neutrals400)
-//                  .frame(maxWidth: .infinity, alignment: .leading)
-//              }
-//
-//              Button {
-//                voiceToRxViewModel.startRecording(conversationType: .conversation)
-//                FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
-//                viewModel.v2rxEnabled = false
-//                Task {
-//                  guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-//                  let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
-//                  let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
-//                }
-//              } label: {
-//                Image(.v2RxMenu)
-//                Text("Conversation mode")
-//                  .font(Font.custom("Lato-Regular", size: 14))
-//                  .foregroundStyle(Color.neutrals400)
-//                  .frame(maxWidth: .infinity, alignment: .leading)
-//           }
               Button {
                   showVoiceToRxPopUp = true
             } label: {
@@ -217,6 +184,9 @@ struct MessageInputView: View {
                 )
                  .presentationDetents([.height(400)])
             }
+            .popoverTip(voiceToRxtip, arrowEdge: .bottom)
+              
+        //      Spacer().frame(height: 60)
           }
         }
       }
@@ -285,40 +255,5 @@ struct VoiceInputView: View {
         )
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
-    }
-}
-
-struct CoachMarkView: View {
-    let message: String
-    let highlightRect: CGRect
-    let onDismiss: () -> Void
-
-    var body: some View {
-        ZStack {
-            // Dimmed background
-            Color.black.opacity(0.5)
-                .ignoresSafeArea()
-                .onTapGesture { onDismiss() }
-
-            // Transparent hole for highlight
-            Rectangle()
-                .fill(Color.clear)
-                .frame(width: highlightRect.width, height: highlightRect.height)
-                .position(x: highlightRect.midX, y: highlightRect.midY)
-                .blendMode(.destinationOut)
-
-            // Coach mark message
-            VStack {
-                Spacer().frame(height: highlightRect.maxY + 20)
-                Text(message)
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue))
-                Spacer()
-            }
-        }
-        .compositingGroup() // Needed for blendMode to work
-        .animation(.easeInOut, value: highlightRect)
     }
 }
