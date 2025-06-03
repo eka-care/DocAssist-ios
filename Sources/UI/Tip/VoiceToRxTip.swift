@@ -31,4 +31,10 @@ struct VoiceToRxTip: Tip {
             event.donations.count == 0
         }
     }
+    
+    var options: [TipOption] {
+        [
+            Tip.MaxDisplayCount(1)
+        ]
+    }
 }

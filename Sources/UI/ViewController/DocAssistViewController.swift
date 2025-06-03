@@ -63,7 +63,7 @@ public class ChatsViewController: UIViewController {
       )
             .task {
                 try? Tips.configure([
-                    .displayFrequency(.immediate),
+                    .displayFrequency(.daily),
                     .datastoreLocation(.applicationDefault)
                 ])
             }
@@ -90,7 +90,7 @@ public class ChatsViewController: UIViewController {
       )
             .task {
                 try? Tips.configure([
-                    .displayFrequency(.immediate),
+                    .displayFrequency(.daily),
                     .datastoreLocation(.applicationDefault)
                 ])
             }
@@ -221,7 +221,7 @@ public class ActiveChatViewController: UIViewController {
         .navigationBarHidden(true)
         .task {
             try? Tips.configure([
-                .displayFrequency(.immediate),
+                .displayFrequency(.daily),
                 .datastoreLocation(.applicationDefault)
             ])
         }
@@ -242,6 +242,7 @@ public class ActiveChatViewController: UIViewController {
         .navigationBarHidden(true)
         .task {
             try? Tips.configure([
+            .displayFrequency(.daily),
             .datastoreLocation(.applicationDefault)
             ])
         }

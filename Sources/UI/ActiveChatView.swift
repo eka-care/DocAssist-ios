@@ -305,7 +305,7 @@ public struct ActiveChatView: View {
           messages: messages,
           voiceToRxViewModel: voiceToRxViewModel,
           recordsRepo: recordsRepo,
-          voiceToRxtip: $voiceToRxTip
+          voiceToRxTip: $voiceToRxTip
         )
         .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )

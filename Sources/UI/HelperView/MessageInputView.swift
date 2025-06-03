@@ -24,8 +24,8 @@ struct MessageInputView: View {
   let recordsRepo: RecordsRepo
   var liveActivityDelegate: LiveActivityDelegate?
   @State var showVoiceToRxPopUp: Bool = false
-  @Binding var voiceToRxtip: VoiceToRxTip
-  
+  @Binding var voiceToRxTip: VoiceToRxTip
+    
   var body: some View {
     VStack(spacing: 15) {
       if !selectedImages.isEmpty {
@@ -165,14 +165,31 @@ struct MessageInputView: View {
           } else {
               Button {
                   showVoiceToRxPopUp = true
-            } label: {
-              Image(systemName: "waveform.circle.fill")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 30,height: 30)
-                .foregroundStyle(viewModel.v2rxEnabled ? Color.primaryprimary : Color.gray.opacity(0.5))
-                .frame(width: 36,height: 36)
-            }
+                  Task {
+                      await VoiceToRxTip.voiceToRxVisited.donate()
+                  }
+                  voiceToRxTip.invalidate(reason: .actionPerformed)
+              } label: {
+                  Image(systemName: "waveform.circle.fill")
+                      .resizable()
+                      .scaledToFit()
+                      .frame(width: 30,height: 30)
+                      .foregroundStyle(viewModel.v2rxEnabled ? LinearGradient(
+                        stops: [
+                            Gradient.Stop(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0.00),
+                            Gradient.Stop(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1.00),
+                        ],
+                        startPoint: UnitPoint(x: 0, y: 0.5),
+                        endPoint: UnitPoint(x: 1, y: 0.5)
+                      ) : LinearGradient(
+                        gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                      )
+                      .frame(width: 36,height: 36)
+              }
+            .popoverTip(voiceToRxTip, arrowEdge: .bottom)
             .disabled(!viewModel.v2rxEnabled)
             .sheet(isPresented: $showVoiceToRxPopUp) {
                 VoiceToRxPopUpView(
@@ -182,11 +199,8 @@ struct MessageInputView: View {
                     messages: messages,
                     startVoicetoRx: $showVoiceToRxPopUp
                 )
-                 .presentationDetents([.height(400)])
+                .presentationDetents([.height(400)])
             }
-            .popoverTip(voiceToRxtip, arrowEdge: .bottom)
-              
-        //      Spacer().frame(height: 60)
           }
         }
       }
