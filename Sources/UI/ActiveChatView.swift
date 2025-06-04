@@ -161,8 +161,13 @@ public struct ActiveChatView: View {
                 .padding(.top, 20)
                 .padding(.leading, 16)
             
-            SuggestionsComponentView(suggestionText: SetUIComponents.shared.generalChatDefaultSuggestion ?? [], viewModel: viewModel)
-                .padding(.leading, 16)
+            SuggestionsComponentView(
+                suggestionText: (patientName == patientNameConstant) ?
+                    (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
+                    (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
+                viewModel: viewModel
+            )
+            .padding(.leading, 16)
             
             Spacer()
         }
