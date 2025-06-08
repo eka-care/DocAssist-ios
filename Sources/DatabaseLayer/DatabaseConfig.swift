@@ -58,7 +58,8 @@ public final actor DatabaseConfig {
   }
   
   // Delet chat message using voicetorxsessionid
-  func deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: UUID) {
+  func deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: UUID?) {
+    guard let v2RxAudioSessionId else { return }
     try? modelContext.delete(model: ChatMessageModel.self, where: #Predicate { $0.v2RxAudioSessionId == v2RxAudioSessionId })
   }
   
