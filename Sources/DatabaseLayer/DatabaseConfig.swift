@@ -142,7 +142,6 @@ extension DatabaseConfig {
     role: MessageRole,
     imageUrls: [String]?,
     v2RxAudioSessionId: UUID? = nil,
-    v2RxaudioFileString: String? = nil,
     suggestions: [String]? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
@@ -155,7 +154,6 @@ extension DatabaseConfig {
       sessionId: sessionId,
       imageUrls: imageUrls,
       v2RxAudioSessionId: v2RxAudioSessionId,
-      v2RxaudioFileString: v2RxaudioFileString,
       createdAtDate: .now,
       suggestions: suggestions
     )
@@ -275,6 +273,5 @@ extension DatabaseConfig {
       imageUrls: nil,
       v2RxAudioSessionId: v2RxAudioSessionId
     )
-  }
-  
+  }  
 }

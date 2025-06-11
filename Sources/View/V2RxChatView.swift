@@ -16,12 +16,12 @@ struct V2RxChatView: View {
   @State private var isPlaying = false
   @State var v2rxState: DocAssistV2RxState = .loading
   var createdAt: Date
-  var audioManger = AudioPlayerManager()
   let viewModel: ChatViewModel
   let v2rxSessionId: UUID
   @State var updatedSessionID: String?
   @State var audioDuration: String = ""
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel
+  let voiceToRxRepo = VoiceToRxRepo()
   
   private enum Constants {
     static let draft = "Draft"
@@ -145,68 +145,25 @@ struct V2RxChatView: View {
           .padding()
           .background(Color.white)
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topRight])
-          if v2rxStateTitle != Constants.somethingWentWrong {
-            VStack(alignment: .center) {
-              HStack {
-                Button(action: {
-                  isPlaying.toggle()
-                  if isPlaying {
-                    audioManger.playAudio(sessionID: v2rxSessionId)
-                  } else {
-                    audioManger.stopAudio()
-                  }
-                }) {
-                  Image(systemName: isPlaying ? "stop.fill" : "play.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 14)
-                    .contentTransition(.symbolEffect(.replace))
-                    .foregroundColor(.blue)
-                }
-                Text(isPlaying ? "Playing..." : "Audio file")
-                  .font(.custom("Lato-Regular", size: 14))
-                  .foregroundColor(Color(red: 0.28, green: 0.28, blue: 0.28))
-                Spacer()
-                Text(audioDuration)
-                  .font(.custom("Lato-Regular", size: 14))
-                  .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-                
-              }
-              .padding()
-              .background(Color.gray.opacity(0.1))
-              .customCornerRadius(12, corners: [.bottomLeft, .bottomRight])
-            }
-            .padding(.init(top: 0, leading: 12, bottom: 0, trailing: 12))
-          }
         }
         .frame(maxWidth: 250)
       }
     }
     .padding()
     .onAppear {
-      Task {
-        if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
-          print("State is \(state)")
-          v2rxState = state
-        }
-        let models = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: EkaVoiceToRx.QueryHelper.queryForFetch(with: v2rxSessionId))
-        if let sessionId = models.first?.updatedSessionID?.uuidString {
-          updatedSessionID = "P-PP-\(sessionId)"
-        }
+      let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
+      v2rxState = state
+      print("State is \(state)")
+      let model = voiceToRxRepo.fetchVoiceConversation(fetchRequest: EkaVoiceToRx.QueryHelper.fetchRequest(for: v2rxSessionId))
+      if let sessionId = model?.updatedSessionID?.uuidString {
+        updatedSessionID = "P-PP-\(sessionId)"
       }
-      audioManger.prepareAudio(sessionID: v2rxSessionId)
-      audioDuration = audioManger.getDuration() ?? ""
     }
     .onChange(of: v2rxViewModel.screenState) { _ , newValue in
       if newValue == .resultDisplay(success: true) ||
           newValue == .resultDisplay(success: false) {
-        Task {
-          if let state = await V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId) {
-            v2rxState = state
-          }
-        }
-        audioManger.prepareAudio(sessionID: v2rxSessionId)
-        audioDuration = audioManger.getDuration() ?? ""
+        let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
+        v2rxState = state
       }
     }
   }

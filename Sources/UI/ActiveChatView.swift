@@ -121,19 +121,7 @@ public struct ActiveChatView: View {
         }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      
-      Task {
-        let result = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID)
-        await MainActor.run {
-          viewModel.v2rxEnabled = result
-        }
-      }
-      
-      if voiceToRxViewModel.screenState == .deletedRecording {
-        Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID)
-        }
-      }
+      handleVoiceToRxStates()
     }
     .onDisappear {
       viewModel.inputString = ""
@@ -332,6 +320,21 @@ public struct ActiveChatView: View {
     Task {
       let isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: viewModel.vmssid)
       viewModel.updateQueryParamsIfNeeded(isOidPresent)
+    }
+  }
+}
+
+extension ActiveChatView {
+  func handleVoiceToRxStates() {
+    guard let sessionID = voiceToRxViewModel.sessionID else { return }
+    let v2rxState = V2RxDocAssistHelper.fetchV2RxState(for: sessionID)
+    if v2rxState != .loading {
+      viewModel.v2rxEnabled = true
+    }
+    if v2rxState == .deleted {
+      Task {
+        await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: sessionID)
+      }
     }
   }
 }
