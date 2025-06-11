@@ -13,19 +13,20 @@ class MRInitializer {
   
   static var shared = MRInitializer()
   
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String) {
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userMergedOids: [String]?) {
     var ownerId: String = oid
     
     if oid == "" {
       ownerId = SetUIComponents.shared.docOId ?? ""
     }
-    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid)
+    registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid, userMergedOids: userMergedOids)
   }
   
-  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String) {
+  private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String, userMergedOids: [String]?) {
     CoreInitConfigurations.shared.authToken = authToken
     CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.filterID = [oid] + (userMergedOids ?? [])
+    CoreInitConfigurations.shared.primaryFilterID = oid
     CoreInitConfigurations.shared.ownerID = bid
   }
   

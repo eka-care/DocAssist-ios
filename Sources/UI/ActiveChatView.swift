@@ -113,7 +113,7 @@ public struct ActiveChatView: View {
             print("#BB session \(session)")
             Task {
                 isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
-                if isOidPresent == "" {
+                if isOidPresent != "" {
                     setupView()
                 }
             }
@@ -325,12 +325,16 @@ public struct ActiveChatView: View {
         )
     }
     
-    private func setupView() {
-        Task {
-            let isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: viewModel.vmssid)
-            viewModel.updateQueryParamsIfNeeded(isOidPresent)
-        }
+  private func setupView() {
+    Task {
+      let isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: viewModel.vmssid)
+      viewModel.updateQueryParamsIfNeeded(isOidPresent)
+      viewModel.getPatientDetailsDelegate?.getPatientDetails(ptOid: isOidPresent, completion: { userMergedOids in
+        print("#BB oid is \(isOidPresent)")
+        MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: isOidPresent, bid: userBId, userMergedOids: userMergedOids ?? [])
+      })
     }
+  }
 }
 
 extension View {
