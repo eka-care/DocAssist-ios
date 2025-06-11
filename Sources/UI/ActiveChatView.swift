@@ -83,6 +83,7 @@ public struct ActiveChatView: View {
     self.authRefreshToken = authRefreshToken
     AuthTokenHolder.shared.authToken = authToken
     AuthTokenHolder.shared.refreshToken = authRefreshToken
+    AuthTokenHolder.shared.bid = userBId
   }
   
   public var body: some View {
@@ -105,7 +106,7 @@ public struct ActiveChatView: View {
       }
       if newValue == .deletedRecording {
         Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.voiceModel?.sessionID)
+          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID)
         }
         viewModel.v2rxEnabled = true
       }
@@ -122,7 +123,7 @@ public struct ActiveChatView: View {
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       
       Task {
-        let result = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.voiceModel?.sessionID)
+        let result = await viewModel.checkForVoiceToRxResult(using: voiceToRxViewModel.sessionID)
         await MainActor.run {
           viewModel.v2rxEnabled = result
         }
@@ -130,7 +131,7 @@ public struct ActiveChatView: View {
       
       if voiceToRxViewModel.screenState == .deletedRecording {
         Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.voiceModel?.sessionID)
+          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID)
         }
       }
     }
