@@ -11,6 +11,7 @@ import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 import EkaVoiceToRx
 import TipKit
+import AVFAudio
 
 @MainActor
 public struct ActiveChatView: View {
@@ -328,8 +329,17 @@ extension ActiveChatView {
   func handleVoiceToRxStates() {
     guard let sessionID = voiceToRxViewModel.sessionID else { return }
     let v2rxState = V2RxDocAssistHelper.fetchV2RxState(for: sessionID)
-    if v2rxState != .loading {
-      viewModel.v2rxEnabled = true
+    /// Handle mic enable status
+    if voiceToRxViewModel.screenState == .listening(conversationType: .conversation) ||
+        voiceToRxViewModel.screenState == .listening(conversationType: .dictation) ||
+        voiceToRxViewModel.screenState == .processing {
+      DispatchQueue.main.async {
+        viewModel.v2rxEnabled = false
+      }
+    } else {
+      DispatchQueue.main.async {
+        viewModel.v2rxEnabled = true
+      }
     }
     if v2rxState == .deleted {
       Task {
