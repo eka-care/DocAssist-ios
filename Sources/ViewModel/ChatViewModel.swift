@@ -105,7 +105,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       sessionId,
       lastMesssageId
     )
-  
+    
     /// Start streaming post request
     startStreamingPostRequest(
       vaultFiles: vaultFiles,
@@ -123,9 +123,9 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     if let lastMessageId = lastMessageId {
       messageId = lastMessageId + 1
     }
-      print("#BB msgId in send \(messageId)")
-      self.lastMsgId = messageId + 1
-      let chat = await DatabaseConfig.shared.createMessage(
+    print("#BB msgId in send \(messageId)")
+    self.lastMsgId = messageId + 1
+    let chat = await DatabaseConfig.shared.createMessage(
       message: query,
       sessionId: sessionId,
       messageId: messageId,
@@ -202,27 +202,27 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 
       
     /// Stream api
-      NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
-      networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
-          DispatchQueue.main.async { [weak self] in
-              self?.streamStarted = false
-          }
-      }) { [weak self] result in
-          guard let self else { return }
-          Task {
-              switch result {
-              case .success(let responseString):
-                  await self.handleStreamResponse(responseString: responseString, userChat: userChat)
-              case .failure(let error):
-                  print("Error streaming: \(error)")
-              }
-          }
+    NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
+    networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
+      DispatchQueue.main.async { [weak self] in
+        self?.streamStarted = false
       }
+    }) { [weak self] result in
+      guard let self else { return }
+      Task {
+        switch result {
+        case .success(let responseString):
+          await self.handleStreamResponse(responseString: responseString, userChat: userChat)
+        case .failure(let error):
+          print("Error streaming: \(error)")
+        }
+      }
+    }
   }
   
   func startFirestoreListener(userChat: ChatMessageModel) {
     let patientContext = isOidPresent != nil && !isOidPresent!.isEmpty
-      
+    
     DocAssistFireStoreManager.shared.listenToFirestoreMessages(
       businessId: self.userBid,
       doctorId: self.userDocId,
@@ -238,10 +238,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
          let role = data["role"] as? String,
          role == "assistant" {
         Task { @MainActor in
-            await DatabaseConfig.shared.upsertMessageV2(
-              responseMessage: message,
-              userChat: userChat, suggestions: nil
-            )
+          await DatabaseConfig.shared.upsertMessageV2(
+            responseMessage: message,
+            userChat: userChat, suggestions: nil
+          )
         }
       }
       
@@ -339,10 +339,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   func stopStreaming() {
-      networkCall.cancelStreaming()
-      streamStarted = false
-    }
-    
+    networkCall.cancelStreaming()
+    streamStarted = false
+  }
+  
 }
 
 extension ChatViewModel: AVAudioRecorderDelegate  {
@@ -424,13 +424,12 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
       break
     }
   }
-      
-
+  
   func openAppSettings() {
-      guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
-      if UIApplication.shared.canOpenURL(settingsURL) {
-          UIApplication.shared.open(settingsURL)
-      }
+    guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+    if UIApplication.shared.canOpenURL(settingsURL) {
+      UIApplication.shared.open(settingsURL)
+    }
   }
 }
 
@@ -461,37 +460,10 @@ extension ChatViewModel {
   }
 }
 
-extension ChatViewModel {
-  
-  public func fetchVoiceConversations(using sessionId: UUID) async -> String? {
-    let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
-      predicate: #Predicate { $0.id == sessionId }
-    )
-    let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
-    return result.first?.fileURL
-  }
-  
-  public func checkForVoiceToRxResult(using sessionId: UUID?) async -> Bool {
-    guard let sessionId else { return true }
-    
-    let fetchDescriptor = FetchDescriptor<VoiceConversationModel>(
-      predicate: #Predicate { $0.id == sessionId }
-    )
-    
-    let result = await VoiceConversationAggregator.shared.fetchVoiceConversation(using: fetchDescriptor)
-    
-    if let result = result.first { /// If we found v2rx session with completed session we enable mic
-      return result.didFetchResult != nil
-    } else { /// If no v2rx session is found means it was deleted and we enable mic again
-      return true
-    }
-  }
-}
-
 extension Data {
-    func toString() -> String? {
-        return String(data: self, encoding: .utf8)
-    }
+  func toString() -> String? {
+    return String(data: self, encoding: .utf8)
+  }
 }
 
 extension ChatViewModel {
