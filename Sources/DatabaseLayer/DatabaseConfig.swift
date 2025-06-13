@@ -172,29 +172,62 @@ extension DatabaseConfig {
 
 // Upsert
 extension DatabaseConfig {
-    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
-    let sessionId = userChat.sessionId
-    let streamMessageId = userChat.msgId + 1
-    /// Check if message already exists
-    if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
-      
-      DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
-          messageToUpdate.suggestions = suggestions
-      }
-      saveData()
+//    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
+//    let sessionId = userChat.sessionId
+//    let streamMessageId = userChat.msgId + 1
+//    /// Check if message already exists
+//    if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
+//      
+//      DispatchQueue.main.async {
+//        print("#BB message text is \(responseMessage)")
+//        messageToUpdate.messageText?.append(responseMessage)
+//          messageToUpdate.suggestions = suggestions
+//      }
+//      saveData()
+//  
+//      return
+//    }
+//      print("#BB message text is \(responseMessage)")
+//    let _ = createMessage(
+//      message: responseMessage,
+//      sessionId: sessionId,
+//      messageId: streamMessageId,
+//      role: .Bot,
+//      imageUrls: nil,
+//      suggestions: suggestions
+//    )
+//  }
   
-      return
-    }
-    
-    let _ = createMessage(
-      message: responseMessage,
-      sessionId: sessionId,
-      messageId: streamMessageId,
-      role: .Bot,
-      imageUrls: nil,
-      suggestions: suggestions
-    )
+  func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?, overwrite: Bool = false) {
+      let sessionId = userChat.sessionId
+      let streamMessageId = userChat.msgId + 1
+      
+      /// Check if message already exists
+      if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
+        DispatchQueue.main.async {
+          print("#BB message text is \(responseMessage)")
+          if overwrite {
+            messageToUpdate.messageText = responseMessage
+          } else {
+            messageToUpdate.messageText?.append(responseMessage)
+          }
+          if let suggestions = suggestions {
+            messageToUpdate.suggestions = suggestions
+          }
+        }
+        saveData()
+        return
+      }
+      
+      print("#BB message text is \(responseMessage)")
+      let _ = createMessage(
+        message: responseMessage,
+        sessionId: sessionId,
+        messageId: streamMessageId,
+        role: .Bot,
+        imageUrls: nil,
+        suggestions: suggestions
+      )
   }
 }
 

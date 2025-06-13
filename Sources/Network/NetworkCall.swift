@@ -19,15 +19,19 @@ public final class NetworkConfig {
 
 final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
+  private var session: URLSession?
   private var dataTask: URLSessionDataTask?
+  private var streamDelegate: StreamDelegate?
   
   override init() {
     super.init()
-    dataTask?.delegate = self
   }
   
   func startStreamingPostRequest(query: String?, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
+    // Create the stream delegate first
     let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
+    self.streamDelegate = streamDelegate
+    
     guard var urlComponents = URLComponents(string: NetworkConfig.shared.baseUrl) else {
       fatalError("Invalid URL")
     }
@@ -51,7 +55,6 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
     if let vaultFiles = vault_files, !vaultFiles.isEmpty {
       messageData["vault_files"] = vaultFiles
     }
-        
     
     let jsonData: [String: Any] = [
       "messages": [messageData]
@@ -64,55 +67,71 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
       return
     }
     
-    let session = URLSession(configuration: .default, delegate: streamDelegate, delegateQueue: .main)
-    dataTask = session.dataTask(with: request)
+    // Create a session with the delegate and retain it
+    session = URLSession(configuration: .default, delegate: streamDelegate, delegateQueue: .main)
+    dataTask = session?.dataTask(with: request)
     dataTask?.resume()
   }
   
   func cancelStreaming() {
-      dataTask?.cancel()
-      dataTask = nil
-      print("Streaming task canceled.")
-    }
+    dataTask?.cancel()
+    dataTask = nil
+    session?.invalidateAndCancel()
+    session = nil
+    streamDelegate = nil
+    print("Streaming task canceled.")
+  }
 }
 
 
 final class StreamDelegate: NSObject, URLSessionDataDelegate {
-  
-  // MARK: - Properties
-  
-  private let completion: @Sendable (Result<String, Error>) -> Void
-  private let onStreamComplete: @Sendable () -> Void
-  private var receivedData = Data()
-  
-  // MARK: - Init
-  
-  init(
-    completion: @escaping @Sendable (Result<String, Error>) -> Void,
-    onStreamComplete: @escaping @Sendable () -> Void
-  ) {
-    self.completion = completion
-    self.onStreamComplete = onStreamComplete
-  }
-  
-  func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
-    receivedData.append(data)
-    if let receivedString = String(data: receivedData, encoding: .utf8) {
-      completion(.success(receivedString))
+    private let completion: @Sendable (Result<String, Error>) -> Void
+    private let onStreamComplete: @Sendable () -> Void
+    private var buffer = Data()
+    private var chunkCounter = 0
+
+    init(
+        completion: @escaping @Sendable (Result<String, Error>) -> Void,
+        onStreamComplete: @escaping @Sendable () -> Void
+    ) {
+        self.completion = completion
+        self.onStreamComplete = onStreamComplete
     }
-  }
-  
-  func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-    if let error = error {
-      print("Streaming error: \(error.localizedDescription)")
-    } else {
-      print("Streaming complete")
+
+    func urlSession(_ session: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        buffer.append(data)
+        while true {
+            if let range = buffer.range(of: Data("\n\n".utf8)) {
+                let chunkData = buffer.subdata(in: 0..<range.lowerBound)
+                buffer.removeSubrange(0..<range.upperBound)
+                if let chunkString = String(data: chunkData, encoding: .utf8), !chunkString.isEmpty {
+                    chunkCounter += 1
+                    print("#BB chunkCounter \(chunkCounter) received")
+                    completion(.success(chunkString))
+                }
+            } else {
+                break
+            }
+        }
     }
-    DispatchQueue.main.async { [weak self] in
-      guard let self else { return }
-      onStreamComplete()
+
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error as? URLError, error.code != .cancelled {
+            print("Streaming error: \(error.localizedDescription)")
+            completion(.failure(error))
+        } else if let error = error {
+            print("Stream cancelled or other error: \(error.localizedDescription)")
+        } else {
+            print("Streaming complete successfully")
+            // Emit any remaining data as a final chunk
+            if !buffer.isEmpty, let finalString = String(data: buffer, encoding: .utf8) {
+                completion(.success(finalString))
+            }
+        }
+        DispatchQueue.main.async { [weak self] in
+            self?.onStreamComplete()
+        }
     }
-  }
 }
 
 @MainActor
