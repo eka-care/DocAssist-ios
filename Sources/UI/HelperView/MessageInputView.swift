@@ -110,6 +110,7 @@ struct MessageInputView: View {
             .frame(width: 16)
             .foregroundStyle(Color.neutrals600)
         }
+        .disabled(!viewModel.v2rxEnabled)
         .alert(isPresented: viewModel.showPermissionAlertBinding) {
           Alert(
             title: Text(viewModel.alertTitle),
