@@ -20,6 +20,8 @@ public class ChatsViewController: UIViewController {
   let ctx: ModelContext
   var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegate: GetMoreSuggestions?
+  var userMergedOids: [String]?
+  var getPatientDetailsDelegate: GetPatientDetails?
   
   public init(
     backgroundColor: Color? = nil,
@@ -36,12 +38,14 @@ public class ChatsViewController: UIViewController {
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
     liveActivityDelegate: LiveActivityDelegate? = nil,
-    suggestionsDelegate: GetMoreSuggestions? = nil
-    
+    suggestionsDelegate: GetMoreSuggestions? = nil,
+    userMergedOids: [String]? = nil,
+    getPatientDetailsDelegate: GetPatientDetails?
   ) {
     self.patientDelegate = patientDelegate
     self.ctx = ctx
     self.liveActivityDelegate = liveActivityDelegate
+    self.userMergedOids = userMergedOids
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
     case "ipad":
@@ -59,7 +63,8 @@ public class ChatsViewController: UIViewController {
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-        suggestionsDelegate: suggestionsDelegate
+        suggestionsDelegate: suggestionsDelegate,
+        getPatientDetailsDelegate: getPatientDetailsDelegate
       )
             .task {
                 try? Tips.configure([
@@ -86,7 +91,8 @@ public class ChatsViewController: UIViewController {
         selectedScreen: Binding.constant(nil),
         deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
         liveActivityDelegate: liveActivityDelegate,
-        suggestionsDelegate: suggestionsDelegate
+        suggestionsDelegate: suggestionsDelegate,
+        getPatientDetailsDelegate: getPatientDetailsDelegate
       )
             .task {
                 try? Tips.configure([
@@ -145,11 +151,13 @@ public class ActiveChatViewController: UIViewController {
   private let calledFromPatientContext: Bool
   private let authToken: String
   private let authRefreshToken: String
+  var userMergedOids: [String]?
   
   var docAssistView: AnyView?
   var vm: ChatViewModel
   var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegae: GetMoreSuggestions?
+  var getPatientDetailsDelegate: GetPatientDetails?
     
   public init(
     backgroundColor: Color? = nil,
@@ -164,7 +172,9 @@ public class ActiveChatViewController: UIViewController {
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
     liveActivityDelegate: LiveActivityDelegate? = nil,
-    suggestionsDelegate: GetMoreSuggestions? = nil
+    suggestionsDelegate: GetMoreSuggestions? = nil,
+    userMergedOids: [String]? = nil,
+    getPatientDetailsDelegate: GetPatientDetails? = nil
   ) {
     self.vm = ChatViewModel(
       context: ctx,
@@ -174,7 +184,8 @@ public class ActiveChatViewController: UIViewController {
       userBid: userBId,
       userDocId: userDocId,
       patientName: patientSubtitle ?? "",
-      suggestionsDelegate: suggestionsDelegate
+      suggestionsDelegate: suggestionsDelegate,
+      getPatientDetailsDelegate: getPatientDetailsDelegate
     )
     self.backgroundColor = backgroundColor
     self.ctx = ctx
@@ -186,10 +197,11 @@ public class ActiveChatViewController: UIViewController {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     self.liveActivityDelegate = liveActivityDelegate
+    self.userMergedOids = userMergedOids
     
     super.init(nibName: nil, bundle: nil)
  //   registerUISdk()
-    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId)
+    registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId, userMergeOids: userMergedOids)
   }
   
   required init?(coder: NSCoder) {
@@ -280,13 +292,27 @@ public class ActiveChatViewController: UIViewController {
 }
 
 extension ActiveChatViewController {
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
-    MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String, userMergeOids: [String]?) {
+    MRInitializer.shared
+      .registerCoreSdk(
+        authToken: authToken,
+        refreshToken: refreshToken,
+        oid: oid,
+        bid: bid,
+        userMergedOids: userMergedOids
+      )
   }
 }
 
 extension ChatsViewController {
-  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String) {
-    MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: refreshToken, oid: oid, bid: bid)
+  func registerCoreSdk(authToken: String, refreshToken: String, oid: String, bid: String, userDocId: String, userMergeOids: [String]?) {
+    MRInitializer.shared
+      .registerCoreSdk(
+        authToken: authToken,
+        refreshToken: refreshToken,
+        oid: oid,
+        bid: bid,
+        userMergedOids: userMergedOids
+      )
   }
 }

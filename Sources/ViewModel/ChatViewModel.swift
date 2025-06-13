@@ -34,6 +34,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
   var liveActivityDelegate: LiveActivityDelegate? = nil
   var suggestionsDelegate: GetMoreSuggestions? = nil
+  var getPatientDetailsDelegate: GetPatientDetails? = nil
   
   private let networkCall = NetworkCall()
   var inputString = ""
@@ -76,7 +77,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     userBid: String,
     userDocId: String,
     patientName: String = "",
-    suggestionsDelegate: GetMoreSuggestions? = nil
+    suggestionsDelegate: GetMoreSuggestions? = nil,
+    getPatientDetailsDelegate: GetPatientDetails? = nil
   ) {
     self.context = context
     self.delegate = delegate
@@ -86,6 +88,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.userDocId = userDocId
     self.patientName = patientName
     self.suggestionsDelegate = suggestionsDelegate
+    self.getPatientDetailsDelegate = getPatientDetailsDelegate
   }
   
   func sendMessage(

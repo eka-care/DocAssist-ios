@@ -174,7 +174,6 @@ extension DatabaseConfig {
     func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
-    print("#BB msgId in bot message \(streamMessageId)")
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
@@ -201,7 +200,6 @@ extension DatabaseConfig {
 extension DatabaseConfig {
     
     public func appendSuggestions(sessionId: String, msgId: Int, suggestions: [String]) {
-        print("#BB msgId appendSuggestions msgId is \(msgId)")
         if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: msgId) {
             
             DispatchQueue.main.async {

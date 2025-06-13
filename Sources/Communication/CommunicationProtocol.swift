@@ -22,3 +22,7 @@ public protocol DeepThoughtsViewDelegate: AnyObject {
 public protocol GetMoreSuggestions {
     func getMoreSuggestions(sessionId: String, ptOid: String?, completion: @escaping ([String]?)-> Void)
 }
+
+public protocol GetPatientDetails {
+  func getPatientDetails(ptOid: String, completion: @escaping ([String]?)-> Void)
+}
