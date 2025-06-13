@@ -163,6 +163,7 @@ struct V2RxChatView: View {
       if newValue == .resultDisplay(success: true) ||
           newValue == .resultDisplay(success: false) {
         let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
+        print("State is \(state)")
         v2rxState = state
       }
     }
