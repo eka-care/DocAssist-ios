@@ -136,14 +136,22 @@ struct VoiceToRxMethodView: View {
       VStack {
         Button {
           print("#BB \(voiceType) button clicked")
-          voiceToRxViewModel.startRecording(conversationType: conversationType)
-          FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
-          viewModel.v2rxEnabled = false
           Task {
+            await FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, conversationType: conversationType, liveActivityDelegate: viewModel.liveActivityDelegate)
             await VoiceToRxTip.voiceToRxVisited.donate()
+            await MainActor.run {
+              viewModel.v2rxEnabled = false
+            }
             guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-            let v2rxAudioFileString = await viewModel.fetchVoiceConversations(using: v2RxSessionId)
-            let _ = await DatabaseConfig.shared.createMessage(sessionId: session, messageId: (messages.last?.msgId ?? 0) + 1 , role: .Bot, imageUrls: nil, v2RxAudioSessionId: v2RxSessionId, v2RxaudioFileString: v2rxAudioFileString)
+            let _ = await DatabaseConfig.shared.createMessage(
+              sessionId: session,
+              messageId: (
+                messages.last?.msgId ?? 0
+              ) + 1 ,
+              role: .Bot,
+              imageUrls: nil,
+              v2RxAudioSessionId: v2RxSessionId
+            )
           }
           startVoicetoRx = false
         } label: {

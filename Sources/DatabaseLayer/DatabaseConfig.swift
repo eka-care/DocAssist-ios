@@ -58,7 +58,8 @@ public final actor DatabaseConfig {
   }
   
   // Delet chat message using voicetorxsessionid
-  func deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: UUID) {
+  func deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: UUID?) {
+    guard let v2RxAudioSessionId else { return }
     try? modelContext.delete(model: ChatMessageModel.self, where: #Predicate { $0.v2RxAudioSessionId == v2RxAudioSessionId })
   }
   
@@ -141,7 +142,6 @@ extension DatabaseConfig {
     role: MessageRole,
     imageUrls: [String]?,
     v2RxAudioSessionId: UUID? = nil,
-    v2RxaudioFileString: String? = nil,
     suggestions: [String]? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
@@ -154,7 +154,6 @@ extension DatabaseConfig {
       sessionId: sessionId,
       imageUrls: imageUrls,
       v2RxAudioSessionId: v2RxAudioSessionId,
-      v2RxaudioFileString: v2RxaudioFileString,
       createdAtDate: .now,
       suggestions: suggestions
     )
@@ -175,7 +174,6 @@ extension DatabaseConfig {
     func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
-    print("#BB msgId in bot message \(streamMessageId)")
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
@@ -202,7 +200,6 @@ extension DatabaseConfig {
 extension DatabaseConfig {
     
     public func appendSuggestions(sessionId: String, msgId: Int, suggestions: [String]) {
-        print("#BB msgId appendSuggestions msgId is \(msgId)")
         if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: msgId) {
             
             DispatchQueue.main.async {
@@ -274,6 +271,5 @@ extension DatabaseConfig {
       imageUrls: nil,
       v2RxAudioSessionId: v2RxAudioSessionId
     )
-  }
-  
+  }  
 }

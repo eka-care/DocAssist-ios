@@ -72,8 +72,6 @@ final class DocAssistFireStoreManager {
       "timestamp": message.timeStamp
     ]
     
-    print("#BB \(messageDocument?.path)")
-    
     messageDocument?.setData(data) { error in
       if let error = error {
         print("#BB Error writing message to Firestore: \(error.localizedDescription)")
