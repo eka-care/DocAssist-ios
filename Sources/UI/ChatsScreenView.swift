@@ -32,7 +32,7 @@ struct ChatsScreenView: View {
   var backgroundColor: Color?
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
-  @State private var selectedSegment: ChatSegment = .patients
+  @State private var selectedSegment: ChatSegment = .allChats
   @State private var selectedPatient: String?
   @Binding var selectedScreen: SelectedScreen?
   @State var selectedPatientThread: SessionDataModel?
@@ -193,18 +193,20 @@ struct ChatsScreenView: View {
         Spacer()
       }
       
-      Picker("Select", selection: $selectedSegment) {
+      if let patientDelegate {
+        Picker("Select", selection: $selectedSegment) {
           ForEach(ChatSegment.allCases, id: \.self) { segment in
-              Text(segment.rawValue).tag(segment)
+            Text(segment.rawValue).tag(segment)
           }
-      }
-      .pickerStyle(.segmented)
-      .padding(.horizontal, 16)
-      .onChange(of: selectedSegment) { _ , newValue in
-        let properties: [String: String] = [
-          "type": newValue == .allChats ? "all_chats" : "patients"
-        ]
-        DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryTopNav, properties: properties)
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 16)
+        .onChange(of: selectedSegment) { _ , newValue in
+          let properties: [String: String] = [
+            "type": newValue == .allChats ? "all_chats" : "patients"
+          ]
+          DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryTopNav, properties: properties)
+        }
       }
       
       SearchBar(text: $searchText)
