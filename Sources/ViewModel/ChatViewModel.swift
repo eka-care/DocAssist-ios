@@ -435,9 +435,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
-    if let ptOid = NetworkConfig.shared.queryParams["pt_oid"], ptOid.isEmpty {
       NetworkConfig.shared.queryParams["pt_oid"] = oid
-    }
   }
 }
 
