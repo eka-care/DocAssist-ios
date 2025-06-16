@@ -10,7 +10,7 @@ import Foundation
 struct Message: Decodable {
     let text: String
     let msgId: Int
-    let chunkId: Int
+    let chunkId: Int?
     let overwrite: Bool
     let suggestions: [String]?
     

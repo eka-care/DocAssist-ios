@@ -26,6 +26,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private let userAgent = "d-iOS"
   private var firestoreListener: ListenerRegistration?
   
+  // MARK: - Chunk Processing Properties
+  private var processedChunkIds = Set<Int>()
+  private var chunkBuffer = [Int: Message]()
+  private var nextExpectedChunkId = 0
+  private let chunkProcessingQueue = DispatchQueue(label: "com.docassist.chunkProcessing", qos: .userInitiated)
+  
   var streamStarted: Bool = false
   
   private(set) var vmssid: String = ""
@@ -52,6 +58,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var patientName: String
   var isOidPresent: String? = ""
   var lastMsgId: Int?
+  var cnt = 0
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -123,7 +130,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     if let lastMessageId = lastMessageId {
       messageId = lastMessageId + 1
     }
-      print("#BB msgId in send \(messageId)")
       self.lastMsgId = messageId + 1
       let chat = await DatabaseConfig.shared.createMessage(
       message: query,
@@ -212,6 +218,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
           Task {
               switch result {
               case .success(let responseString):
+                self.cnt += 1
                   await self.handleStreamResponse(responseString: responseString, userChat: userChat)
               case .failure(let error):
                   print("Error streaming: \(error)")
@@ -436,9 +443,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
-    if let ptOid = NetworkConfig.shared.queryParams["pt_oid"], ptOid.isEmpty {
       NetworkConfig.shared.queryParams["pt_oid"] = oid
-    }
   }
 }
 

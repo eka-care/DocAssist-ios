@@ -135,7 +135,6 @@ struct VoiceToRxMethodView: View {
         
       VStack {
         Button {
-          print("#BB \(voiceType) button clicked")
           voiceToRxViewModel.startRecording(conversationType: conversationType)
           FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, liveActivityDelegate: viewModel.liveActivityDelegate)
           viewModel.v2rxEnabled = false

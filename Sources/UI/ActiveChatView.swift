@@ -35,7 +35,7 @@ public struct ActiveChatView: View {
     let patientNameConstant = "General Chat"
     @State private var showFeedback = false
     @State private var feedbackText: String = ""
-    @State var isOidPresent: String?
+    @State var fetchedOid: String?
     private let userDocId: String
     private let userBId: String
     private let authToken: String
@@ -110,11 +110,10 @@ public struct ActiveChatView: View {
         }
         .onAppear {
             viewModel.switchToSession(session)
-            print("#BB session \(session)")
             Task {
-                isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
-                if isOidPresent != "" {
-                    setupView()
+              fetchedOid =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
+                if fetchedOid != "" {
+                  setupView(with: fetchedOid ?? "")
                 }
             }
             DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
@@ -325,13 +324,11 @@ public struct ActiveChatView: View {
         )
     }
     
-  private func setupView() {
+  private func setupView(with oid: String) {
     Task {
-      let isOidPresent =  try await DatabaseConfig.shared.isOidPresent(sessionId: viewModel.vmssid)
-      viewModel.updateQueryParamsIfNeeded(isOidPresent)
-      viewModel.getPatientDetailsDelegate?.getPatientDetails(ptOid: isOidPresent, completion: { userMergedOids in
-        print("#BB oid is \(isOidPresent)")
-        MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: isOidPresent, bid: userBId, userMergedOids: userMergedOids ?? [])
+      viewModel.updateQueryParamsIfNeeded(oid)
+      viewModel.getPatientDetailsDelegate?.getPatientDetails(ptOid: oid, completion: { userMergedOids in
+        MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userMergedOids: userMergedOids ?? [])
       })
     }
   }
