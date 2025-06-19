@@ -46,37 +46,39 @@ struct MessageInputView: View {
         .frame(minHeight: 25)
       
       HStack(spacing: 12) {
-        Button {
-          showRecordsView = true
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
-          if patientName != "General Chat" {
-            InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
-          } else {
-            InitConfiguration.shared.recordsTitle = "My documents"
-          }
-        } label: {
-          Image(.paperClip)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 16)
-            .foregroundStyle(Color.neutrals600)
-        }
-        .sheet(isPresented: $showRecordsView) {
-          NavigationStack {
-            RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-              
-              let images = data.compactMap { record in
-                record.image
-              }
-              let docIds = data.compactMap { record in
-                record.documentID
-              }
-              
-              selectedImages = Array(images.prefix(3))
-              selectedDocumentId = Array(docIds.prefix(3))
-              showRecordsView = false
+        if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient {
+          Button {
+            showRecordsView = true
+            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
+            if patientName != "General Chat" {
+              InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
+            } else {
+              InitConfiguration.shared.recordsTitle = "My documents"
             }
-            .environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
+          } label: {
+            Image(.paperClip)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 16)
+              .foregroundStyle(Color.neutrals600)
+          }
+          .sheet(isPresented: $showRecordsView) {
+            NavigationStack {
+              RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
+                
+                let images = data.compactMap { record in
+                  record.image
+                }
+                let docIds = data.compactMap { record in
+                  record.documentID
+                }
+                
+                selectedImages = Array(images.prefix(3))
+                selectedDocumentId = Array(docIds.prefix(3))
+                showRecordsView = false
+              }
+              .environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
+            }
           }
         }
         
@@ -100,108 +102,109 @@ struct MessageInputView: View {
         
         Spacer()
         
+        // Hide microphone button for patient app
+          Button {
+            viewModel.handleMicrophoneTap()
+            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
+          } label: {
+            Image(.mic)
+              .resizable()
+              .scaledToFit()
+              .frame(width: 16)
+              .foregroundStyle(Color.neutrals600)
+          }
+          .disabled(!viewModel.v2rxEnabled)
+          .alert(isPresented: viewModel.showPermissionAlertBinding) {
+            Alert(
+              title: Text(viewModel.alertTitle),
+              message: Text(viewModel.alertMessage),
+              primaryButton: .default(Text("Go to Settings")) {
+                viewModel.openAppSettings()
+              },
+              secondaryButton: .cancel(Text("Cancel"))
+            )
+          }
+        
+        // Send button
         Button {
-          viewModel.handleMicrophoneTap()
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
+          inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
+          
+          guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
+          Task {
+            await viewModel.sendMessage(
+              newMessage: inputString,
+              imageUrls: selectedImages,
+              vaultFiles: selectedDocumentId,
+              sessionId: session,
+              lastMesssageId: messages.last?.msgId
+            )
+            inputString = ""
+            selectedImages = []
+            selectedDocumentId = []
+            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+            isTextFieldFocused.toggle()
+          }
         } label: {
-          Image(.mic)
+          Image(systemName: "arrow.up.circle.fill")
             .resizable()
             .scaledToFit()
-            .frame(width: 16)
-            .foregroundStyle(Color.neutrals600)
+            .frame(width: 30,height: 30)
+            .foregroundStyle((inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || viewModel.streamStarted ? Color.gray.opacity(0.5) : Color.primaryprimary)
+            .frame(width: 36,height: 36)
         }
-        .disabled(!viewModel.v2rxEnabled)
-        .alert(isPresented: viewModel.showPermissionAlertBinding) {
-          Alert(
-            title: Text(viewModel.alertTitle),
-            message: Text(viewModel.alertMessage),
-            primaryButton: .default(Text("Go to Settings")) {
-              viewModel.openAppSettings()
-            },
-            secondaryButton: .cancel(Text("Cancel"))
-          )
-        }
+        .disabled((inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || viewModel.streamStarted)
         
-        if !inputString.isEmpty {
+        // Voice to Rx button - only show for non-patient app
+        if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient, viewModel.streamStarted {
           Button {
-            inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
-            Task {
-              await viewModel.sendMessage(
-                newMessage: inputString,
-                imageUrls: selectedImages,
-                vaultFiles: selectedDocumentId,
-                sessionId: session,
-                lastMesssageId: messages.last?.msgId
-              )
-              inputString = ""
-              selectedImages = []
-              selectedDocumentId = []
-              DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
-              isTextFieldFocused.toggle()
-            }
+            viewModel.stopStreaming()
+            viewModel.stopFirestoreStream()
           } label: {
-            Image(systemName: "arrow.up.circle.fill")
+            Image(systemName: "stop.circle")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 24,height: 24)
+              .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
+              .padding(4)
+          }
+        } else if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient, inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+          Button {
+            showVoiceToRxPopUp = true
+            Task {
+              await VoiceToRxTip.voiceToRxVisited.donate()
+            }
+            voiceToRxTip.invalidate(reason: .actionPerformed)
+          } label: {
+            Image(systemName: "waveform.circle.fill")
               .resizable()
               .scaledToFit()
               .frame(width: 30,height: 30)
-              .foregroundStyle((inputString.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.5) : Color.primaryprimary)
+              .foregroundStyle(viewModel.v2rxEnabled ? LinearGradient(
+                stops: [
+                  Gradient.Stop(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0.00),
+                  Gradient.Stop(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1.00),
+                ],
+                startPoint: UnitPoint(x: 0, y: 0.5),
+                endPoint: UnitPoint(x: 1, y: 0.5)
+              ) : LinearGradient(
+                gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
+                startPoint: .top,
+                endPoint: .bottom
+              )
+              )
               .frame(width: 36,height: 36)
           }
-          .disabled(inputString.isEmpty || viewModel.streamStarted)
-        } else {
-          if viewModel.streamStarted {
-            Button {
-              viewModel.stopStreaming()
-              viewModel.stopFirestoreStream()
-            } label: {
-              Image(systemName: "stop.circle")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24,height: 24)
-                .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
-                .padding(4)
-            }
-          } else {
-              Button {
-                  showVoiceToRxPopUp = true
-                  Task {
-                      await VoiceToRxTip.voiceToRxVisited.donate()
-                  }
-                  voiceToRxTip.invalidate(reason: .actionPerformed)
-              } label: {
-                  Image(systemName: "waveform.circle.fill")
-                      .resizable()
-                      .scaledToFit()
-                      .frame(width: 30,height: 30)
-                      .foregroundStyle(viewModel.v2rxEnabled ? LinearGradient(
-                        stops: [
-                            Gradient.Stop(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0.00),
-                            Gradient.Stop(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1.00),
-                        ],
-                        startPoint: UnitPoint(x: 0, y: 0.5),
-                        endPoint: UnitPoint(x: 1, y: 0.5)
-                      ) : LinearGradient(
-                        gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                      )
-                      .frame(width: 36,height: 36)
-              }
-            .popoverTip(voiceToRxTip, arrowEdge: .bottom)
-            .disabled(!viewModel.v2rxEnabled)
-            .sheet(isPresented: $showVoiceToRxPopUp) {
-                VoiceToRxPopUpView(
-                    viewModel: viewModel,
-                    session: session,
-                    voiceToRxViewModel: voiceToRxViewModel,
-                    messages: messages,
-                    startVoicetoRx: $showVoiceToRxPopUp
-                )
-                .presentationDetents([.height(400)])
-            }
+          .popoverTip(voiceToRxTip, arrowEdge: .bottom)
+          .disabled(!viewModel.v2rxEnabled)
+          .sheet(isPresented: $showVoiceToRxPopUp) {
+            VoiceToRxPopUpView(
+              viewModel: viewModel,
+              session: session,
+              voiceToRxViewModel: voiceToRxViewModel,
+              messages: messages,
+              startVoicetoRx: $showVoiceToRxPopUp
+            )
+            .presentationDetents([.height(400)])
           }
         }
       }

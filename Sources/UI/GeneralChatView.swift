@@ -87,6 +87,5 @@ public struct GeneralChatView: View {
       getPatientDetailsDelegate: getPatientDetailsDelegate
     )
     .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
-    .navigationBarHidden(true)
   }
 }

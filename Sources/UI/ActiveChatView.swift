@@ -147,13 +147,14 @@ public struct ActiveChatView: View {
   
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-      Text("Hello Dr \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
-        .font(Font.custom("Lato-Regular", size: 16))
-        .foregroundStyle(Color.neutrals600)
-        .padding(.bottom, 8)
-        .padding(.top, 20)
-        .padding(.leading, 16)
-      
+      if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient {
+        Text("Hello Dr \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
+          .font(Font.custom("Lato-Regular", size: 16))
+          .foregroundStyle(Color.neutrals600)
+          .padding(.bottom, 8)
+          .padding(.top, 20)
+          .padding(.leading, 16)
+      }
       SuggestionsComponentView(
         suggestionText: (patientName == patientNameConstant) ?
         (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
