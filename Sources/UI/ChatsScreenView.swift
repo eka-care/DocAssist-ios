@@ -198,25 +198,27 @@ struct ChatsScreenView: View {
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       
-      HStack {
-        Button(action: {
-          dismiss()
-        }) {
-          HStack(spacing: 6) {
-            Image(systemName: "chevron.left")
-              .font(.system(size: 21, weight: .medium))
-              .foregroundColor(.blue)
-            Text("Back")
-              .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
-            Spacer()
+      if SetUIComponents.shared.isPatientApp ?? false {
+        HStack {
+          Button(action: {
+            dismiss()
+          }) {
+            HStack(spacing: 6) {
+              Image(systemName: "chevron.left")
+                .font(.system(size: 21, weight: .medium))
+                .foregroundColor(.blue)
+              Text("Back")
+                .font(Font.custom("Lato-Regular", size: 16))
+                .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
+              Spacer()
+            }
           }
+          .contentShape(Rectangle())
+          Spacer()
         }
-        .contentShape(Rectangle())
-        Spacer()
+        .padding(.leading, 10)
+        .padding(.top, 9)
       }
-      .padding(.leading, 10)
-      .padding(.top, 9)
       
       HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")

@@ -25,7 +25,8 @@ class MRInitializer {
   private func registerAuthToken(authToken: String, refreshToken: String, oid: String, bid: String, userMergedOids: [String]?) {
     CoreInitConfigurations.shared.authToken = authToken
     CoreInitConfigurations.shared.refreshToken = refreshToken
-    CoreInitConfigurations.shared.filterID = oid
+    CoreInitConfigurations.shared.filterID = [oid] + (userMergedOids ?? [])
+    CoreInitConfigurations.shared.primaryFilterID = oid
     CoreInitConfigurations.shared.ownerID = bid
   }
   

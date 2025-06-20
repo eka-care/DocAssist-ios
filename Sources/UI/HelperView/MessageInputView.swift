@@ -46,7 +46,6 @@ struct MessageInputView: View {
         .frame(minHeight: 25)
       
       HStack(spacing: 12) {
-        if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient {
           Button {
             showRecordsView = true
             DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
@@ -79,7 +78,6 @@ struct MessageInputView: View {
               }
               .environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
             }
-          }
         }
         
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
