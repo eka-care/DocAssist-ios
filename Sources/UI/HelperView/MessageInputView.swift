@@ -61,7 +61,7 @@ struct MessageInputView: View {
             .frame(width: 16)
             .foregroundStyle(Color.neutrals600)
         }
-        .sheet(isPresented: $showRecordsView) {
+        .fullScreenCover(isPresented: $showRecordsView) {
           NavigationStack {
             RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
               
