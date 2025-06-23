@@ -46,6 +46,7 @@ struct MessageInputView: View {
         .frame(minHeight: 25)
       
       HStack(spacing: 12) {
+        if !(SetUIComponents.shared.isPatientApp ?? false) {
           Button {
             showRecordsView = true
             DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
@@ -78,6 +79,7 @@ struct MessageInputView: View {
               }
               .environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
             }
+          }
         }
         
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
@@ -210,7 +212,6 @@ struct MessageInputView: View {
     .focused($isTextFieldFocused)
     .padding(16)
     .background(Color(.white))
-    .customCornerBorder(20, corners: [.topLeft, .topRight], color: Color.gray, lineWidth: 0.5)
   }
 }
 

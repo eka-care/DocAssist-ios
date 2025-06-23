@@ -166,7 +166,7 @@ struct ChatsScreenView: View {
   }
   
   private var chatView: some View {
-    ZStack(alignment: .bottomTrailing) {
+    ZStack {
       VStack {
         Image(.bg)
           .resizable()
@@ -178,7 +178,7 @@ struct ChatsScreenView: View {
       VStack {
         headerView
           .padding(.bottom, 15)
-        ZStack(alignment: .bottomTrailing) {
+        ZStack {
           VStack {
             mainContentView
             Spacer()
@@ -280,7 +280,7 @@ struct ChatsScreenView: View {
     return VStack {
       Divider()
       ScrollView {
-        VStack {
+        LazyVStack {
           ForEach(sortedKeys, id: \.self) { key in
             if let sessions = groupedThreads[key],
                let firstSession = sessions.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) {
@@ -370,7 +370,7 @@ struct ChatsScreenView: View {
     VStack {
       Divider()
       ScrollView {
-        VStack {
+        LazyVStack {
           ForEach(filteredSessions, id: \.sessionId) { thread in
             Button {
               handleThreadSelection(thread)
@@ -423,44 +423,50 @@ struct ChatsScreenView: View {
   }
   
   var NewChatButtonView: some View {
-    Button(action: {
-      if allSessions.isEmpty {
-        DatabaseConfig.shared.deleteAllValues()
-      }
-      newViewChat = true
-      if let patientDelegate {
-        patientDelegate.navigateToPatientDirectory()
-      } else {
-        Task {
-          let sessionId = await viewModel.createSession(
-            subTitle: "",
-            userDocId: userDocId,
-            userBId: userBId
-          )
-          await MainActor.run {
-            self.newSessionId = sessionId
+    VStack {
+      Spacer()
+      HStack() {
+        Spacer()
+        Button(action: {
+          if allSessions.isEmpty {
+            DatabaseConfig.shared.deleteAllValues()
+          }
+          newViewChat = true
+          if let patientDelegate {
+                  patientDelegate.navigateToPatientDirectory()
+                } else {
+                  Task {
+                    let sessionId = await viewModel.createSession(
+                      subTitle: "",
+                      userDocId: userDocId,
+                      userBId: userBId
+                    )
+                    await MainActor.run {
+                      self.newSessionId = sessionId
+                    }
+                  }
+                }
+        }) {
+          Image(.newChatButton)
+          if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
+            Text(newChatButtonText)
+              .foregroundColor(Color.primaryprimary)
+              .font(.custom("Lato-Regular", size: 16))
           }
         }
-      }
-    }) {
-      Image(.newChatButton)
-      if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
-        Text(newChatButtonText)
-          .foregroundColor(Color.primaryprimary)
-          .font(.custom("Lato-Regular", size: 16))
+        .padding(.top, 14)
+        .padding(.bottom, 14)
+        .padding(.leading, 28)
+        .padding(.trailing, 28)
+        .background(Color.white)
+        .cornerRadius(10)
+        .overlay {
+          RoundedRectangle(cornerRadius: 10)
+            .stroke(Color.primaryprimary)
+        }
+        .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
       }
     }
-    .padding(.top, 14)
-    .padding(.bottom, 14)
-    .padding(.leading, 28)
-    .padding(.trailing, 28)
-    .background(Color.white)
-    .cornerRadius(10)
-    .overlay {
-      RoundedRectangle(cornerRadius: 10)
-        .stroke(Color.primaryprimary)
-    }
-    .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
   }
 }
 

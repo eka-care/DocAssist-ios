@@ -97,9 +97,70 @@ public struct ActiveChatView: View {
           .edgesIgnoringSafeArea(.all)
         Spacer()
       }
-      VStack {
-        content
+      
+      VStack(spacing: 0) {
+        if calledFromPatientContext {
+          headerView
+        }
+        
+        ScrollViewReader { proxy in
+          ScrollView {
+            if messages.isEmpty {
+              emptyChatView
+            }
+            else {
+              VStack {
+                ForEach(messages) { message in
+                  messageBubbleView(message: message)
+                    .padding(.horizontal)
+                    .id(message.id)
+                  
+                  if message.role == .user && messages.last?.id == message.id {
+                    if viewModel.streamStarted {
+                      LoadingView()
+                    }
+                  }
+                }
+                
+                Color.clear.frame(height: 1)
+                  .id(bottomScrollIdentifier)
+              }
+              .padding(.top, 10)
+              .onChange(of: isTextFieldFocused, { _, _ in
+                proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
+              })
+              .onChange(of: messages) { oldValue , newValue in
+                withAnimation {
+                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                }
+              }
+              .onAppear {
+                DispatchQueue.main.async {
+                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                }
+              }
+            }
+          }
+          .scrollDismissesKeyboard(.immediately)
+          .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+        }
+        
+        chatInputView
       }
+      .toolbarBackground(
+        LinearGradient(
+          gradient: Gradient(colors: [
+            Color(red: 0.93, green: 0.91, blue: 0.98),
+            Color(red: 0.96, green: 0.94, blue: 1.0)
+          ]),
+          startPoint: .top,
+          endPoint: .bottom
+        ),
+        for: .navigationBar)
+      .toolbarBackground(.visible, for: .navigationBar)
+      .navigationTitle(title ?? "New Chat")
+      .navigationBarTitleDisplayMode(.large)
+      
       FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
@@ -135,16 +196,6 @@ public struct ActiveChatView: View {
     }
   }
   
-  private var content: some View {
-    VStack {
-      if calledFromPatientContext {
-        headerView
-      }
-      messageView
-        .background(Color(red: 0.96, green: 0.96, blue: 0.96))
-    }
-  }
-  
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
       if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient {
@@ -165,66 +216,6 @@ public struct ActiveChatView: View {
       
       Spacer()
     }
-  }
-  
-  var messageView: some View {
-    VStack {
-      ScrollViewReader { proxy in
-        ScrollView {
-          if messages.isEmpty {
-            emptyChatView
-          }
-          else {
-            VStack {
-              ForEach(messages) { message in
-                messageBubbleView(message: message)
-                  .padding(.horizontal)
-                  .id(message.id)
-                
-                if message.role == .user && messages.last?.id == message.id {
-                  if viewModel.streamStarted {
-                    LoadingView()
-                  }
-                }
-              }
-              
-              Color.clear.frame(height: 1)
-                .id(bottomScrollIdentifier)
-            }
-            .padding(.top, 10)
-            .onChange(of: isTextFieldFocused, { _, _ in
-              proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
-            })
-            .onChange(of: messages) { oldValue , newValue in
-              withAnimation {
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
-              }
-            }
-            .onAppear {
-              DispatchQueue.main.async {
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
-              }
-            }
-          }
-        }
-        .scrollDismissesKeyboard(.immediately)
-      }
-      Spacer()
-      chatInputView
-    }
-    .toolbarBackground(
-      LinearGradient(
-        gradient: Gradient(colors: [
-          Color(red: 0.93, green: 0.91, blue: 0.98),
-          Color(red: 0.96, green: 0.94, blue: 1.0)
-        ]),
-        startPoint: .top,
-        endPoint: .bottom
-      ),
-      for: .navigationBar)
-    .toolbarBackground(.visible, for: .navigationBar)
-    .navigationTitle(title ?? "New Chat")
-    .navigationBarTitleDisplayMode(.large)
   }
   
   private var headerView: some View {
