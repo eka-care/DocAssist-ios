@@ -455,7 +455,7 @@ struct ChatsScreenView: View {
           }
         }
         .padding(.top, 14)
-        .padding(.bottom, 14)
+        .padding(.bottom, 20)
         .padding(.leading, 28)
         .padding(.trailing, 28)
         .background(Color.white)
