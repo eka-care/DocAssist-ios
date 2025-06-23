@@ -455,7 +455,7 @@ struct ChatsScreenView: View {
           }
         }
         .padding(.top, 14)
-        .padding(.bottom, 20)
+        .padding(.bottom, 14)
         .padding(.leading, 28)
         .padding(.trailing, 28)
         .background(Color.white)
@@ -466,6 +466,7 @@ struct ChatsScreenView: View {
         }
         .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
       }
+      .padding(.bottom, 20)
     }
   }
 }

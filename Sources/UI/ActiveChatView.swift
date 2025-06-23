@@ -198,18 +198,16 @@ public struct ActiveChatView: View {
   
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-      if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient || SetUIComponents.shared.isPatientApp == nil {
         Text("Hello Dr \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
           .font(Font.custom("Lato-Regular", size: 16))
           .foregroundStyle(Color.neutrals600)
           .padding(.bottom, 4)
           .padding(.top, 20)
           .padding(.leading, 16)
-      }
       Group {
         if SetUIComponents.shared.isPatientApp == true {
           SuggestionsComponentView(
-            suggestionText: ["Hello doctor", "What is my suggestions?", "WHAT IS MY MEDICATION?"],
+            suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
             viewModel: viewModel
           )
         } else {
@@ -221,7 +219,6 @@ public struct ActiveChatView: View {
           )
         }
       }
-      .padding(.top, 8)
       .padding(.leading, 16)
       
       Spacer()
