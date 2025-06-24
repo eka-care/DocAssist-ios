@@ -205,16 +205,16 @@ public struct ActiveChatView: View {
           .padding(.top, 20)
           .padding(.leading, 16)
       Group {
-        if SetUIComponents.shared.isPatientApp == true {
-          SuggestionsComponentView(
-            suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
-            viewModel: viewModel
-          )
-        } else {
+        if SetUIComponents.shared.isPatientApp == nil {
           SuggestionsComponentView(
             suggestionText: (patientName == patientNameConstant) ?
             (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
               (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
+            viewModel: viewModel
+          )
+        } else {
+          SuggestionsComponentView(
+            suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
             viewModel: viewModel
           )
         }
