@@ -124,87 +124,18 @@ struct MessageInputView: View {
               secondaryButton: .cancel(Text("Cancel"))
             )
           }
-        
-        // Send button
-        Button {
-          inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
-          
-          guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
-          Task {
-            await viewModel.sendMessage(
-              newMessage: inputString,
-              imageUrls: selectedImages,
-              vaultFiles: selectedDocumentId,
-              sessionId: session,
-              lastMesssageId: messages.last?.msgId
-            )
-            inputString = ""
-            selectedImages = []
-            selectedDocumentId = []
-            DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
-            isTextFieldFocused.toggle()
-          }
-        } label: {
-          Image(systemName: "arrow.up.circle.fill")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 30,height: 30)
-            .foregroundStyle((inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || viewModel.streamStarted ? Color.gray.opacity(0.5) : Color.primaryprimary)
-            .frame(width: 36,height: 36)
-        }
-        .disabled((inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && selectedImages.isEmpty) || viewModel.streamStarted)
-        
-        // Voice to Rx button - only show for non-patient app
-        if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient, viewModel.streamStarted {
-          Button {
-            viewModel.stopStreaming()
-            viewModel.stopFirestoreStream()
-          } label: {
-            Image(systemName: "stop.circle")
-              .resizable()
-              .scaledToFit()
-              .frame(width: 24,height: 24)
-              .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
-              .padding(4)
-          }
-        } else if let isPatient = SetUIComponents.shared.isPatientApp, !isPatient, inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-          Button {
-            showVoiceToRxPopUp = true
-            Task {
-              await VoiceToRxTip.voiceToRxVisited.donate()
+              
+        Group {
+          if !inputString.isEmpty {
+            sendButton
+          } else {
+            if viewModel.streamStarted {
+              stopButton
+            } else if SetUIComponents.shared.isPatientApp == nil {
+              waveformButton
+            } else {
+              disabledSendIcon
             }
-            voiceToRxTip.invalidate(reason: .actionPerformed)
-          } label: {
-            Image(systemName: "waveform.circle.fill")
-              .resizable()
-              .scaledToFit()
-              .frame(width: 30,height: 30)
-              .foregroundStyle(viewModel.v2rxEnabled ? LinearGradient(
-                stops: [
-                  Gradient.Stop(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0.00),
-                  Gradient.Stop(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1.00),
-                ],
-                startPoint: UnitPoint(x: 0, y: 0.5),
-                endPoint: UnitPoint(x: 1, y: 0.5)
-              ) : LinearGradient(
-                gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
-                startPoint: .top,
-                endPoint: .bottom
-              )
-              )
-              .frame(width: 36,height: 36)
-          }
-          .popoverTip(voiceToRxTip, arrowEdge: .bottom)
-          .disabled(!viewModel.v2rxEnabled)
-          .sheet(isPresented: $showVoiceToRxPopUp) {
-            VoiceToRxPopUpView(
-              viewModel: viewModel,
-              session: session,
-              voiceToRxViewModel: voiceToRxViewModel,
-              messages: messages,
-              startVoicetoRx: $showVoiceToRxPopUp
-            )
-            .presentationDetents([.height(400)])
           }
         }
       }
@@ -212,6 +143,104 @@ struct MessageInputView: View {
     .focused($isTextFieldFocused)
     .padding(16)
     .background(Color(.white))
+  }
+  
+  var sendButton: some View {
+      Button {
+          inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
+          guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
+          Task {
+              await viewModel.sendMessage(
+                  newMessage: inputString,
+                  imageUrls: selectedImages,
+                  vaultFiles: selectedDocumentId,
+                  sessionId: session,
+                  lastMesssageId: messages.last?.msgId
+              )
+              inputString = ""
+              selectedImages = []
+              selectedDocumentId = []
+              DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+              isTextFieldFocused.toggle()
+          }
+      } label: {
+          Image(systemName: "arrow.up.circle.fill")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 30, height: 30)
+              .foregroundStyle(
+                  (inputString.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.5) : Color.primaryprimary
+              )
+              .frame(width: 36, height: 36)
+      }
+      .disabled(inputString.isEmpty || viewModel.streamStarted)
+  }
+
+  var stopButton: some View {
+      Button {
+          viewModel.stopStreaming()
+          viewModel.stopFirestoreStream()
+      } label: {
+          Image(systemName: "stop.circle")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 24, height: 24)
+              .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
+              .padding(4)
+      }
+  }
+
+  var waveformButton: some View {
+      Button {
+          showVoiceToRxPopUp = true
+          Task {
+              await VoiceToRxTip.voiceToRxVisited.donate()
+          }
+          voiceToRxTip.invalidate(reason: .actionPerformed)
+      } label: {
+          Image(systemName: "waveform.circle.fill")
+              .resizable()
+              .scaledToFit()
+              .frame(width: 30, height: 30)
+              .foregroundStyle(
+                  viewModel.v2rxEnabled ?
+                  LinearGradient(
+                      stops: [
+                          .init(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0),
+                          .init(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1)
+                      ],
+                      startPoint: .leading,
+                      endPoint: .trailing
+                  ) :
+                  LinearGradient(
+                      gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
+                      startPoint: .top,
+                      endPoint: .bottom
+                  )
+              )
+              .frame(width: 36, height: 36)
+      }
+      .popoverTip(voiceToRxTip, arrowEdge: .bottom)
+      .disabled(!viewModel.v2rxEnabled)
+      .sheet(isPresented: $showVoiceToRxPopUp) {
+          VoiceToRxPopUpView(
+              viewModel: viewModel,
+              session: session,
+              voiceToRxViewModel: voiceToRxViewModel,
+              messages: messages,
+              startVoicetoRx: $showVoiceToRxPopUp
+          )
+          .presentationDetents([.height(400)])
+      }
+  }
+
+  var disabledSendIcon: some View {
+      Image(systemName: "arrow.up.circle.fill")
+          .resizable()
+          .scaledToFit()
+          .frame(width: 30, height: 30)
+          .foregroundStyle(Color.gray.opacity(0.5))
+          .frame(width: 36, height: 36)
   }
 }
 
