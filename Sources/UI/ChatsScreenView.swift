@@ -32,12 +32,12 @@ struct ChatsScreenView: View {
   var backgroundColor: Color?
   var subTitle: String? = "General Chat"
   @State private var patientName: String? = ""
-  @State private var selectedSegment: ChatSegment = .patients
+  @State private var selectedSegment: ChatSegment = .allChats
   @State private var selectedPatient: String?
   @Binding var selectedScreen: SelectedScreen?
   @State var selectedPatientThread: SessionDataModel?
   @State private var messageMatches: [String: Bool] = [:]
-
+  @State var newViewChat: Bool = false
   
   var patientDelegate: NavigateToPatientDirectory?
   var searchForPatient: (() -> Void)?
@@ -147,6 +147,20 @@ struct ChatsScreenView: View {
             )
             .modelContext( DatabaseConfig.shared.modelContext)
           }
+          .navigationDestination(item: $newSessionId) { sessionId in
+            ActiveChatView(
+              session: sessionId,
+              viewModel: viewModel,
+              backgroundColor: .white,
+              patientName: "General Chat",
+              calledFromPatientContext: false,
+              userDocId: userDocId,
+              userBId: userBId,
+              authToken: authToken,
+              authRefreshToken: authRefreshToken
+            )
+            .modelContext( DatabaseConfig.shared.modelContext)
+          }
       }
     }
   }
@@ -183,6 +197,29 @@ struct ChatsScreenView: View {
   
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
+      
+      if SetUIComponents.shared.isPatientApp ?? false {
+        HStack {
+          Button(action: {
+            dismiss()
+          }) {
+            HStack(spacing: 6) {
+              Image(systemName: "chevron.left")
+                .font(.system(size: 21, weight: .medium))
+                .foregroundColor(.blue)
+              Text("Back")
+                .font(Font.custom("Lato-Regular", size: 16))
+                .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
+              Spacer()
+            }
+          }
+          .contentShape(Rectangle())
+          Spacer()
+        }
+        .padding(.leading, 10)
+        .padding(.top, 9)
+      }
+      
       HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
           .foregroundColor(.titleColor)
@@ -193,20 +230,21 @@ struct ChatsScreenView: View {
         Spacer()
       }
       
-      Picker("Select", selection: $selectedSegment) {
+      if let patientDelegate {
+        Picker("Select", selection: $selectedSegment) {
           ForEach(ChatSegment.allCases, id: \.self) { segment in
-              Text(segment.rawValue).tag(segment)
+            Text(segment.rawValue).tag(segment)
           }
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal, 16)
+        .onChange(of: selectedSegment) { _ , newValue in
+          let properties: [String: String] = [
+            "type": newValue == .allChats ? "all_chats" : "patients"
+          ]
+          DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryTopNav, properties: properties)
+        }
       }
-      .pickerStyle(.segmented)
-      .padding(.horizontal, 16)
-      .onChange(of: selectedSegment) { _ , newValue in
-        let properties: [String: String] = [
-          "type": newValue == .allChats ? "all_chats" : "patients"
-        ]
-        DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryTopNav, properties: properties)
-      }
-      
       SearchBar(text: $searchText)
     }
   }
@@ -242,7 +280,7 @@ struct ChatsScreenView: View {
     return VStack {
       Divider()
       ScrollView {
-        VStack {
+        LazyVStack {
           ForEach(sortedKeys, id: \.self) { key in
             if let sessions = groupedThreads[key],
                let firstSession = sessions.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) {
@@ -332,7 +370,7 @@ struct ChatsScreenView: View {
     VStack {
       Divider()
       ScrollView {
-        VStack {
+        LazyVStack {
           ForEach(filteredSessions, id: \.sessionId) { thread in
             Button {
               handleThreadSelection(thread)
@@ -393,8 +431,21 @@ struct ChatsScreenView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-          patientDelegate?.navigateToPatientDirectory()
-         // searchForPatient()
+          newViewChat = true
+          if let patientDelegate {
+                  patientDelegate.navigateToPatientDirectory()
+                } else {
+                  Task {
+                    let sessionId = await viewModel.createSession(
+                      subTitle: "",
+                      userDocId: userDocId,
+                      userBId: userBId
+                    )
+                    await MainActor.run {
+                      self.newSessionId = sessionId
+                    }
+                  }
+                }
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
@@ -416,50 +467,6 @@ struct ChatsScreenView: View {
         .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
       }
       .padding(.bottom, 20)
-    }
-  }
-  
-  struct MessageSubViewComponent: View {
-    let title: String
-    let date: String
-    let subTitle: String?
-    let foregroundColor: Bool
-    let allChat: Bool
-    
-    var body: some View {
-      VStack {
-        HStack {
-          nameInitialsView(initials: getInitials(name: title ?? "GeneralChat") ?? "GC")
-          VStack(spacing: 6) {
-            HStack {
-              Text(title)
-                .font(.custom("Lato-Regular", size: 16))
-                .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
-              Spacer()
-            }
-            HStack {
-              Text(subTitle ?? "General Chat")
-                .font(.custom("Lato-Regular", size: 14))
-                .fontWeight(.regular)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-                .lineLimit(1)
-              Spacer()
-              Text(date)
-                .font(.caption)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-              Image(systemName: "chevron.right")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 6)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-            }
-            Divider()
-          }
-        }
-      }
-      .padding(UIDevice.current.userInterfaceIdiom == .pad ? 3 : 0)
     }
   }
 }
