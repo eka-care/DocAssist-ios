@@ -20,7 +20,7 @@ let package = Package(
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
     // Medical Record
-    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.24"),
+    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.25"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
