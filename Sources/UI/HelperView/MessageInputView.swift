@@ -82,6 +82,17 @@ struct MessageInputView: View {
           }
         }
         
+        Button {
+          viewModel.navigateToPatientDirectoryDelegate?.navigateToPatientDirectory(completion: { str in
+            print("#BB patient name is \(str)")
+          })
+        } label: {
+          Image(systemName: "person.filled")
+            .padding()
+            .background(Color.primaryprimary)
+            .clipShape(.capsule)
+        }
+        
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {
             VStack(alignment: .center, spacing: 10) {

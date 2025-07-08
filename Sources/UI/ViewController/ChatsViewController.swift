@@ -59,7 +59,6 @@ public class ChatsViewController: UIViewController {
         userBId: userBId,
         delegate: delegate,
         patientDelegate: patientDelegate,
-        searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
@@ -85,7 +84,6 @@ public class ChatsViewController: UIViewController {
         userBId: userBId,
         delegate: delegate,
         patientDelegate: patientDelegate,
-        searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         selectedScreen: Binding.constant(nil),
@@ -133,10 +131,6 @@ public class ChatsViewController: UIViewController {
   override public func viewWillAppear(_ animated: Bool) {
       super.viewWillAppear(animated)
       self.navigationController?.setNavigationBarHidden(true, animated: false)
-  }
-  
-  private func searchForPatient() {
-    patientDelegate?.navigateToPatientDirectory()
   }
 }
 

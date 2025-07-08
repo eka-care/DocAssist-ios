@@ -28,7 +28,6 @@ public struct IpadChatView: View {
   var userDocId: String
   var userBId: String
   var patientDelegate: NavigateToPatientDirectory?
-  var searchForPatient: (()->Void)
   var authToken: String
   var authRefreshToken: String
   var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
@@ -45,7 +44,6 @@ public struct IpadChatView: View {
     userBId: String,
     delegate: ConvertVoiceToText?,
     patientDelegate: NavigateToPatientDirectory?,
-    searchForPatient: @escaping (()->Void),
     authToken: String,
     authRefreshToken: String,
     selectedScreen: SelectedScreen? = .emptyScreen,
@@ -62,7 +60,6 @@ public struct IpadChatView: View {
     self.userBId = userBId
     self.delegate = delegate
     self.patientDelegate = patientDelegate
-    self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     self.selectedScreen = selectedScreen
@@ -83,7 +80,6 @@ public struct IpadChatView: View {
         userBId: userBId,
         delegate: delegate,
         patientDelegate: patientDelegate,
-        searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         selectedScreen: $selectedScreen,

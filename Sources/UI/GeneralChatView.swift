@@ -21,7 +21,6 @@ public struct GeneralChatView: View {
   var userDocId: String
   var userBId: String
   var patientDelegate: NavigateToPatientDirectory?
-  var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
   @Binding var selectedScreen: SelectedScreen?
@@ -40,7 +39,6 @@ public struct GeneralChatView: View {
     userBId: String,
     delegate: ConvertVoiceToText?,
     patientDelegate: NavigateToPatientDirectory?,
-    searchForPatient: (() -> Void)?,
     authToken: String,
     authRefreshToken: String,
     selectedScreen: Binding<SelectedScreen?>,
@@ -58,7 +56,6 @@ public struct GeneralChatView: View {
     self.userBId = userBId
     self.delegate = delegate
     self.patientDelegate = patientDelegate
-    self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
@@ -77,7 +74,6 @@ public struct GeneralChatView: View {
       ctx: ctx,
       delegate: delegate,
       patientDelegate: patientDelegate,
-      searchForPatient: searchForPatient,
       authToken: authToken,
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen,

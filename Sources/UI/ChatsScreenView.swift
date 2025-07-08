@@ -40,7 +40,6 @@ struct ChatsScreenView: View {
   @State var newViewChat: Bool = false
   
   var patientDelegate: NavigateToPatientDirectory?
-  var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
   var liveActivityDelegate: LiveActivityDelegate?
@@ -89,7 +88,6 @@ struct ChatsScreenView: View {
        ctx: ModelContext,
        delegate: ConvertVoiceToText?,
        patientDelegate: NavigateToPatientDirectory?,
-       searchForPatient: (() -> Void)?,
        authToken: String,
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
@@ -110,12 +108,12 @@ struct ChatsScreenView: View {
       userDocId: userDocId,
       patientName: patientName ?? "General Chat",
       suggestionsDelegate: suggestionsDelegate,
-      getPatientDetailsDelegate: getPatientDetailsDelegate
+      getPatientDetailsDelegate: getPatientDetailsDelegate,
+      navigateToPatientDirectoryDelegate: patientDelegate
     )
     self.userDocId = userDocId
     self.userBId = userBid
     self.patientDelegate = patientDelegate
-    self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
@@ -432,20 +430,20 @@ struct ChatsScreenView: View {
             DatabaseConfig.shared.deleteAllValues()
           }
           newViewChat = true
-          if let patientDelegate {
-                  patientDelegate.navigateToPatientDirectory()
-                } else {
-                  Task {
-                    let sessionId = await viewModel.createSession(
-                      subTitle: "",
-                      userDocId: userDocId,
-                      userBId: userBId
-                    )
-                    await MainActor.run {
-                      self.newSessionId = sessionId
-                    }
-                  }
-                }
+//          if let patientDelegate {
+//            patientDelegate.navigateToPatientDirectory()
+//          } else {
+            Task {
+              let sessionId = await viewModel.createSession(
+                subTitle: "",
+                userDocId: userDocId,
+                userBId: userBId
+              )
+              await MainActor.run {
+                self.newSessionId = sessionId
+              }
+            }
+//          }
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
