@@ -146,18 +146,8 @@ public struct ActiveChatView: View {
         }
         
         chatInputView
+          .customCornerRadius(20, corners: [.topLeft, .topRight])
       }
-      .toolbarBackground(
-        LinearGradient(
-          gradient: Gradient(colors: [
-            Color(red: 0.93, green: 0.91, blue: 0.98),
-            Color(red: 0.96, green: 0.94, blue: 1.0)
-          ]),
-          startPoint: .top,
-          endPoint: .bottom
-        ),
-        for: .navigationBar)
-      .toolbarBackground(.visible, for: .navigationBar)
       .navigationTitle(title ?? "New Chat")
       .navigationBarTitleDisplayMode(.large)
       
@@ -179,9 +169,9 @@ public struct ActiveChatView: View {
       print("#BB session \(session)")
       Task {
         fetchedOid =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
-          if fetchedOid != "" {
-            setupView(with: fetchedOid ?? "")
-          }
+        if fetchedOid != "" {
+          setupView(with: fetchedOid ?? "")
+        }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       handleVoiceToRxStates()
@@ -198,12 +188,12 @@ public struct ActiveChatView: View {
   
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-        Text("Hello \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
-          .font(Font.custom("Lato-Regular", size: 16))
-          .foregroundStyle(Color.neutrals600)
-          .padding(.bottom, 4)
-          .padding(.top, 20)
-          .padding(.leading, 16)
+      Text("Hello \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
+        .font(Font.custom("Lato-Regular", size: 16))
+        .foregroundStyle(Color.neutrals600)
+        .padding(.bottom, 4)
+        .padding(.top, 20)
+        .padding(.leading, 16)
       Group {
         if SetUIComponents.shared.isPatientApp == nil {
           SuggestionsComponentView(
@@ -283,7 +273,8 @@ public struct ActiveChatView: View {
           recordsRepo: recordsRepo,
           voiceToRxTip: $voiceToRxTip
         )
-        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
+        .background(Color.green)
+//        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )
     } else {
       AnyView(

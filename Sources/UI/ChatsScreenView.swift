@@ -187,7 +187,8 @@ struct ChatsScreenView: View {
         }
       }
     }
-    .navigationBarHidden(true)
+    .scrollDismissesKeyboard(.immediately)
+    .navigationTitle("DocAssist Chats")
     .onAppear {
       DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
     }
@@ -218,15 +219,15 @@ struct ChatsScreenView: View {
         .padding(.top, 9)
       }
       
-      HStack {
-        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-          .foregroundColor(.titleColor)
-          .font(.custom("Lato-Bold", size: 34))
-          .padding(.leading, 16)
-          .padding(.top, 16)
-          .padding(.bottom, 4)
-        Spacer()
-      }
+//      HStack {
+//        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
+//          .foregroundColor(.titleColor)
+//          .font(.custom("Lato-Bold", size: 34))
+//          .padding(.leading, 16)
+//          .padding(.top, 16)
+//          .padding(.bottom, 4)
+//        Spacer()
+//      }
       
       if let patientDelegate {
         Picker("Select", selection: $selectedSegment) {
