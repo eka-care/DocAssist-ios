@@ -93,10 +93,10 @@ public struct ActiveChatView: View {
       VStack {
         Image(.bg)
           .resizable()
-          .frame(height: 120)
+          .frame(height: 90)
           .edgesIgnoringSafeArea(.all)
-        Spacer()
-      }
+        Color(red: 0.96, green: 0.96, blue: 0.96)
+      }.ignoresSafeArea()
       
       VStack(spacing: 0) {
         if calledFromPatientContext {
@@ -142,11 +142,12 @@ public struct ActiveChatView: View {
             }
           }
           .scrollDismissesKeyboard(.immediately)
-          .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+         // .background(Color(red: 0.96, green: 0.96, blue: 0.96))
         }
         
         chatInputView
           .customCornerRadius(20, corners: [.topLeft, .topRight])
+          .background(Color.white)
       }
       .navigationTitle(title ?? "New Chat")
       .navigationBarTitleDisplayMode(.large)
@@ -273,7 +274,7 @@ public struct ActiveChatView: View {
           recordsRepo: recordsRepo,
           voiceToRxTip: $voiceToRxTip
         )
-        .background(Color.green)
+        .customCornerRadius(20, corners: [.topLeft, .topRight])
 //        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )
     } else {
@@ -339,34 +340,5 @@ extension ActiveChatView {
         await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: sessionID)
       }
     }
-  }
-}
-
-extension View {
-  func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-    clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
-  }
-  
-  func customCornerBorder(_ radius: CGFloat, corners: UIRectCorner, color: Color, lineWidth: CGFloat = 1) -> some View {
-    self
-      .overlay(
-        CustomCornerShape(cornerRadius: radius, corners: corners)
-          .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
-      )
-      .clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
-  }
-}
-
-struct CustomCornerShape: Shape {
-  var cornerRadius: CGFloat
-  var corners: UIRectCorner
-  
-  func path(in rect: CGRect) -> Path {
-    let path = UIBezierPath(
-      roundedRect: rect,
-      byRoundingCorners: corners,
-      cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
-    )
-    return Path(path.cgPath)
   }
 }

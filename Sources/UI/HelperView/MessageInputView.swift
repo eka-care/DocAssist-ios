@@ -25,6 +25,7 @@ struct MessageInputView: View {
   var liveActivityDelegate: LiveActivityDelegate?
   @State var showVoiceToRxPopUp: Bool = false
   @Binding var voiceToRxTip: VoiceToRxTip
+  @State private var showPatientSelectionButton = true
     
   var body: some View {
     VStack(spacing: 15) {
@@ -82,15 +83,19 @@ struct MessageInputView: View {
           }
         }
         
-        Button {
-          viewModel.navigateToPatientDirectoryDelegate?.navigateToPatientDirectory(completion: { str in
-            print("#BB patient name is \(str)")
-          })
-        } label: {
-          Image(systemName: "person.fill")
-            .foregroundStyle(Color.black)
-            .padding()
-            .clipShape(.capsule)
+        if showPatientSelectionButton {
+          Button {
+            viewModel.navigateToPatientDirectoryDelegate?.navigateToPatientDirectory(completion: { str in
+              if str != nil {
+                showPatientSelectionButton = false
+              }
+            })
+          } label: {
+            Image(systemName: "person.fill")
+              .foregroundStyle(Color.black)
+              .padding()
+              .clipShape(.capsule)
+          }
         }
         
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
@@ -153,7 +158,6 @@ struct MessageInputView: View {
     }
     .focused($isTextFieldFocused)
     .padding(16)
-    .background(Color.red)
     .customCornerRadius(20, corners: [.topLeft, .topRight])
   }
   

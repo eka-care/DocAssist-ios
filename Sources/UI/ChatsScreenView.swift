@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import EkaVoiceToRx
+import EkaUI
 
 enum ChatSegment: String, CaseIterable {
     case patients = "Patients"
@@ -431,9 +432,6 @@ struct ChatsScreenView: View {
             DatabaseConfig.shared.deleteAllValues()
           }
           newViewChat = true
-//          if let patientDelegate {
-//            patientDelegate.navigateToPatientDirectory()
-//          } else {
             Task {
               let sessionId = await viewModel.createSession(
                 subTitle: "",
@@ -444,7 +442,6 @@ struct ChatsScreenView: View {
                 self.newSessionId = sessionId
               }
             }
-//          }
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
