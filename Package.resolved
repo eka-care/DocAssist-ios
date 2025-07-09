@@ -1,5 +1,5 @@
 {
-  "originHash" : "fa0f2fb31f47c51c5c5ec4c9badff65d62d05b180a1e9b23159841992bc08874",
+  "originHash" : "686775e02001538bfc0a7476d45ed9711c25c92d66d2a1a67d7c867020e037ea",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaMedicalRecordsCore.git",
       "state" : {
-        "revision" : "a286758b4327f03761952bd3cc5c8aa5e59033bd",
-        "version" : "1.0.3"
+        "revision" : "65b9f5919acba99ead0ee5182bf6dbb4319183ad",
+        "version" : "1.0.22"
       }
     },
     {
@@ -51,8 +51,26 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaMedicalRecordsUI.git",
       "state" : {
-        "revision" : "6f312a526634d426eea65bd4914aecdc63ef2709",
-        "version" : "1.0.2"
+        "revision" : "f841eb240d777356a5b2cdfe10b9b4fbafaaee82",
+        "version" : "1.0.28"
+      }
+    },
+    {
+      "identity" : "ekapdfmaker",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/aryaIOS/EkaPDFMaker.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "06d20473db838ea245d63597d6c3a560bd933c29"
+      }
+    },
+    {
+      "identity" : "ekaui",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:eka-care/EkaUI.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "bcc1ec0899e9e573669543343994f35bad7426a0"
       }
     },
     {
@@ -60,8 +78,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaVoiceToRx.git",
       "state" : {
-        "revision" : "439420ccfd945c99a460172aed504802bb38cd84",
-        "version" : "1.0.3"
+        "revision" : "100f88ff2df078bcee66f0130c551ea6d13b29ab",
+        "version" : "1.2.0"
+      }
+    },
+    {
+      "identity" : "eureka",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/xmartlabs/Eureka.git",
+      "state" : {
+        "revision" : "028ef8e3191a256b8f6b8bb6b9496efcb0762dbc",
+        "version" : "5.5.0"
       }
     },
     {
@@ -128,6 +155,15 @@
       }
     },
     {
+      "identity" : "jgprogresshud",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/JonasGessner/JGProgressHUD",
+      "state" : {
+        "branch" : "master",
+        "revision" : "6336c426fb147ee19c15252eaf363f29720c3eb5"
+      }
+    },
+    {
       "identity" : "leveldb",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/leveldb.git",
@@ -182,21 +218,21 @@
       }
     },
     {
+      "identity" : "patientutility",
+      "kind" : "remoteSourceControl",
+      "location" : "git@github.com:eka-care/PatientUtility.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "1d46e3c5e75a368076092d1a70f7818b4d61449d"
+      }
+    },
+    {
       "identity" : "promises",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/promises.git",
       "state" : {
         "revision" : "540318ecedd63d883069ae7f1ed811a2df00b6ac",
         "version" : "2.4.0"
-      }
-    },
-    {
-      "identity" : "proto-contracts",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/eka-care/proto-contracts.git",
-      "state" : {
-        "revision" : "bac1201cc305c453e913940c601467004998576c",
-        "version" : "1.29.30"
       }
     },
     {
@@ -213,8 +249,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImageSwiftUI.git",
       "state" : {
-        "revision" : "451c6dfd5ecec2cf626d1d9ca81c2d4a60355172",
-        "version" : "3.1.3"
+        "revision" : "53573d6dd017e354c0e7d8f1c86b77ef1383c996",
+        "version" : "2.2.7"
+      }
+    },
+    {
+      "identity" : "skyfloatinglabeltextfield",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Skyscanner/SkyFloatingLabelTextField",
+      "state" : {
+        "revision" : "a0750ebbc7311f3b3debf99c5e59338e854afa59",
+        "version" : "4.0.0"
       }
     },
     {
