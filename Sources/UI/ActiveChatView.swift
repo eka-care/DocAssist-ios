@@ -90,13 +90,17 @@ public struct ActiveChatView: View {
   
   public var body: some View {
     ZStack {
+
+      Color(red: 0.96, green: 0.96, blue: 0.96)
+        .ignoresSafeArea()
+      
       VStack {
         Image(.bg)
           .resizable()
-          .frame(height: 90)
+          .frame(height: 150)
           .edgesIgnoringSafeArea(.all)
-        Color(red: 0.96, green: 0.96, blue: 0.96)
-      }.ignoresSafeArea()
+        Spacer()
+      }
       
       VStack(spacing: 0) {
         if calledFromPatientContext {
@@ -107,42 +111,42 @@ public struct ActiveChatView: View {
           ScrollView {
             if messages.isEmpty {
               emptyChatView
-            }
-            else {
-              VStack {
+            } else {
+              VStack(spacing: 8) {
                 ForEach(messages) { message in
                   messageBubbleView(message: message)
                     .padding(.horizontal)
                     .id(message.id)
-                  
                   if message.role == .user && messages.last?.id == message.id {
                     if viewModel.streamStarted {
                       LoadingView()
                     }
                   }
                 }
-                
-                Color.clear.frame(height: 1)
+                Color.clear.frame(height: 70)
                   .id(bottomScrollIdentifier)
               }
               .padding(.top, 10)
-              .onChange(of: isTextFieldFocused, { _, _ in
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
-              })
-              .onChange(of: messages) { oldValue , newValue in
-                withAnimation {
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
-                }
-              }
-              .onAppear {
-                DispatchQueue.main.async {
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
-                }
-              }
             }
           }
           .scrollDismissesKeyboard(.immediately)
-         // .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+          .onChange(of: isTextFieldFocused) { _, _ in
+            withAnimation {
+              proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+            }
+          }
+          .onChange(of: messages) { _, _ in
+            withAnimation {
+              proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+            }
+          }
+          .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+              withAnimation {
+                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+              }
+            }
+          }
         }
         
         chatInputView
@@ -150,7 +154,7 @@ public struct ActiveChatView: View {
           .background(Color.white)
       }
       .navigationTitle(title ?? "New Chat")
-      .navigationBarTitleDisplayMode(.large)
+      .navigationBarTitleDisplayMode(.automatic)
       
       FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
