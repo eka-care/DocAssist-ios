@@ -87,6 +87,7 @@ struct MessageInputView: View {
           Button {
             viewModel.navigateToPatientDirectoryDelegate?.navigateToPatientDirectory(completion: { str in
               if str != nil {
+                print("#BB \(str?.name) \(str?.gender) \(str?.userOID) \(str?.userUUID) ")
                 showPatientSelectionButton = false
               }
             })

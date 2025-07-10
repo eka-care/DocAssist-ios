@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol NavigateToPatientDirectory {
-  func navigateToPatientDirectory(completion: @escaping (String?) -> Void)
+  func navigateToPatientDirectory(completion: @escaping (PatientInfoModel?) -> Void)
 }
 
 public protocol ConvertVoiceToText {
