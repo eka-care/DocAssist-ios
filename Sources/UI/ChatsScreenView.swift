@@ -156,7 +156,8 @@ struct ChatsScreenView: View {
               userDocId: userDocId,
               userBId: userBId,
               authToken: authToken,
-              authRefreshToken: authRefreshToken
+              authRefreshToken: authRefreshToken,
+              chatToSessionView: true
             )
             .modelContext( DatabaseConfig.shared.modelContext)
           }
@@ -219,16 +220,6 @@ struct ChatsScreenView: View {
         .padding(.leading, 10)
         .padding(.top, 9)
       }
-      
-//      HStack {
-//        Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
-//          .foregroundColor(.titleColor)
-//          .font(.custom("Lato-Bold", size: 34))
-//          .padding(.leading, 16)
-//          .padding(.top, 16)
-//          .padding(.bottom, 4)
-//        Spacer()
-//      }
       
       if let patientDelegate {
         Picker("Select", selection: $selectedSegment) {

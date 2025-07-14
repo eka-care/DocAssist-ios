@@ -1,5 +1,5 @@
 //
-//  QueueConfigRepo.swift
+//  DatabaseConfig.swift
 //  Chatbot
 //
 //  Created by Brunda B on 11/11/24.
@@ -167,6 +167,18 @@ extension DatabaseConfig {
     
     return chat
   }
+  
+  func updateSessionDetails(for sessionId: String, with patientInfo: PatientInfoModel) {
+    
+    guard let session = try? fetchSession(bySessionId: sessionId) else { return }
+    DispatchQueue.main.async {
+      session.title = patientInfo.name ?? ""
+      session.oid = patientInfo.userOID
+      session.userBId = patientInfo.userUUID ?? ""
+    }
+    saveData()
+  }
+  
 }
 
 // Upsert
@@ -178,7 +190,7 @@ extension DatabaseConfig {
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
       DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
+        messageToUpdate.messageText?.append(responseMessage)
           messageToUpdate.suggestions = suggestions
       }
       saveData()
@@ -217,7 +229,7 @@ extension DatabaseConfig {
             predicate: #Predicate<ChatMessageModel> { session in
                 session.sessionId == sessionId
             },
-            sortBy: [SortDescriptor(\.msgId, order: .reverse)] 
+            sortBy: [SortDescriptor(\.msgId, order: .reverse)]
         )
         descriptor.fetchLimit = 1
 
@@ -271,5 +283,5 @@ extension DatabaseConfig {
       imageUrls: nil,
       v2RxAudioSessionId: v2RxAudioSessionId
     )
-  }  
+  }
 }

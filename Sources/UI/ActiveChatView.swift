@@ -12,6 +12,7 @@ import EkaMedicalRecordsCore
 import EkaVoiceToRx
 import TipKit
 import AVFAudio
+import MarkdownUI
 
 @MainActor
 public struct ActiveChatView: View {
@@ -43,8 +44,21 @@ public struct ActiveChatView: View {
   private let authRefreshToken: String
   @State var voiceToRxTip = VoiceToRxTip()
   private let bottomScrollIdentifier = "bottomID"
+  @State var chatToSessionView: Bool = false
   
-  public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
+  public init(
+    session: String,
+    viewModel: ChatViewModel,
+    backgroundColor: Color?,
+    patientName: String,
+    calledFromPatientContext: Bool,
+    title: String? = "New Chat",
+    userDocId: String,
+    userBId: String,
+    authToken: String,
+    authRefreshToken: String,
+    chatToSessionView: Bool = false
+  ) {
     self.session = session
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
@@ -83,6 +97,7 @@ public struct ActiveChatView: View {
     self.userBId = userBId
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
+    self.chatToSessionView = chatToSessionView
     AuthTokenHolder.shared.authToken = authToken
     AuthTokenHolder.shared.refreshToken = authRefreshToken
     AuthTokenHolder.shared.bid = userBId
@@ -117,11 +132,17 @@ public struct ActiveChatView: View {
                   messageBubbleView(message: message)
                     .padding(.horizontal)
                     .id(message.id)
+                  
                   if message.role == .user && messages.last?.id == message.id {
                     if viewModel.streamStarted {
                       LoadingView()
                     }
                   }
+                  
+                  if viewModel.streamStarted && !viewModel.liveMessages.isEmpty && messages.last?.id == message.id {
+                    Markdown(viewModel.liveMessages)
+                  }
+                  
                 }
                 Color.clear.frame(height: 70)
                   .id(bottomScrollIdentifier)
@@ -248,11 +269,6 @@ public struct ActiveChatView: View {
             Font.custom("Lato-Bold", size: 34)
           )
           .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
-        
-        Text("Parrotlet Lite")
-          .font(Font.custom("Lato-Regular", size: 14))
-          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-          .frame(maxWidth: .infinity, alignment: .leading)
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)
@@ -276,7 +292,8 @@ public struct ActiveChatView: View {
           messages: messages,
           voiceToRxViewModel: voiceToRxViewModel,
           recordsRepo: recordsRepo,
-          voiceToRxTip: $voiceToRxTip
+          voiceToRxTip: $voiceToRxTip,
+          newChat: $chatToSessionView
         )
         .customCornerRadius(20, corners: [.topLeft, .topRight])
 //        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)

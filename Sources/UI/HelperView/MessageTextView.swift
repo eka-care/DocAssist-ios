@@ -1,5 +1,5 @@
 //
-//  SwiftUIView.swift
+//  MessageTextView.swift
 //  ChatBotAiPackage
 //
 //  Created by Brunda B on 03/03/25.
@@ -29,22 +29,22 @@ struct MessageTextView: View {
           ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
             let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(urlImage)
             AsyncImage(url: completeUrl) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 86, height: 86)
-                        .clipped()
-                        .cornerRadius(10)
-                case .failure(_):
-                  ProgressView()
-                   
-                @unknown default:
-                    ProgressView()
-                }
+              switch phase {
+              case .empty:
+                ProgressView()
+              case .success(let image):
+                image
+                  .resizable()
+                  .aspectRatio(contentMode: .fill)
+                  .frame(width: 86, height: 86)
+                  .clipped()
+                  .cornerRadius(10)
+              case .failure(_):
+                ProgressView()
+                
+              @unknown default:
+                ProgressView()
+              }
             }
           }
         }
@@ -82,33 +82,20 @@ struct MessageTextView: View {
   func shareText() {
     guard let url = pdfURL else { return }
     let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-      
-      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-         let rootViewController = windowScene.windows.first?.rootViewController {
-          rootViewController.present(activityVC, animated: true, completion: nil)
-      }
+    
+    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+       let rootViewController = windowScene.windows.first?.rootViewController {
+      rootViewController.present(activityVC, animated: true, completion: nil)
+    }
   }
 }
 
 extension View {
-    @ViewBuilder func ifCondition<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
+  @ViewBuilder func ifCondition<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+    if condition {
+      transform(self)
+    } else {
+      self
     }
-}
-
-struct PdfBodyView: View {
-  
-  let text: String
-  
-  var body: some View {
-    VStack {
-      Markdown(text)
-    }
-    .padding(.horizontal, EkaSpacing.spacingM)
-    .padding(.top, EkaSpacing.spacingM)
   }
 }

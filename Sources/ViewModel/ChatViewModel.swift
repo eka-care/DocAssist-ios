@@ -53,6 +53,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var patientName: String
   var isOidPresent: String? = ""
   var lastMsgId: Int?
+  var liveMessages: String = ""
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -151,17 +152,18 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     ///Firestore handling
     let ownerId = userDocId + "_" + userBid
     DispatchQueue.main.async { [weak self] in
+        self?.liveMessages = ""
         self?.streamStarted = true
     }
 //      Task {
 //          do {
 //              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
-//              
+//
 //              // Calculate patientContext after getting isOidPresent
 //              let patientContext = isOidPresent != nil && isOidPresent != ""
-//              
+//
 //            /// if patient context is true then chat context should be a json object which as field oid and patientName
-//            
+//
 //            var chatContext: String? = nil
 //            if let oid = isOidPresent, !oid.isEmpty {
 //                let contextDict: [String: String] = [
@@ -207,15 +209,26 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     /// Stream api
     NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
     networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
-      DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = false
+      Task { @MainActor in
+          guard let self else { return }
+          print("#BB stream completed")
+          
+          await self.updateDatabaseAfterStreamCompletion(
+            message: self.liveMessages,
+              userChat: userChat,
+              suggestions: nil
+          )
+          
+          self.streamStarted = false
+          self.liveMessages = ""
       }
     }) { [weak self] result in
       guard let self else { return }
       Task {
         switch result {
-        case .success(let responseString):
-          await self.handleStreamResponse(responseString: responseString, userChat: userChat)
+        case .success(let message):
+          print("#BB response string \(message.text)")
+          await self.handleStreamResponse(message: message, userChat: userChat)
         case .failure(let error):
           print("Error streaming: \(error)")
         }
@@ -258,30 +271,19 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   /// Stream response handling
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
-      let splitLines = responseString.split(separator: "\n")
-
-      var message: Message?
-
-      for line in splitLines {
-          guard line.contains("data:") else { continue }
-          guard let jsonRange = line.range(of: "{") else { return }
-
-          let jsonString = String(line[jsonRange.lowerBound...])
-          guard let jsonData = jsonString.data(using: .utf8) else { return }
-
-          do {
-              message = try JSONDecoder().decode(Message.self, from: jsonData)
-          } catch {
-              print("Failed to decode JSON: \(error.localizedDescription)")
-          }
-      }
-    await MainActor.run {
-      Task {
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
-      }
+  @MainActor
+  func handleStreamResponse(message: Message, userChat: ChatMessageModel) {
+    print("#BB liveMessages[sessionId] before \(liveMessages) and message text is \(message.text)")
+    liveMessages.append(message.text)
+  }
+  
+  // func update db after stream completion
+  func updateDatabaseAfterStreamCompletion(message: String, userChat: ChatMessageModel, suggestions: [String]?) async {
+    Task {
+      await DatabaseConfig.shared.upsertMessageV2(responseMessage: message, userChat: userChat, suggestions: suggestions)
     }
   }
+  
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
     do {
@@ -299,11 +301,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    //    let currentDate = Date()
-    //    let ssid = UUID().uuidString
-    //    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    //    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    //    await DatabaseConfig.shared.saveData()
     let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
     switchToSession(session)
     return session

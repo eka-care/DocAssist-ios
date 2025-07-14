@@ -26,6 +26,7 @@ struct MessageInputView: View {
   @State var showVoiceToRxPopUp: Bool = false
   @Binding var voiceToRxTip: VoiceToRxTip
   @State private var showPatientSelectionButton = true
+  @Binding var newChat: Bool
     
   var body: some View {
     VStack(spacing: 15) {
@@ -63,6 +64,9 @@ struct MessageInputView: View {
               .frame(width: 16)
               .foregroundStyle(Color.neutrals600)
           }
+          .onChange(of: newChat, { oldValue, newValue in
+            print("#BB \(oldValue) and \(newValue)")
+          })
           .fullScreenCover(isPresented: $showRecordsView) {
             NavigationStack {
               RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
@@ -85,9 +89,10 @@ struct MessageInputView: View {
         
         if showPatientSelectionButton {
           Button {
-            viewModel.navigateToPatientDirectoryDelegate?.navigateToPatientDirectory(completion: { str in
-              if str != nil {
-                print("#BB \(str?.name) \(str?.gender) \(str?.userOID) \(str?.userUUID) ")
+            viewModel.navigateToPatientDirectoryDelegate?.navigateToPatientDirectory(completion: { patientInfo in
+              if let patientInfo {
+                print("#BB \(patientInfo.name) \(patientInfo.gender) \(patientInfo.userOID) \(patientInfo.userUUID)")
+                DatabaseConfig.shared.updateSessionDetails(for: viewModel.vmssid, with: patientInfo)
                 showPatientSelectionButton = false
               }
             })
@@ -99,7 +104,7 @@ struct MessageInputView: View {
           }
         }
         
-        if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
+        if let patientName, !patientName.isEmpty, patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {
             VStack(alignment: .center, spacing: 10) {
               Image(systemName: "person.fill")
