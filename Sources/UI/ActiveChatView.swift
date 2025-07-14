@@ -86,6 +86,8 @@ public struct ActiveChatView: View {
     AuthTokenHolder.shared.authToken = authToken
     AuthTokenHolder.shared.refreshToken = authRefreshToken
     AuthTokenHolder.shared.bid = userBId
+    /// To maintain the same reference
+    FloatingVoiceToRxViewController.shared.viewModel = voiceToRxViewModel
   }
   
   public var body: some View {

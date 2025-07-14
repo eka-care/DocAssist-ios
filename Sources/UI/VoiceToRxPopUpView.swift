@@ -137,11 +137,11 @@ struct VoiceToRxMethodView: View {
         Button {
           print("#BB \(voiceType) button clicked")
           Task {
-            await FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, conversationType: conversationType, liveActivityDelegate: viewModel.liveActivityDelegate)
-            await VoiceToRxTip.voiceToRxVisited.donate()
             await MainActor.run {
               viewModel.v2rxEnabled = false
             }
+            await FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, conversationType: conversationType, liveActivityDelegate: viewModel.liveActivityDelegate)
+            await VoiceToRxTip.voiceToRxVisited.donate()
             guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
             let _ = await DatabaseConfig.shared.createMessage(
               sessionId: session,
