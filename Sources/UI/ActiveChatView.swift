@@ -166,7 +166,6 @@ public struct ActiveChatView: View {
       FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
-      print("New value is -> \(newValue)")
       if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
         viewModel.v2rxEnabled = true
       }

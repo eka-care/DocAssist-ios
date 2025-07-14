@@ -46,11 +46,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var alertTitle = ""
   var alertMessage = ""
   var audioRecorder: AVAudioRecorder?
-  var v2rxEnabled: Bool = true {
-    didSet {
-      print("V2rx enabled value is \(v2rxEnabled)")
-    }
-  }
+  var v2rxEnabled: Bool = true
   var userBid: String
   var userDocId: String
   var patientName: String
