@@ -86,6 +86,8 @@ public struct ActiveChatView: View {
     AuthTokenHolder.shared.authToken = authToken
     AuthTokenHolder.shared.refreshToken = authRefreshToken
     AuthTokenHolder.shared.bid = userBId
+    /// To maintain the same reference
+    FloatingVoiceToRxViewController.shared.viewModel = voiceToRxViewModel
   }
   
   public var body: some View {
@@ -164,6 +166,7 @@ public struct ActiveChatView: View {
       FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
+      print("New value is -> \(newValue)")
       if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
         viewModel.v2rxEnabled = true
       }
