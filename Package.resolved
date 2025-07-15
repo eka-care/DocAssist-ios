@@ -1,5 +1,5 @@
 {
-  "originHash" : "686775e02001538bfc0a7476d45ed9711c25c92d66d2a1a67d7c867020e037ea",
+  "originHash" : "d0808e25401adf59034d799908120255b164019e7abca0d123cefa686e376177",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaMedicalRecordsCore.git",
       "state" : {
-        "revision" : "65b9f5919acba99ead0ee5182bf6dbb4319183ad",
-        "version" : "1.0.22"
+        "revision" : "b24e6d182222954540d042316f7d50b5dfed8f0e",
+        "version" : "1.0.24"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaMedicalRecordsUI.git",
       "state" : {
-        "revision" : "f841eb240d777356a5b2cdfe10b9b4fbafaaee82",
-        "version" : "1.0.28"
+        "revision" : "581f28e2e7258ed97ccba8fad86a1d44499c23b2",
+        "version" : "1.0.31"
       }
     },
     {
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaVoiceToRx.git",
       "state" : {
-        "revision" : "100f88ff2df078bcee66f0130c551ea6d13b29ab",
-        "version" : "1.2.0"
+        "revision" : "58f39d7a663c43182a92cc8e319bd02a144fcc9d",
+        "version" : "1.2.3"
       }
     },
     {
