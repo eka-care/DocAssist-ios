@@ -156,11 +156,22 @@ struct MessageBubble: View {
   }
   
   func shareText() {
-    guard let url = pdfURL else { return }
-    let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-      
+      guard let url = pdfURL else { return }
+      let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+
       if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
          let rootViewController = windowScene.windows.first?.rootViewController {
+          
+
+          if let popover = activityVC.popoverPresentationController {
+              popover.sourceView = rootViewController.view
+              popover.sourceRect = CGRect(x: rootViewController.view.bounds.midX,
+                                          y: rootViewController.view.bounds.midY,
+                                          width: 0,
+                                          height: 0)
+              popover.permittedArrowDirections = []
+          }
+
           rootViewController.present(activityVC, animated: true, completion: nil)
       }
   }
