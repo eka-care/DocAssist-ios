@@ -189,6 +189,7 @@ struct ChatsScreenView: View {
         }
       }
     }
+    .scrollDismissesKeyboard(.immediately)
     .navigationBarHidden(true)
     .onAppear {
       DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
