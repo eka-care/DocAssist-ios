@@ -58,59 +58,6 @@ struct MessageTextView: View {
           .foregroundColor(foregroundColor)
           .contentTransition(.numericText())
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
-          .ifCondition(role == .Bot) { view in
-            view.contextMenu {
-              Button(action: {
-                UIPasteboard.general.string = text
-                DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "copy", "session_id": message.sessionId,"text": text])
-              }) {
-                HStack {
-                  Text("Copy response")
-                  Spacer()
-                  Image(systemName: "document.on.document")
-                }
-              }
-              
-              Button(action: {
-                DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "sharepdf", "session_id": message.sessionId,"text": text])
-                let fileURL = PDFRenderer().renderSinglePage(
-                  headerView: AnyView( DTPDFHeaderView(
-                    data: DTPDFHeaderViewData.formDeepthoughtHeaderViewData(doctorName: "DR.\(SetUIComponents.shared.docName ?? "" )", clinicName: "", address: "")
-                  )),
-                  bodyView: AnyView(PdfBodyView(text: text))
-                )
-                pdfURL = fileURL
-                shareText()
-                
-              }) {
-                HStack {
-                  Text("Share as PDF")
-                  Spacer()
-                  Image(systemName: "square.and.arrow.up")
-                }
-              }
-              
-              Button(action: {
-                DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "good", "session_id": message.sessionId,"text": text])
-              }) {
-                HStack {
-                  Text("Good response")
-                  Spacer()
-                  Image(systemName: "hand.thumbsup")
-                }
-              }
-              
-              Button(action: {
-                DocAssistEventManager.shared.trackEvent(event: .chatResponseActions, properties: ["type": "bad", "session_id": message.sessionId,"text": text])
-              }) {
-                HStack {
-                  Text("Bad response")
-                  Spacer()
-                  Image(systemName: "hand.thumbsdown")
-                }
-              }
-            }
-          }
       }
       
       if let v2RxAudioSessionId = message.v2RxAudioSessionId {
