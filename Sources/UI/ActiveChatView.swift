@@ -165,6 +165,13 @@ public struct ActiveChatView: View {
       
       FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
+    .alert(isPresented: viewModel.showTranscriptionFailureAlertBinding) {
+      Alert(
+        title: Text(viewModel.alertTitle),
+        message: Text(viewModel.alertMessage),
+        dismissButton: .default(Text("OK"))
+      )
+    }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
       if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
         viewModel.v2rxEnabled = true

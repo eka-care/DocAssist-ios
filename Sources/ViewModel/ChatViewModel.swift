@@ -52,6 +52,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var patientName: String
   var isOidPresent: String? = ""
   var lastMsgId: Int?
+  var showTranscriptionFailureAlert = false
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -66,6 +67,15 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       self?.inputString ?? ""
     } set: { [weak self] newValue in
       self?.inputString = newValue
+    }
+  }
+  
+  
+  var showTranscriptionFailureAlertBinding: Binding<Bool> {
+    Binding { [weak self] in
+      self?.showTranscriptionFailureAlert ?? false
+    } set: { [weak self] newValue in
+      self?.showTranscriptionFailureAlert = newValue
     }
   }
   
@@ -330,19 +340,26 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       return
     }
     voiceProcessing = true
-    delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] text in
+    delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] result in
       guard let self = self else { return }
-      self.inputString = text
       self.voiceProcessing = false
       self.messageInput = true
-    })
+      switch result {
+        case .success(let transcribedText):
+          self.inputString = transcribedText
+
+        case .failure(let error):
+          self.alertTitle = "Transcription Failed"
+          self.alertMessage = error.localizedDescription
+          self.showTranscriptionFailureAlert = true
+        }
+      })
   }
   
   func stopStreaming() {
     networkCall.cancelStreaming()
     streamStarted = false
   }
-  
 }
 
 extension ChatViewModel: AVAudioRecorderDelegate  {
