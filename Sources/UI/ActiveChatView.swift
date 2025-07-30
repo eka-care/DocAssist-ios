@@ -169,7 +169,7 @@ public struct ActiveChatView: View {
       Alert(
         title: Text(viewModel.alertTitle),
         message: Text(viewModel.alertMessage),
-        dismissButton: .cancel(Text("Cancel"))
+        dismissButton: .default(Text("OK"))
       )
     }
     .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
