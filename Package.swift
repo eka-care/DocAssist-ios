@@ -20,13 +20,13 @@ let package = Package(
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
     // Medical Record
-    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.31"),
+    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git", from: "1.0.32"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
     .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.2.3"),
     // EkaPDFMaker
-    .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", branch: "main")
+    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
