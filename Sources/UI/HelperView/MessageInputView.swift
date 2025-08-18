@@ -100,9 +100,11 @@ struct MessageInputView: View {
         
         Spacer()
         
-        // Hide microphone button for patient app
         Button {
-          viewModel.handleMicrophoneTap()
+          AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+            viewModel.messageInput = false
+            viewModel.startRecording()
+          }
           DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
         } label: {
           Image(.mic)
@@ -190,11 +192,13 @@ struct MessageInputView: View {
   
   var waveformButton: some View {
     Button {
-      showVoiceToRxPopUp = true
-      Task {
-        await VoiceToRxTip.voiceToRxVisited.donate()
+      AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+        showVoiceToRxPopUp = true
+        Task {
+          await VoiceToRxTip.voiceToRxVisited.donate()
+        }
+        voiceToRxTip.invalidate(reason: .actionPerformed)
       }
-      voiceToRxTip.invalidate(reason: .actionPerformed)
     } label: {
       Image(systemName: "waveform.circle.fill")
         .resizable()
