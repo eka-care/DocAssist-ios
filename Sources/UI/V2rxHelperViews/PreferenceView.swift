@@ -119,7 +119,7 @@ struct PreferenceView: View {
           Text("Start recording")
             .frame(maxWidth: .infinity)
             .padding()
-            .background(Color.blue)
+            .background(Color.primaryprimary)
             .foregroundColor(.white)
             .cornerRadius(10)
         }

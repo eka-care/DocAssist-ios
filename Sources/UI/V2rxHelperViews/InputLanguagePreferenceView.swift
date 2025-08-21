@@ -65,7 +65,7 @@ struct InputLanguagePreferenceView: View {
         Text("Save preference")
           .frame(maxWidth: .infinity)
           .padding()
-          .background(Color.blue)
+          .background(Color.primaryprimary)
           .foregroundColor(.white)
           .cornerRadius(10)
       }
