@@ -8,8 +8,8 @@
 import SwiftUI
 
 enum RecordingMode: String, CaseIterable, Identifiable {
-  case conversation = "Conversation mode"
-  case dictation = "Dictation mode"
+  case conversation = "conversation"
+  case dictation = "dictation"
   var id: String { rawValue }
 }
 

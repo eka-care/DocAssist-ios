@@ -46,6 +46,9 @@ struct MultiSelectList<Item: Hashable & Identifiable>: View {
       }
     }
     .listStyle(.insetGrouped)
+    .onAppear {
+      print("#BB Selected items on appear: \(selectedItems)")
+    }
   }
   
   private func toggleSelection(_ option: Item) {

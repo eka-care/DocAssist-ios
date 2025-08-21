@@ -233,7 +233,7 @@ struct MessageInputView: View {
 //        startVoicetoRx: $showVoiceToRxPopUp
 //      )
 //      .presentationDetents([.height(400)])
-     PreferenceView()
+      PreferenceView(viewModel: viewModel, session: session, voiceToRxViewModel: voiceToRxViewModel, messages: messages, startVoicetoRx: $showVoiceToRxPopUp)
     }
   }
   

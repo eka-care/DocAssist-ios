@@ -7,6 +7,7 @@
 
 import SwiftUI
 import EkaUI
+import EkaVoiceToRx
 
 enum PreferenceKeys {
     static let selectedLanguages = "selectedLanguages"
@@ -15,10 +16,16 @@ enum PreferenceKeys {
 }
 
 struct PreferenceView: View {
-  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = ""
-  @AppStorage(PreferenceKeys.selectedFormats) private var storedFormats: String = ""
+  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = "English,Hindi"
+  @AppStorage(PreferenceKeys.selectedFormats) private var storedFormats: String = "eka_emr_template,transcript_template"
   @AppStorage(PreferenceKeys.selectedRecordingMode) private var storedMode: String = RecordingMode.dictation.rawValue
-
+  
+  let viewModel: ChatViewModel
+  let session: String
+  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
+  let messages: [ChatMessageModel]
+  @Binding var startVoicetoRx: Bool
+  
   var body: some View {
     VStack(spacing: 0) {
       NavigationStack {
@@ -34,7 +41,7 @@ struct PreferenceView: View {
                 isSelected: false
               )
             }
-
+            
             NavigationLink {
               OutputPreferenceView()
             } label: {
@@ -45,7 +52,7 @@ struct PreferenceView: View {
                 isSelected: false
               )
             }
-
+            
             NavigationLink {
               RecordingModePickerView()
             } label: {
@@ -60,7 +67,7 @@ struct PreferenceView: View {
             HStack(alignment: .top, spacing: 6) {
               Image(systemName: "info.circle.fill")
                 .foregroundColor(Color(.textTertiary))
-
+              
               Text("These settings are not permanent and can be changed later as well when you start a new session. By continuing, you acknowledge that patient consent was taken for AI-assisted scribing. All notes must still be reviewed and approved by you before saving")
                 .newTextStyle(ekaFont: .caption1Regular, color: .textTertiary)
                 .multilineTextAlignment(.leading)
@@ -70,15 +77,46 @@ struct PreferenceView: View {
         }
         .listStyle(.insetGrouped)
         .navigationTitle("EkaScribe preferences")
+        
+        Button(action: {
+          Task {
+            await MainActor.run {
+              viewModel.v2rxEnabled = false
+            }
+            let selectedLanguages = storedLanguages
+              .split(separator: ",")
+              .map { String($0).trimmingCharacters(in: .whitespaces) }
 
-        Button("Start recording") {
-          print("Start recording with: \(storedLanguages), \(storedFormats), \(storedMode)")
+            let selectedFormats = storedFormats
+              .split(separator: ",")
+              .map { String($0).trimmingCharacters(in: .whitespaces) }
+
+            await FloatingVoiceToRxViewController.shared.showFloatingButton(
+              viewModel: voiceToRxViewModel,
+              conversationType: storedMode,
+              inputLanguage: selectedLanguages,
+              templateId: selectedFormats,
+              liveActivityDelegate: viewModel.liveActivityDelegate
+            )
+            await VoiceToRxTip.voiceToRxVisited.donate()
+            guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
+            let _ = await DatabaseConfig.shared.createMessage(
+              sessionId: session,
+              messageId: (messages.last?.msgId ?? 0) + 1,
+              role: .Bot,
+              imageUrls: nil,
+              v2RxAudioSessionId: v2RxSessionId
+            )
+          }
+          startVoicetoRx = false
+        }) {
+          Text("Start recording")
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.blue)
+            .foregroundColor(.white)
+            .cornerRadius(10)
         }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.blue)
-        .foregroundColor(.white)
-        .cornerRadius(10)
         .padding(.horizontal)
         .padding(.bottom, 10)
       }

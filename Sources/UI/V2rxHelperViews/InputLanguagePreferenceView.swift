@@ -4,7 +4,6 @@
 //
 //  Created by Brunda  B on 19/08/25.
 //
-
 import SwiftUI
 
 struct InputLanguagePreferenceView: View {
@@ -27,7 +26,7 @@ struct InputLanguagePreferenceView: View {
     Language(name: "Punjabi")
   ]
 
-  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = ""
+  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = "English,Hindi"
   @State private var selectedLanguages: Set<Language> = []
   @Environment(\.dismiss) private var dismiss
 
@@ -58,8 +57,16 @@ struct InputLanguagePreferenceView: View {
     }
     .onAppear {
       if !storedLanguages.isEmpty {
-        let names = storedLanguages.split(separator: ",").map(String.init)
-        selectedLanguages = Set(languages.filter { names.contains($0.name) })
+        let keys = Set(
+          storedLanguages
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        )
+        print("#BB keys are \(keys)")
+        selectedLanguages = Set(languages.filter { keys.contains($0.name) })
+        print("#BB selected language are \(selectedLanguages)")
+      } else {
+        print("#BB it's empty")
       }
     }
     .navigationTitle("Languages")
