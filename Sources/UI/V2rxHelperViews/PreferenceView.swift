@@ -47,7 +47,10 @@ struct PreferenceView: View {
             } label: {
               EkaListView(
                 title: "Output format(s)",
-                subTitle: storedFormats.isEmpty ? "Not selected" : storedFormats,
+                subTitle: storedFormats
+                  .split(separator: ",")
+                  .compactMap { OutputFormat(rawValue: String($0))?.displayName }
+                  .joined(separator: ", "),
                 style: .tall,
                 isSelected: false
               )

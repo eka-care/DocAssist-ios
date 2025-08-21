@@ -7,23 +7,27 @@
 
 import SwiftUI
 
-struct OutputPreferenceView: View {
-  struct Format: Identifiable, Hashable, CustomStringConvertible {
-      var id: String { key } 
-      let name: String
-      let key: String
-
-      var description: String { name }
+enum OutputFormat: String, CaseIterable, Identifiable {
+  case ekaEmr = "eka_emr_template"
+  case transcript = "transcript_template"
+  case clinicalNotes = "clinical_notes_template"
+  
+  var id: String { rawValue }
+  
+  var displayName: String {
+    switch self {
+    case .ekaEmr: return "Eka EMR format"
+    case .transcript: return "Transcription"
+    case .clinicalNotes: return "Clinical notes"
+    }
   }
+}
 
-  private let formats = [
-    Format(name: "Eka EMR format", key: "eka_emr_template"),
-    Format(name: "Transcription", key: "transcript_template"),
-    Format(name: "Clinical notes", key: "clinical_notes_template")
-  ]
+struct OutputPreferenceView: View {
 
-  @AppStorage(PreferenceKeys.selectedFormats) private var storedFormats: String = "eka_emr_format, transcription"
-  @State private var selectedFormats: Set<Format> = []
+  private let formats = OutputFormat.allCases
+  @AppStorage(PreferenceKeys.selectedFormats) private var storedFormats: String = "eka_emr_template,transcript_template"
+  @State private var selectedFormats: Set<OutputFormat> = []
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
@@ -36,7 +40,7 @@ struct OutputPreferenceView: View {
         footerText: "These settings are not permanent and can be changed later as well when you start a new session"
       )
       Button(action: {
-        storedFormats = selectedFormats.map(\.key).joined(separator: ", ")
+        storedFormats = selectedFormats.map(\.rawValue).joined(separator: ", ")
         print("Saved preference: \(storedFormats)")
         dismiss()
       }) {
@@ -58,7 +62,7 @@ struct OutputPreferenceView: View {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         )
         print("#BB keys are \(keys)")
-        selectedFormats = Set(formats.filter { keys.contains($0.key) })
+        selectedFormats = Set(formats.filter { keys.contains($0.rawValue) })
         print("#BB selected formats are \(selectedFormats)")
       } else {
         print("#BB: No stored formats found")
