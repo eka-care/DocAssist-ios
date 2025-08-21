@@ -40,7 +40,7 @@ struct OutputPreferenceView: View {
         footerText: "These settings are not permanent and can be changed later as well when you start a new session"
       )
       Button(action: {
-        storedFormats = selectedFormats.map(\.rawValue).joined(separator: ", ")
+        storedFormats = selectedFormats.map(\.rawValue).joined(separator: ",")
         print("Saved preference: \(storedFormats)")
         dismiss()
       }) {

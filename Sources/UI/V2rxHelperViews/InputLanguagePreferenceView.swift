@@ -58,7 +58,7 @@ struct InputLanguagePreferenceView: View {
       )
       Spacer()
       Button(action: {
-        storedLanguages = selectedLanguages.map(\.rawValue).joined(separator: ", ")
+        storedLanguages = selectedLanguages.map(\.rawValue).joined(separator: ",")
         print("Saved preference: \(storedLanguages)")
         dismiss()
       }) {
