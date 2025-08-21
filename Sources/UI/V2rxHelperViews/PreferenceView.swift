@@ -16,7 +16,7 @@ enum PreferenceKeys {
 }
 
 struct PreferenceView: View {
-  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = "English,Hindi"
+  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = "en-IN,hi"
   @AppStorage(PreferenceKeys.selectedFormats) private var storedFormats: String = "eka_emr_template,transcript_template"
   @AppStorage(PreferenceKeys.selectedRecordingMode) private var storedMode: String = RecordingMode.dictation.rawValue
   
@@ -36,7 +36,10 @@ struct PreferenceView: View {
             } label: {
               EkaListView(
                 title: "Input language(s)",
-                subTitle: storedLanguages.isEmpty ? "Not selected" : storedLanguages,
+                subTitle: storedLanguages
+                  .split(separator: ",")
+                  .compactMap { InputLanguage(rawValue: String($0))?.displayName }
+                  .joined(separator: ", "),
                 style: .tall,
                 isSelected: false
               )

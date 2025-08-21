@@ -6,28 +6,41 @@
 //
 import SwiftUI
 
-struct InputLanguagePreferenceView: View {
-  struct Language: Identifiable, Hashable, CustomStringConvertible {
-    let id = UUID()
-    let name: String
-    var description: String { name }
+enum InputLanguage: String, CaseIterable, Identifiable {
+  case english = "en-IN"
+  case hindi = "hi"
+  case kannada = "kn"
+  case tamil = "ta"
+  case telugu = "te"
+  case bengali = "bn"
+  case malayalam = "ml"
+  case gujarati = "gu"
+  case marathi = "mr"
+  case punjabi = "pa"
+
+  var displayName: String {
+    switch self {
+    case .english: return "English"
+    case .hindi: return "Hindi"
+    case .kannada: return "Kannada"
+    case .tamil: return "Tamil"
+    case .telugu: return "Telugu"
+    case .bengali: return "Bengali"
+    case .malayalam: return "Malayalam"
+    case .gujarati: return "Gujarati"
+    case .marathi: return "Marathi"
+    case .punjabi: return "Punjabi"
+    }
   }
 
-  private let languages = [
-    Language(name: "English"),
-    Language(name: "Hindi"),
-    Language(name: "Kannada"),
-    Language(name: "Tamil"),
-    Language(name: "Telugu"),
-    Language(name: "Bengali"),
-    Language(name: "Malayalam"),
-    Language(name: "Gujarati"),
-    Language(name: "Marathi"),
-    Language(name: "Punjabi")
-  ]
+  var id: String { rawValue }
+}
 
-  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = "English,Hindi"
-  @State private var selectedLanguages: Set<Language> = []
+struct InputLanguagePreferenceView: View {
+  private let languages = InputLanguage.allCases
+
+  @AppStorage(PreferenceKeys.selectedLanguages) private var storedLanguages: String = "en-IN,hi"
+  @State private var selectedLanguages: Set<InputLanguage> = []
   @Environment(\.dismiss) private var dismiss
 
   var body: some View {
@@ -41,7 +54,7 @@ struct InputLanguagePreferenceView: View {
       )
       Spacer()
       Button(action: {
-        storedLanguages = selectedLanguages.map(\.name).joined(separator: ", ")
+        storedLanguages = selectedLanguages.map(\.rawValue).joined(separator: ", ")
         print("Saved preference: \(storedLanguages)")
         dismiss()
       }) {
@@ -63,7 +76,7 @@ struct InputLanguagePreferenceView: View {
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
         )
         print("#BB keys are \(keys)")
-        selectedLanguages = Set(languages.filter { keys.contains($0.name) })
+        selectedLanguages = Set(languages.filter { keys.contains($0.rawValue) })
         print("#BB selected language are \(selectedLanguages)")
       } else {
         print("#BB it's empty")
