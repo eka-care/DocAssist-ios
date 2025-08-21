@@ -6,7 +6,11 @@
 //
 import SwiftUI
 
-enum InputLanguage: String, CaseIterable, Identifiable {
+protocol DisplayNameProviding {
+    var displayName: String { get }
+}
+
+enum InputLanguage: String, CaseIterable, Identifiable,DisplayNameProviding {
   case english = "en-IN"
   case hindi = "hi"
   case kannada = "kn"

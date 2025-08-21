@@ -60,7 +60,9 @@ struct MultiSelectList<Item: Hashable & Identifiable>: View {
   }
   
   private func optionText(_ option: Item) -> String {
-    if let string = option as? String {
+    if let optionWithDisplayName = option as? DisplayNameProviding {
+      return optionWithDisplayName.displayName
+    } else if let string = option as? String {
       return string
     } else {
       return "\(option)"

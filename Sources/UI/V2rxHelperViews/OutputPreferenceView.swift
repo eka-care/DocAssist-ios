@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum OutputFormat: String, CaseIterable, Identifiable {
+enum OutputFormat: String, CaseIterable, Identifiable, DisplayNameProviding {
   case ekaEmr = "eka_emr_template"
   case transcript = "transcript_template"
   case clinicalNotes = "clinical_notes_template"
