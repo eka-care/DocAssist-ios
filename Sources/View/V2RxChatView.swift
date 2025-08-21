@@ -86,7 +86,7 @@ struct V2RxChatView: View {
     case .retry:
       Constants.failedToAnalyze
     default:
-      ""
+      Constants.failedToAnalyze
       
     }
   }
@@ -167,7 +167,16 @@ struct V2RxChatView: View {
         let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
         print("State is \(state)")
         v2rxState = state
+      } else if newValue == .startRecording {
+        let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
+        print("#BB new fetch state \(state)")
+        if state == .deleted {
+          v2rxState = state
+          viewModel.v2rxEnabled = true
+          DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: v2rxSessionId)
+        }
       }
     }
   }
+    
 }

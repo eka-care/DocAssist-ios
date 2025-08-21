@@ -8,9 +8,16 @@
 import SwiftUI
 
 enum RecordingMode: String, CaseIterable, Identifiable {
-  case conversation = "conversation"
+  case conversation = "consultation"
   case dictation = "dictation"
   var id: String { rawValue }
+  
+  var displayName: String {
+    switch self {
+    case .conversation : return "Conversation"
+    case .dictation : return "Dictation"
+    }
+  }
 }
 
 struct RecordingModePickerView: View {
@@ -37,7 +44,7 @@ struct RecordingModePickerView: View {
             label: EmptyView()
           ) {
             ForEach(RecordingMode.allCases) { mode in
-              Text(mode.rawValue).tag(mode)
+              Text(mode.displayName).tag(mode)
             }
           }
           .pickerStyle(.inline)
