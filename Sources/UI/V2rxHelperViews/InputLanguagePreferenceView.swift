@@ -10,7 +10,7 @@ protocol DisplayNameProviding {
     var displayName: String { get }
 }
 
-enum InputLanguage: String, CaseIterable, Identifiable,DisplayNameProviding {
+public enum InputLanguage: String, CaseIterable, Identifiable,DisplayNameProviding {
   case english = "en-IN"
   case hindi = "hi"
   case kannada = "kn"
@@ -37,7 +37,7 @@ enum InputLanguage: String, CaseIterable, Identifiable,DisplayNameProviding {
     }
   }
 
-  var id: String { rawValue }
+  public var id: String { rawValue }
 }
 
 struct InputLanguagePreferenceView: View {

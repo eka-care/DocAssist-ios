@@ -7,12 +7,12 @@
 
 import SwiftUI
 
-enum OutputFormat: String, CaseIterable, Identifiable, DisplayNameProviding {
+public enum OutputFormat: String, CaseIterable, Identifiable, DisplayNameProviding {
   case ekaEmr = "eka_emr_template"
   case transcript = "transcript_template"
   case clinicalNotes = "clinical_notes_template"
   
-  var id: String { rawValue }
+  public var id: String { rawValue }
   
   var displayName: String {
     switch self {
