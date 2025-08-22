@@ -12,11 +12,6 @@ import AVFoundation
 import EkaVoiceToRx
 import FirebaseFirestore
 
-public struct ExistingChatResponse {
-  var chatExist: Bool
-  var sessionId: [String]
-}
-
 @Observable
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
@@ -404,43 +399,43 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     messageInput = true
   }
   
-  func handleMicrophoneTap() {
-    let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-    
-    switch micStatus {
-    case .authorized:
-      messageInput = false
-      startRecording()
-      
-    case .denied:
-      alertTitle = "Microphone Access Denied"
-      alertMessage = "To record audio, please enable microphone access in Settings."
-      showPermissionAlert = true
-      
-    case .notDetermined:
-      AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-        DispatchQueue.main.async {
-          guard let self = self else { return }
-          if granted {
-            self.messageInput = false
-            self.startRecording()
-          } else {
-            self.alertTitle = "Microphone Access Denied"
-            self.alertMessage = "To record audio, please enable microphone access in Settings."
-            self.showPermissionAlert = true
-          }
-        }
-      }
-      
-    case .restricted:
-      alertTitle = "Microphone Access Restricted"
-      alertMessage = "Microphone access is restricted and cannot be changed."
-      showPermissionAlert = true
-      
-    @unknown default:
-      break
-    }
-  }
+//  func handleMicrophoneTap() {
+//    let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+//    
+//    switch micStatus {
+//    case .authorized:
+//      messageInput = false
+//      startRecording()
+//      
+//    case .denied:
+//      alertTitle = "Microphone Access Denied"
+//      alertMessage = "To record audio, please enable microphone access in Settings."
+//      showPermissionAlert = true
+//      
+//    case .notDetermined:
+//      AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+//        DispatchQueue.main.async {
+//          guard let self = self else { return }
+//          if granted {
+//            self.messageInput = false
+//            self.startRecording()
+//          } else {
+//            self.alertTitle = "Microphone Access Denied"
+//            self.alertMessage = "To record audio, please enable microphone access in Settings."
+//            self.showPermissionAlert = true
+//          }
+//        }
+//      }
+//      
+//    case .restricted:
+//      alertTitle = "Microphone Access Restricted"
+//      alertMessage = "Microphone access is restricted and cannot be changed."
+//      showPermissionAlert = true
+//      
+//    @unknown default:
+//      break
+//    }
+//  }
   
   func openAppSettings() {
     guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }

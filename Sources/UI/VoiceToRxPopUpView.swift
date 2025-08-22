@@ -140,7 +140,6 @@ struct VoiceToRxMethodView: View {
             await MainActor.run {
               viewModel.v2rxEnabled = false
             }
-            await FloatingVoiceToRxViewController.shared.showFloatingButton(viewModel: voiceToRxViewModel, conversationType: conversationType, liveActivityDelegate: viewModel.liveActivityDelegate)
             await VoiceToRxTip.voiceToRxVisited.donate()
             guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
             let _ = await DatabaseConfig.shared.createMessage(

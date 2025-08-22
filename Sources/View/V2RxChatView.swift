@@ -24,6 +24,7 @@ struct V2RxChatView: View {
   let voiceToRxRepo = VoiceToRxRepo()
   
   private enum Constants {
+    static let loading = "Eka Scribe in progress..."
     static let draft = "Draft"
     static let saved = "Saved"
     static let tapToTryAgain = "Tap to try again"
@@ -50,6 +51,8 @@ struct V2RxChatView: View {
   
   private var v2rximage: UIImage {
     switch v2rxState {
+    case .loading:
+      return UIImage(resource: .recording)
     case .draft:
       return UIImage(resource: .draftV2Rx)
     case .saved:
@@ -70,18 +73,21 @@ struct V2RxChatView: View {
     case .retry:
       return .red
     default:
-      return .red
+      return .white
     }
   }
   
   private var v2rxStateTitle: String {
     switch v2rxState {
+    case .loading:
+      Constants.loading
     case .draft, .saved:
       Constants.viewClinicalNotes
     case .retry:
       Constants.failedToAnalyze
     default:
-      Constants.somethingWentWrong
+      Constants.failedToAnalyze
+      
     }
   }
   
@@ -95,9 +101,6 @@ struct V2RxChatView: View {
   
   var body: some View {
     VStack(alignment: .leading, spacing: 0) {
-      if v2rxState == .loading {
-        ProgressView()
-      } else {
         VStack(alignment: .leading, spacing: 0) {
           Button {
             if v2rxStateTitle == Constants.somethingWentWrong {
@@ -148,7 +151,6 @@ struct V2RxChatView: View {
         }
         .frame(maxWidth: 250)
       }
-    }
     .padding()
     .onAppear {
       let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
@@ -165,7 +167,16 @@ struct V2RxChatView: View {
         let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
         print("State is \(state)")
         v2rxState = state
+      } else if newValue == .startRecording {
+        let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
+        print("#BB new fetch state \(state)")
+        if state == .deleted {
+          v2rxState = state
+          viewModel.v2rxEnabled = true
+          DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: v2rxSessionId)
+        }
       }
     }
   }
+    
 }

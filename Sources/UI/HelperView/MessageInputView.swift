@@ -97,9 +97,11 @@ struct MessageInputView: View {
         
         Spacer()
         
-        // Hide microphone button for patient app
         Button {
-          viewModel.handleMicrophoneTap()
+          AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+            viewModel.messageInput = false
+            viewModel.startRecording()
+          }
           DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
         } label: {
           Image(.mic)
@@ -187,11 +189,13 @@ struct MessageInputView: View {
   
   var waveformButton: some View {
     Button {
-      showVoiceToRxPopUp = true
-      Task {
-        await VoiceToRxTip.voiceToRxVisited.donate()
+      AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+        showVoiceToRxPopUp = true
+        Task {
+          await VoiceToRxTip.voiceToRxVisited.donate()
+        }
+        voiceToRxTip.invalidate(reason: .actionPerformed)
       }
-      voiceToRxTip.invalidate(reason: .actionPerformed)
     } label: {
       Image(systemName: "waveform.circle.fill")
         .resizable()
@@ -218,14 +222,7 @@ struct MessageInputView: View {
     .popoverTip(voiceToRxTip, arrowEdge: .bottom)
     .disabled(!viewModel.v2rxEnabled)
     .sheet(isPresented: $showVoiceToRxPopUp) {
-      VoiceToRxPopUpView(
-        viewModel: viewModel,
-        session: session,
-        voiceToRxViewModel: voiceToRxViewModel,
-        messages: messages,
-        startVoicetoRx: $showVoiceToRxPopUp
-      )
-      .presentationDetents([.height(400)])
+      PreferenceView(viewModel: viewModel, session: session, voiceToRxViewModel: voiceToRxViewModel, messages: messages, startVoicetoRx: $showVoiceToRxPopUp)
     }
   }
   
