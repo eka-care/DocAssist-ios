@@ -225,14 +225,6 @@ struct MessageInputView: View {
     .popoverTip(voiceToRxTip, arrowEdge: .bottom)
     .disabled(!viewModel.v2rxEnabled)
     .sheet(isPresented: $showVoiceToRxPopUp) {
-//      VoiceToRxPopUpView(
-//        viewModel: viewModel,
-//        session: session,
-//        voiceToRxViewModel: voiceToRxViewModel,
-//        messages: messages,
-//        startVoicetoRx: $showVoiceToRxPopUp
-//      )
-//      .presentationDetents([.height(400)])
       PreferenceView(viewModel: viewModel, session: session, voiceToRxViewModel: voiceToRxViewModel, messages: messages, startVoicetoRx: $showVoiceToRxPopUp)
     }
   }
