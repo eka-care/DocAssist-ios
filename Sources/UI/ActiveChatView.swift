@@ -32,7 +32,7 @@ public struct ActiveChatView: View {
   @State private var selectedDocumentId: [String] = []
   var title: String?
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
-  let recordsRepo = RecordsRepo()
+  let recordsRepo: RecordsRepo = RecordsRepo.shared
   let patientNameConstant = "General Chat"
   @State private var showFeedback = false
   @State private var feedbackText: String = ""
