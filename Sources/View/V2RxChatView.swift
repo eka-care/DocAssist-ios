@@ -24,7 +24,7 @@ struct V2RxChatView: View {
   let voiceToRxRepo = VoiceToRxRepo()
   
   private enum Constants {
-    static let loading = "Recording in progress..."
+    static let loading = "Eka Scribe in progress..."
     static let draft = "Draft"
     static let saved = "Saved"
     static let tapToTryAgain = "Tap to try again"
