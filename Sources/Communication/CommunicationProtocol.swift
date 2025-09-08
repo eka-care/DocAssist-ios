@@ -7,8 +7,11 @@
 
 import Foundation
 
+//public protocol NavigateToPatientDirectory {
+//  func navigateToPatientDirectory()
+//}
 public protocol NavigateToPatientDirectory {
-  func navigateToPatientDirectory()
+  func navigateToPatientDirectory(onSelection: @escaping (_ name: String, _ oid: String) -> Void)
 }
 
 public protocol ConvertVoiceToText {

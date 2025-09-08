@@ -110,7 +110,8 @@ struct ChatsScreenView: View {
       userDocId: userDocId,
       patientName: patientName ?? "General Chat",
       suggestionsDelegate: suggestionsDelegate,
-      getPatientDetailsDelegate: getPatientDetailsDelegate
+      getPatientDetailsDelegate: getPatientDetailsDelegate,
+      patientDelegate: patientDelegate
     )
     self.userDocId = userDocId
     self.userBId = userBid
@@ -433,9 +434,9 @@ struct ChatsScreenView: View {
             DatabaseConfig.shared.deleteAllValues()
           }
           newViewChat = true
-          if let patientDelegate {
-                  patientDelegate.navigateToPatientDirectory()
-                } else {
+//          if let patientDelegate {
+//                  patientDelegate.navigateToPatientDirectory()
+//                } else {
                   Task {
                     let sessionId = await viewModel.createSession(
                       subTitle: "",
@@ -446,7 +447,7 @@ struct ChatsScreenView: View {
                       self.newSessionId = sessionId
                     }
                   }
-                }
+  //              }
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {

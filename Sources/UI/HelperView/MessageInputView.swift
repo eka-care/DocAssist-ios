@@ -77,7 +77,12 @@ struct MessageInputView: View {
           }
         }
         
-        if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
+//        if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
+        Button {
+          viewModel.patientDelegate?.navigateToPatientDirectory { name, oid in
+            print("#BB name is \(name) and oid is \(oid)")
+          }
+        } label: {
           HStack(alignment: .center, spacing: 4) {
             VStack(alignment: .center, spacing: 10) {
               Image(systemName: "person.fill")
@@ -85,7 +90,7 @@ struct MessageInputView: View {
             .padding(4)
             .frame(width: 16, height: 16, alignment: .center)
             
-            Text(patientName)
+            Text("name")
               .font(Font.custom("Lato-Bold", size: 12))
               .foregroundColor(Color(red: 0.28, green: 0.28, blue: 0.28))
           }
@@ -94,6 +99,7 @@ struct MessageInputView: View {
           .background(Color(red: 0.91, green: 0.91, blue: 0.91))
           .cornerRadius(123)
         }
+//        }
         
         Spacer()
         

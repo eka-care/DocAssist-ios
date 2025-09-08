@@ -136,7 +136,9 @@ public class ChatsViewController: UIViewController {
   }
   
   private func searchForPatient() {
-    patientDelegate?.navigateToPatientDirectory()
+      patientDelegate?.navigateToPatientDirectory { name, oid in
+          print("Selected patient: \(name), oid: \(oid)")
+      }
   }
 }
 

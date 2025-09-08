@@ -30,6 +30,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var liveActivityDelegate: LiveActivityDelegate? = nil
   var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails? = nil
+  var patientDelegate: NavigateToPatientDirectory? = nil
   
   private let networkCall = NetworkCall()
   var inputString = ""
@@ -83,7 +84,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     userDocId: String,
     patientName: String = "",
     suggestionsDelegate: GetMoreSuggestions? = nil,
-    getPatientDetailsDelegate: GetPatientDetails? = nil
+    getPatientDetailsDelegate: GetPatientDetails? = nil,
+    patientDelegate: NavigateToPatientDirectory? = nil
   ) {
     self.context = context
     self.delegate = delegate
@@ -94,6 +96,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.patientName = patientName
     self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
+    self.patientDelegate = patientDelegate
   }
   
   func sendMessage(
