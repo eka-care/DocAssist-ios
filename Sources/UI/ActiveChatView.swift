@@ -292,7 +292,6 @@ public struct ActiveChatView: View {
           recordsRepo: recordsRepo,
           voiceToRxTip: $voiceToRxTip
         )
-//        .shadow(color: .black.opacity(0.16), radius: 10, x: 0, y: -4)
       )
     } else {
       AnyView(

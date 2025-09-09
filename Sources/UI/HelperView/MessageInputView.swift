@@ -47,13 +47,7 @@ struct MessageInputView: View {
       
       HStack(spacing: 12) {
         Button {
-          showRecordsView = true
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
-          if patientName != "General Chat" {
-            InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
-          } else {
-            InitConfiguration.shared.recordsTitle = "My documents"
-          }
+          showMedicalRecords()
         } label: {
           Image(.paperClip)
             .resizable()
@@ -98,11 +92,7 @@ struct MessageInputView: View {
         Spacer()
         
         Button {
-          AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
-            viewModel.messageInput = false
-            viewModel.startRecording()
-          }
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
+          startVoiceToText()
         } label: {
           Image(.mic)
             .resizable()
@@ -140,6 +130,20 @@ struct MessageInputView: View {
     .focused($isTextFieldFocused)
     .padding(16)
     .background(Color(.white))
+    .onAppear {
+      guard let type = viewModel.openType else { return }
+      if type == "EkaScribe" {
+        startVoiceToRx()
+      } else if type == "MedicalRecords" {
+        showMedicalRecords()
+      } else if type == "chat" {
+        isTextFieldFocused = true
+      } else if type == "voiceToText" {
+        startVoiceToText()
+      }
+      
+      viewModel.openType = nil 
+    }
   }
   
   var sendButton: some View {
@@ -189,13 +193,7 @@ struct MessageInputView: View {
   
   var waveformButton: some View {
     Button {
-      AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
-        showVoiceToRxPopUp = true
-        Task {
-          await VoiceToRxTip.voiceToRxVisited.donate()
-        }
-        voiceToRxTip.invalidate(reason: .actionPerformed)
-      }
+      startVoiceToRx()
     } label: {
       Image(systemName: "waveform.circle.fill")
         .resizable()
@@ -233,6 +231,37 @@ struct MessageInputView: View {
       .frame(width: 30, height: 30)
       .foregroundStyle(Color.gray.opacity(0.5))
       .frame(width: 36, height: 36)
+  }
+  
+  private func showMedicalRecords() {
+      showRecordsView = true
+      DocAssistEventManager.shared.trackEvent(
+          event: .docAssistLandingPgClick,
+          properties: ["type": "records"]
+      )
+      if patientName != "General Chat" {
+          InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
+      } else {
+          InitConfiguration.shared.recordsTitle = "My documents"
+      }
+  }
+  
+  private func startVoiceToRx() {
+    AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+      showVoiceToRxPopUp = true
+      Task {
+        await VoiceToRxTip.voiceToRxVisited.donate()
+      }
+      voiceToRxTip.invalidate(reason: .actionPerformed)
+    }
+  }
+  
+  private func startVoiceToText() {
+    AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+      viewModel.messageInput = false
+      viewModel.startRecording()
+    }
+    DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
   }
 }
 
