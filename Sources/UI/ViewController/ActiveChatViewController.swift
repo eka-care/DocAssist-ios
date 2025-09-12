@@ -31,6 +31,7 @@ public class ActiveChatViewController: UIViewController {
   var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegae: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
+  var openType: String? = nil
     
   public init(
     backgroundColor: Color? = nil,
@@ -47,7 +48,8 @@ public class ActiveChatViewController: UIViewController {
     liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
-    getPatientDetailsDelegate: GetPatientDetails? = nil
+    getPatientDetailsDelegate: GetPatientDetails? = nil,
+    openType: String? = nil
   ) {
     self.vm = ChatViewModel(
       context: ctx,
@@ -58,7 +60,8 @@ public class ActiveChatViewController: UIViewController {
       userDocId: userDocId,
       patientName: patientSubtitle ?? "",
       suggestionsDelegate: suggestionsDelegate,
-      getPatientDetailsDelegate: getPatientDetailsDelegate
+      getPatientDetailsDelegate: getPatientDetailsDelegate,
+      openType: openType
     )
     self.backgroundColor = backgroundColor
     self.ctx = ctx

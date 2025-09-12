@@ -48,6 +48,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var isOidPresent: String? = ""
   var lastMsgId: Int?
   var showTranscriptionFailureAlert = false
+  var openType: String?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -83,7 +84,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     userDocId: String,
     patientName: String = "",
     suggestionsDelegate: GetMoreSuggestions? = nil,
-    getPatientDetailsDelegate: GetPatientDetails? = nil
+    getPatientDetailsDelegate: GetPatientDetails? = nil,
+    openType: String? = nil
   ) {
     self.context = context
     self.delegate = delegate
@@ -94,6 +96,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.patientName = patientName
     self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
+    self.openType = openType
   }
   
   func sendMessage(
@@ -301,11 +304,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    //    let currentDate = Date()
-    //    let ssid = UUID().uuidString
-    //    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    //    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    //    await DatabaseConfig.shared.saveData()
     let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
     switchToSession(session)
     return session
@@ -398,44 +396,6 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
   func dontRecord() {
     messageInput = true
   }
-  
-//  func handleMicrophoneTap() {
-//    let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-//    
-//    switch micStatus {
-//    case .authorized:
-//      messageInput = false
-//      startRecording()
-//      
-//    case .denied:
-//      alertTitle = "Microphone Access Denied"
-//      alertMessage = "To record audio, please enable microphone access in Settings."
-//      showPermissionAlert = true
-//      
-//    case .notDetermined:
-//      AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-//        DispatchQueue.main.async {
-//          guard let self = self else { return }
-//          if granted {
-//            self.messageInput = false
-//            self.startRecording()
-//          } else {
-//            self.alertTitle = "Microphone Access Denied"
-//            self.alertMessage = "To record audio, please enable microphone access in Settings."
-//            self.showPermissionAlert = true
-//          }
-//        }
-//      }
-//      
-//    case .restricted:
-//      alertTitle = "Microphone Access Restricted"
-//      alertMessage = "Microphone access is restricted and cannot be changed."
-//      showPermissionAlert = true
-//      
-//    @unknown default:
-//      break
-//    }
-//  }
   
   func openAppSettings() {
     guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
