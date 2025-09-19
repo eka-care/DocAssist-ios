@@ -172,15 +172,22 @@ public struct ActiveChatView: View {
         dismissButton: .default(Text("OK"))
       )
     }
-    .onChange(of: voiceToRxViewModel.screenState) { oldValue , newValue in
-      if (newValue == .resultDisplay(success: true) || newValue == .resultDisplay(success: false)) {
+    .onChange(of: voiceToRxViewModel.screenState) { oldValue, newValue in
+      switch newValue {
+      case .resultDisplay:
+        // Enable v2rx regardless of success being true or false
         viewModel.v2rxEnabled = true
-      }
-      if newValue == .deletedRecording {
+        
+      case .deletedRecording:
         Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: voiceToRxViewModel.sessionID)
+          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(
+            v2RxAudioSessionId: voiceToRxViewModel.sessionID
+          )
         }
         viewModel.v2rxEnabled = true
+
+      default:
+        break
       }
     }
     .onAppear {

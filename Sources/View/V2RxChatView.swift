@@ -161,19 +161,20 @@ struct V2RxChatView: View {
         updatedSessionID = "P-PP-\(sessionId)"
       }
     }
-    .onChange(of: v2rxViewModel.screenState) { _ , newValue in
-      if newValue == .resultDisplay(success: true) ||
-          newValue == .resultDisplay(success: false) {
-        let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
-        print("State is \(state)")
-        v2rxState = state
+    .onChange(of: v2rxViewModel.screenState) { _, newValue in
+      if case .resultDisplay = newValue {
+          let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
+          print("State is \(state)")
+          v2rxState = state
       } else if newValue == .startRecording {
         let state = V2RxDocAssistHelper.fetchV2RxState(for: v2rxSessionId)
         print("#BB new fetch state \(state)")
         if state == .deleted {
           v2rxState = state
           viewModel.v2rxEnabled = true
-          DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: v2rxSessionId)
+          DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(
+            v2RxAudioSessionId: v2rxSessionId
+          )
         }
       }
     }
