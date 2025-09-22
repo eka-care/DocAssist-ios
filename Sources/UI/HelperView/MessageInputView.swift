@@ -118,8 +118,6 @@ struct MessageInputView: View {
           } else {
             if viewModel.streamStarted {
               stopButton
-            } else if SetUIComponents.shared.isPatientApp == nil {
-              waveformButton
             } else {
               disabledSendIcon
             }
@@ -188,39 +186,6 @@ struct MessageInputView: View {
         .frame(width: 24, height: 24)
         .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
         .padding(4)
-    }
-  }
-  
-  var waveformButton: some View {
-    Button {
-      startVoiceToRx()
-    } label: {
-      Image(systemName: "waveform.circle.fill")
-        .resizable()
-        .scaledToFit()
-        .frame(width: 30, height: 30)
-        .foregroundStyle(
-          viewModel.v2rxEnabled ?
-          LinearGradient(
-            stops: [
-              .init(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0),
-              .init(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1)
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-          ) :
-            LinearGradient(
-              gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
-              startPoint: .top,
-              endPoint: .bottom
-            )
-        )
-        .frame(width: 36, height: 36)
-    }
-    .popoverTip(voiceToRxTip, arrowEdge: .bottom)
-    .disabled(!viewModel.v2rxEnabled)
-    .sheet(isPresented: $showVoiceToRxPopUp) {
-      PreferenceView(viewModel: viewModel, session: session, voiceToRxViewModel: voiceToRxViewModel, messages: messages, startVoicetoRx: $showVoiceToRxPopUp)
     }
   }
   
