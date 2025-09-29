@@ -57,17 +57,19 @@ struct MessageInputView: View {
         }
         .fullScreenCover(isPresented: $showRecordsView) {
           NavigationStack {
-            RecordContainerView(didSelectPickerDataObjects: { data in
-              let images = data.compactMap { record in
-                record.image
-              }
-              let docIds = data.compactMap { record in
-                record.documentID
-              }
-              selectedImages = Array(images.prefix(3))
-              selectedDocumentId = Array(docIds.prefix(3))
-              showRecordsView = false
-            }, recordPresentationState: RecordPresentationState.picker(maxCount: 5))
+            RecordContainerView(
+              recordPresentationState: RecordPresentationState.picker(maxCount: 3),
+              didSelectPickerDataObjects: { data in
+                let images = data.compactMap { record in
+                  record.image
+                }
+                let docIds = data.compactMap { record in
+                  record.documentID
+                }
+                selectedImages = Array(images.prefix(3))
+                selectedDocumentId = Array(docIds.prefix(3))
+                showRecordsView = false
+              })
           }
         }
         
