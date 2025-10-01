@@ -199,7 +199,6 @@ struct ChatsScreenView: View {
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       
-      if SetUIComponents.shared.isPatientApp ?? false {
         HStack {
           Button(action: {
             dismiss()
@@ -219,7 +218,6 @@ struct ChatsScreenView: View {
         }
         .padding(.leading, 10)
         .padding(.top, 9)
-      }
       
       HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
