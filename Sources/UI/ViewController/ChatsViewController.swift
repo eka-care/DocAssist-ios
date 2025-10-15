@@ -118,7 +118,7 @@ public class ChatsViewController: UIViewController {
     
     uiHostingController.view.translatesAutoresizingMaskIntoConstraints = false
     NSLayoutConstraint.activate([
-      uiHostingController.view.topAnchor.constraint(equalTo: view.topAnchor, constant: UIDevice.current.userInterfaceIdiom == .pad ? 80 : 0),
+      uiHostingController.view.topAnchor.constraint(equalTo: view.topAnchor),
       uiHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
       uiHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
       uiHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
@@ -132,7 +132,7 @@ public class ChatsViewController: UIViewController {
   
   override public func viewWillAppear(_ animated: Bool) {
       super.viewWillAppear(animated)
-      self.navigationController?.setNavigationBarHidden(true, animated: false)
+      self.navigationController?.setNavigationBarHidden(false, animated: false)
   }
   
   private func searchForPatient() {
