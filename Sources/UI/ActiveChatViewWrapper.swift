@@ -14,8 +14,9 @@ import SwiftData
 
 @MainActor
 public struct ActiveChatViewWrapper: View {
-  @State private var viewModel: ChatViewModel
-  @State private var docAssistView: AnyView?
+  @State private var sessionPresent: Bool? = nil
+  @State private var newSession: String? = nil
+  @State private var didCheckSession = false
   
   private let backgroundColor: Color?
   private let ctx: ModelContext
@@ -28,6 +29,8 @@ public struct ActiveChatViewWrapper: View {
   private let authRefreshToken: String
   private let liveActivityDelegate: LiveActivityDelegate?
   private let userMergedOids: [String]?
+  
+  private let viewModel: ChatViewModel
   
   public init(
     backgroundColor: Color? = nil,
@@ -74,8 +77,42 @@ public struct ActiveChatViewWrapper: View {
   
   public var body: some View {
     Group {
-      if let view = docAssistView {
-        view
+      if let sessionPresent {
+        if calledFromPatientContext, sessionPresent {
+          ExistingPatientChatsView(
+            patientName: patientSubtitle ?? "",
+            viewModel: viewModel,
+            oid: oid,
+            userDocId: userDocId,
+            userBId: userBId,
+            calledFromPatientContext: true,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken,
+            useNavigationStack: false,
+            liveActivityDelegate: liveActivityDelegate
+          )
+          .modelContext(DatabaseConfig.shared.modelContext)
+        } else if let sessionId = newSession {
+          ActiveChatView(
+            session: sessionId,
+            viewModel: viewModel,
+            backgroundColor: backgroundColor,
+            patientName: patientSubtitle ?? "",
+            calledFromPatientContext: true,
+            userDocId: userDocId,
+            userBId: userBId,
+            authToken: authToken,
+            authRefreshToken: authRefreshToken
+          )
+          .navigationBarHidden(true)
+          .modelContext(DatabaseConfig.shared.modelContext)
+        } else {
+          ProgressView("Loading chat…")
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+      } else {
+        ProgressView("Checking chat session…")
+          .frame(maxWidth: .infinity, maxHeight: .infinity)
       }
     }
     .onAppear {
@@ -90,43 +127,17 @@ public struct ActiveChatViewWrapper: View {
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       
       Task {
-        let sessionPresent = await viewModel.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
-        if calledFromPatientContext, sessionPresent {
-          docAssistView = AnyView(
-            ExistingPatientChatsView(
-              patientName: patientSubtitle ?? "",
-              viewModel: viewModel,
-              oid: oid,
-              userDocId: userDocId,
-              userBId: userBId,
-              calledFromPatientContext: true,
-              authToken: authToken,
-              authRefreshToken: authRefreshToken,
-              liveActivityDelegate: liveActivityDelegate
-            ).navigationBarHidden(true)
-              .modelContext(DatabaseConfig.shared.modelContext)
-          )
-        } else {
-          let newSession = await viewModel.createSession(
+        let present = await viewModel.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
+        sessionPresent = present
+        
+        if !present || !calledFromPatientContext {
+          let sessionId = await viewModel.createSession(
             subTitle: patientSubtitle,
             oid: oid,
             userDocId: userDocId,
             userBId: userBId
           )
-          docAssistView = AnyView(
-            ActiveChatView(
-              session: newSession,
-              viewModel: viewModel,
-              backgroundColor: backgroundColor,
-              patientName: patientSubtitle ?? "",
-              calledFromPatientContext: true,
-              userDocId: userDocId,
-              userBId: userBId,
-              authToken: authToken,
-              authRefreshToken: authRefreshToken
-            ).navigationBarHidden(true)
-              .modelContext(DatabaseConfig.shared.modelContext)
-          )
+          newSession = sessionId
         }
       }
     }
