@@ -98,13 +98,13 @@ public struct ActiveChatViewWrapper: View {
             viewModel: viewModel,
             backgroundColor: backgroundColor,
             patientName: patientSubtitle ?? "",
-            calledFromPatientContext: true,
+            calledFromPatientContext: false,
             userDocId: userDocId,
             userBId: userBId,
             authToken: authToken,
             authRefreshToken: authRefreshToken
           )
-          .navigationBarHidden(true)
+        //  .navigationBarHidden(true)
           .modelContext(DatabaseConfig.shared.modelContext)
         } else {
           ProgressView("Loading chat…")
