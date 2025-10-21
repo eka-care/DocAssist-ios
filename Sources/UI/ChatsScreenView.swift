@@ -200,6 +200,20 @@ struct ChatsScreenView: View {
     VStack(alignment: .leading, spacing: 4) {
       
  //     if SetUIComponents.shared.isPatientApp ?? false {
+      if #available(iOS 26.0, *) {
+        Button(action: {
+          dismiss()
+        }) {
+          Image(systemName: "chevron.left")
+            .renderingMode(.template)
+            .foregroundColor(Color(.blackNeutrals))
+            .font(.system(size: 24, weight: .regular))
+            .padding(12)
+        }
+        .glassEffect(.clear.interactive(), in: .circle)
+        .padding(.leading, 10)
+        .padding(.top, 4)
+      } else {
         HStack {
           Button(action: {
             dismiss()
@@ -219,6 +233,7 @@ struct ChatsScreenView: View {
         }
         .padding(.leading, 10)
         .padding(.top, 9)
+      }
     //  }
       
       HStack {
