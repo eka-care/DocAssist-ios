@@ -132,7 +132,7 @@ public class ChatsViewController: UIViewController {
   
   override public func viewWillAppear(_ animated: Bool) {
       super.viewWillAppear(animated)
-      self.navigationController?.setNavigationBarHidden(false, animated: false)
+      self.navigationController?.setNavigationBarHidden(true, animated: false)
   }
   
   private func searchForPatient() {
