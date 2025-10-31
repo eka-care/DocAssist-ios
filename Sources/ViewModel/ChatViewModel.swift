@@ -394,6 +394,11 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
   }
   
   func dontRecord() {
+    guard isRecording, let recorder = audioRecorder else {
+      print("No recording to stop.")
+      return
+    }
+    recorder.stop()
     messageInput = true
   }
   
