@@ -126,7 +126,7 @@ struct ChatsScreenView: View {
   var body: some View {
     
     switch currentDevice {
-    case .pad:
+    case .pad, .mac:
       chatView
       
     default:
@@ -418,12 +418,11 @@ struct ChatsScreenView: View {
     )
     .background(Color.clear)
     .background(
-      UIDevice.current.userInterfaceIdiom == .pad ?
-      RoundedRectangle(cornerRadius: 10)
+      UIDevice.current.userInterfaceIdiom == .phone ? nil :
+        RoundedRectangle(cornerRadius: 10)
         .fill(
           (newSessionId == thread.sessionId) ||
           (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.primaryprimary : Color.clear)
-      : nil
     )
     .foregroundColor(
       (newSessionId == thread.sessionId) ||
