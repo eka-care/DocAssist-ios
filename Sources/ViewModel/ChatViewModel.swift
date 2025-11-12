@@ -161,12 +161,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
 //      Task {
 //          do {
 //              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
-//              
+//
 //              // Calculate patientContext after getting isOidPresent
 //              let patientContext = isOidPresent != nil && isOidPresent != ""
-//              
+//
 //            /// if patient context is true then chat context should be a json object which as field oid and patientName
-//            
+//
 //            var chatContext: String? = nil
 //            if let oid = isOidPresent, !oid.isEmpty {
 //                let contextDict: [String: String] = [
@@ -448,3 +448,127 @@ extension ChatViewModel {
     streamStarted = false
   }
 }
+
+// MARK: - Web Socket flow
+extension ChatViewModel {
+  
+  func checkandValidateWebSocketConnection() async {
+    guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session") else { return }
+    
+    do {
+      let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
+      
+      let networkRequest = HTTPNetworkRequest(
+        url: url,
+        method: .post,
+        headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+        body: requestBody
+      )
+      
+      networkRequest.execute { [weak self] result in
+        guard let self else { return }
+        switch result {
+        case .success(let data):
+          do {
+            let decoder = JSONDecoder()
+            let sessionModel = try decoder.decode(AuthSessionResponseModel.self, from: data)
+            print("✅ #BB Session model:", sessionModel)
+            Task {
+              await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
+            }
+          } catch {
+            print("❌ #BB JSON decode error:", error)
+          }
+          
+        case .failure(let error):
+          print("❌ #BB Network error:", error.localizedDescription)
+        }
+      }
+    } catch {
+      print("❌ #BB Encoding error:", error)
+    }
+  }
+  
+  func checkIfSessionIsActive(for sessionId: String) async {
+    guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session/\(sessionId)") else { return }
+    
+    let networkRequest = HTTPNetworkRequest(
+      url: url,
+      method: .get,
+      headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+      body: nil
+    )
+    
+    networkRequest.execute { result in
+      switch result {
+      case .success(let data):
+        print("#BB Data:", String(data: data, encoding: .utf8)!)
+      case .failure(let error):
+        print("#BB failure error:", error.localizedDescription)
+      }
+    }
+  }
+  
+  func refreshSession(for sessionId: String) async {
+    guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session/\(sessionId)/refresh") else  {
+      return
+    }
+    
+    let networkRequest = HTTPNetworkRequest(
+      url: url,
+      method: .post,
+      headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+      body: nil
+    )
+    
+    networkRequest.execute { result in
+      switch result {
+      case .success(let data):
+        print("#BB Data:", String(data: data, encoding: .utf8)!)
+      case .failure(let error):
+        print("#BB failure error:", error.localizedDescription)
+      }
+    }
+  }
+  
+  func webSocketAuthentication(sessionId: String, sessionToken: String) async {
+      guard let url = URL(string: "wss://matrix-ws.dev.eka.care/ws/med-assist/session/\(sessionId)/") else {
+          print("❌ Invalid WebSocket URL")
+          return
+      }
+
+      let webSocketClient = WebSocketNetworkRequest(url: url)
+      webSocketClient.connect { connected in
+          guard connected else {
+              print("❌ WebSocket connection failed")
+              return
+          }
+
+          // Generate unique ID & timestamp
+          let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+          let authId = String(timestamp)
+
+          // Construct auth payload
+          let authPayload: [String: Any] = [
+              "ev": "auth",
+              "_id": authId,
+              "ts": timestamp,
+              "data": [
+                  "token": sessionToken
+              ]
+          ]
+
+          // Convert to JSON string
+          do {
+              let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
+              if let jsonString = String(data: jsonData, encoding: .utf8) {
+                  print("📤 Sending auth message: \(jsonString)")
+                  webSocketClient.send(message: jsonString)
+              }
+          } catch {
+              print("❌ Failed to encode auth payload: \(error)")
+          }
+      }
+  }
+}
+

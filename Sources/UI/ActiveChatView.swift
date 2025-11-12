@@ -140,6 +140,9 @@ public struct ActiveChatView: View {
                 DispatchQueue.main.async {
                   proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
                 }
+                Task {
+                  await viewModel.checkandValidateWebSocketConnection()
+                }
               }
             }
           }
