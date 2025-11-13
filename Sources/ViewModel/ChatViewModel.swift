@@ -154,10 +154,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   static let dispatchSemaphore = DispatchSemaphore(value: 1)
   
   func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
-      guard let userChat else { return }
-      
+    guard let userChat else { return }
+    
     ///Firestore handling
     let ownerId = userDocId + "_" + userBid
+  }
   /// Stream response handling
   func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
       let splitLines = responseString.split(separator: "\n")
