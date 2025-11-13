@@ -140,9 +140,6 @@ public struct ActiveChatView: View {
                 DispatchQueue.main.async {
                   proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
                 }
-                Task {
-                  await viewModel.checkandValidateWebSocketConnection()
-                }
               }
             }
           }
@@ -204,6 +201,9 @@ public struct ActiveChatView: View {
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       handleVoiceToRxStates()
+      Task {
+        await viewModel.checkandValidateWebSocketConnection()
+      }
     }
     .onDisappear {
       viewModel.inputString = ""

@@ -32,6 +32,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var getPatientDetailsDelegate: GetPatientDetails? = nil
   
   private let networkCall = NetworkCall()
+  private var webSocketClient: WebSocketNetworkRequest?
+  
   var inputString = ""
   var isRecording = false
   var currentRecording: URL?
@@ -49,6 +51,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var lastMsgId: Int?
   var showTranscriptionFailureAlert = false
   var openType: String?
+  var userMessage: ChatMessageModel?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -107,7 +110,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     lastMesssageId: Int?
   ) async {
     /// Create user message
-    let userMessage =  await addUserMessage(
+    userMessage =  await addUserMessage(
       newMessage,
       imageUrls,
       sessionId,
@@ -155,113 +158,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       
     ///Firestore handling
     let ownerId = userDocId + "_" + userBid
-    DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = true
-    }
-//      Task {
-//          do {
-//              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
-//
-//              // Calculate patientContext after getting isOidPresent
-//              let patientContext = isOidPresent != nil && isOidPresent != ""
-//
-//            /// if patient context is true then chat context should be a json object which as field oid and patientName
-//
-//            var chatContext: String? = nil
-//            if let oid = isOidPresent, !oid.isEmpty {
-//                let contextDict: [String: String] = [
-//                    "patientId": oid,
-//                    "patientName": patientName
-//                ]
-//                if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
-//                   let jsonString = String(data: jsonData, encoding: .utf8) {
-//                    chatContext = jsonString
-//                }
-//            }
-//
-//              DocAssistFireStoreManager.shared
-//                  .sendMessageToFirestore(
-//                      businessId: userBid,
-//                      doctorId: userDocId,
-//                      context: patientContext,
-//                      sessionId: userChat.sessionId,
-//                      messageId: userChat.msgId - 1,
-//                      message: .init(
-//                          message: userChat.messageText ?? "",
-//                          sessionId: userChat.sessionId,
-//                          doctorId: userDocId,
-//                          patientId: isOidPresent ?? "", // Use the fetched OID
-//                          role: role,
-//                          vaultFiles: userChat.imageUrls,
-//                          userAgent: userAgent,
-//                          ownerId: ownerId,
-//                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
-//                          chatContext: chatContext
-//                      )
-//                  ) { [weak self] str in
-//                      guard let self else { return }
-//                      print("Message sent to Firestore: \(str)")
-//                      self.startFirestoreListener(userChat: userChat)
-//                  }
-//          } catch {
-//              print("#BB Error determining OID presence: \(error)")
-//          }
-//      }
-
-      
-    /// Stream api
-    NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
-    networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
-      DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = false
-      }
-    }) { [weak self] result in
-      guard let self else { return }
-      Task {
-        switch result {
-        case .success(let responseString):
-          await self.handleStreamResponse(responseString: responseString, userChat: userChat)
-        case .failure(let error):
-          print("Error streaming: \(error)")
-        }
-      }
-    }
-  }
-  
-  func startFirestoreListener(userChat: ChatMessageModel) {
-    let patientContext = isOidPresent != nil && !isOidPresent!.isEmpty
-    
-    DocAssistFireStoreManager.shared.listenToFirestoreMessages(
-      businessId: self.userBid,
-      doctorId: self.userDocId,
-      sessionId: userChat.sessionId,
-      context: patientContext,  // Added context parameter
-      patientId: self.isOidPresent ?? "",
-      messageId: userChat.msgId
-    ) { [weak self] data in
-      guard let self = self else { return }
-      
-      if let message = data["message"] as? String,
-         let status = data["status"] as? String,
-         let role = data["role"] as? String,
-         role == "assistant" {
-        Task { @MainActor in
-          await DatabaseConfig.shared.upsertMessageV2(
-            responseMessage: message,
-            userChat: userChat, suggestions: nil
-          )
-        }
-      }
-      
-      if let eof = data["is_eof"] as? Bool, eof == true {
-        DispatchQueue.main.async { [weak self] in
-          self?.streamStarted = false
-        }
-      }
-      
-    }
-  }
-  
   /// Stream response handling
   func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
       let splitLines = responseString.split(separator: "\n")
@@ -281,11 +177,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
               print("Failed to decode JSON: \(error.localizedDescription)")
           }
       }
-    await MainActor.run {
-      Task {
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
-      }
-    }
+//    await MainActor.run {
+//      Task {
+//          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
+//      }
+//    }
   }
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
@@ -532,43 +428,111 @@ extension ChatViewModel {
   }
   
   func webSocketAuthentication(sessionId: String, sessionToken: String) async {
-      guard let url = URL(string: "wss://matrix-ws.dev.eka.care/ws/med-assist/session/\(sessionId)/") else {
-          print("❌ Invalid WebSocket URL")
+    guard let url = URL(string: "wss://matrix-ws.dev.eka.care/ws/med-assist/session/\(sessionId)/") else {
+      print("❌ Invalid WebSocket URL")
+      return
+    }
+    
+    webSocketClient = WebSocketNetworkRequest(url: url)
+    webSocketClient?.onMessageDecoded = { [weak self] model in
+        Task { await self?.handleWebSocketModel(model) }
+    }
+    webSocketClient?.connect { connected in
+      guard connected else {
+        print("❌ WebSocket connection failed")
+        return
+      }
+      
+      // Generate unique ID & timestamp
+      let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+      let authId = String(timestamp)
+      
+      // Construct auth payload
+      let authPayload: [String: Any] = [
+        "ev": "auth",
+        "_id": authId,
+        "ts": timestamp,
+        "data": [
+          "token": sessionToken
+        ]
+      ]
+      
+      // Convert to JSON string
+      do {
+        let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+          print("📤 Sending auth message: \(jsonString)")
+          self.webSocketClient?.send(message: jsonString)
+        }
+      } catch {
+        print("❌ Failed to encode auth payload: \(error)")
+      }
+    }
+  }
+  
+  func sendWebSocketMessage(message: String) {
+      guard let webSocketClient else {
+          print("❌ WebSocket not connected")
           return
       }
 
-      let webSocketClient = WebSocketNetworkRequest(url: url)
-      webSocketClient.connect { connected in
-          guard connected else {
-              print("❌ WebSocket connection failed")
-              return
+      let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+
+      let data = WebSocketData(text: message)
+
+      let webSocketMessage = WebSocketModel(
+          ev: .chat,
+          ts: timestamp,
+          id: String(timestamp),
+          ct: .text,
+          msg: nil,
+          data: data
+      )
+
+      do {
+          let jsonData = try JSONEncoder().encode(webSocketMessage)
+          if let jsonString = String(data: jsonData, encoding: .utf8) {
+              print("📤 Sending message: \(jsonString)")
+              webSocketClient.send(message: jsonString)
           }
-
-          // Generate unique ID & timestamp
-          let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-          let authId = String(timestamp)
-
-          // Construct auth payload
-          let authPayload: [String: Any] = [
-              "ev": "auth",
-              "_id": authId,
-              "ts": timestamp,
-              "data": [
-                  "token": sessionToken
-              ]
-          ]
-
-          // Convert to JSON string
-          do {
-              let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
-              if let jsonString = String(data: jsonData, encoding: .utf8) {
-                  print("📤 Sending auth message: \(jsonString)")
-                  webSocketClient.send(message: jsonString)
-              }
-          } catch {
-              print("❌ Failed to encode auth payload: \(error)")
-          }
+      } catch {
+          print("❌ Failed to encode WebSocket message: \(error)")
       }
   }
+  
+  func handleWebSocketModel(_ model: WebSocketModel) async {
+          switch model.ev {
+          case .stream:
+              if let text = model.data?.text {
+                     // self.resultvalue += text
+                //    await MainActor.run {
+                
+                      Task {
+                        print("#BB text is \(text)")
+                        await DatabaseConfig.shared.upsertMessageV2(responseMessage: text, userChat: userMessage, suggestions: nil)
+                      }
+               //     }
+                      print("🧩 Stream text appended: \(text)")
+                  
+                   
+              } else if let progress = model.data?.text ?? model.data?.audio {
+                  DispatchQueue.main.async {
+                  //    self.resultvalue = progress
+                      print("⏳ Progress: \(progress)")
+                  }
+              }
+
+          case .eos:
+              DispatchQueue.main.async {
+                  print("✅ Stream ended.")
+              }
+
+          case .err:
+              print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
+
+          default:
+              break
+          }
+      }
 }
 

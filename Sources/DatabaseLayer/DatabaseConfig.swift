@@ -171,7 +171,9 @@ extension DatabaseConfig {
 
 // Upsert
 extension DatabaseConfig {
-    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
+    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel?, suggestions: [String]?) {
+    
+    guard let userChat else { return }
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists

@@ -55,25 +55,40 @@ struct WebSocketModel: Codable {
       case mobileVerification = "mobile_verification"
     }
   }
-  
-  struct WebSocketData: Codable {
+}
+
+struct WebSocketData: Codable {
     let audio: String?
     let text: String?
     let format: String?
     let toolUseId: String?
     let choices: [String]?
-    let additionalOption : String?
+    let additionalOption: String?
     let fileExtension: String?
-    
-    enum CodingKeys:String, CodingKey {
-      case audio
-      case text
-      case format
-      case toolUseId = "tool_use_id"
-      case choices
-      case additionalOption = "additional_option"
-      case fileExtension = "extension"
+
+    enum CodingKeys: String, CodingKey {
+        case audio
+        case text
+        case format
+        case toolUseId = "tool_use_id"
+        case choices
+        case additionalOption = "additional_option"
+        case fileExtension = "extension"
     }
-  }
-  
+
+    init(audio: String? = nil,
+         text: String? = nil,
+         format: String? = nil,
+         toolUseId: String? = nil,
+         choices: [String]? = nil,
+         additionalOption: String? = nil,
+         fileExtension: String? = nil) {
+        self.audio = audio
+        self.text = text
+        self.format = format
+        self.toolUseId = toolUseId
+        self.choices = choices
+        self.additionalOption = additionalOption
+        self.fileExtension = fileExtension
+    }
 }
