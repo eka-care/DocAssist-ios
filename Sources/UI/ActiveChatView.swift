@@ -201,6 +201,9 @@ public struct ActiveChatView: View {
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       handleVoiceToRxStates()
+      Task {
+        await viewModel.checkandValidateWebSocketConnection()
+      }
     }
     .onDisappear {
       viewModel.inputString = ""

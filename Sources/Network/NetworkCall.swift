@@ -115,24 +115,19 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
   }
 }
 
-@MainActor
-class NetworkMonitor: ObservableObject {
-  @Published var isConnected: Bool = true
+
+import Foundation
+import Network
+
+protocol NetworkRequest {
+    func execute(completion: @escaping (Result<Data, Error>) -> Void)
+}
+
+final class NetworkManager {
+  static let shared = NetworkManager()
+  private init() {}
   
-  private var monitor: NWPathMonitor
-  private let queue = DispatchQueue.global(qos: .background)
-  
-  init() {
-    monitor = NWPathMonitor()
-    monitor.pathUpdateHandler = { path in
-      DispatchQueue.main.async {
-        self.isConnected = path.status == .satisfied
-      }
-    }
-    monitor.start(queue: queue)
-  }
-  
-  deinit {
-    monitor.cancel()
+  func perform(request: NetworkRequest, completion: @escaping (Result<Data, Error>) -> Void) {
+    request.execute(completion: completion)
   }
 }
