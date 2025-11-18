@@ -9,7 +9,7 @@ import SwiftUI
 
 struct AudioWaveformView: View {
   @State private var isAnimating = true
-  @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 0.0, count: UIDevice.current.userInterfaceIdiom == .pad ? 90 : 30 )
+  @State private var waveformAmplitudes: [CGFloat] = Array(repeating: 0.0, count: UIDevice.current.userInterfaceIdiom == .phone ? 30 : 90 )
   
   var body: some View {
       HStack(spacing: 4) {

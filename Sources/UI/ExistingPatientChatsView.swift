@@ -9,7 +9,7 @@
 //import SwiftData
 //import EkaMedicalRecordsCore
 //import EkaMedicalRecordsUI
-//import EkaVoiceToRx
+import EkaVoiceToRx
 //
 //public struct ExistingPatientChatsView: View {
 //  private let patientName: String
