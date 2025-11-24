@@ -18,7 +18,7 @@ public struct ActiveChatView: View {
   private let session: String
   @Environment(\.modelContext) var modelContext
   @Query private var messages: [ChatMessageModel] = []
-  private var viewModel: ChatViewModel
+  @State var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
@@ -172,24 +172,6 @@ public struct ActiveChatView: View {
         dismissButton: .default(Text("OK"))
       )
     }
-    .onChange(of: voiceToRxViewModel.screenState) { oldValue, newValue in
-      switch newValue {
-      case .resultDisplay:
-        // Enable v2rx regardless of success being true or false
-        viewModel.v2rxEnabled = true
-        
-      case .deletedRecording:
-        Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(
-            v2RxAudioSessionId: voiceToRxViewModel.sessionID
-          )
-        }
-        viewModel.v2rxEnabled = true
-
-      default:
-        break
-      }
-    }
     .onAppear {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
@@ -198,12 +180,9 @@ public struct ActiveChatView: View {
           if fetchedOid != "" {
             setupView(with: fetchedOid ?? "")
           }
-      }
-      DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      handleVoiceToRxStates()
-      Task {
         await viewModel.checkandValidateWebSocketConnection()
       }
+      DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
     .onDisappear {
       viewModel.inputString = ""

@@ -179,9 +179,11 @@ extension DatabaseConfig {
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
-      DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
-          messageToUpdate.suggestions = suggestions
+     
+      if messageToUpdate.messageText == nil {
+          messageToUpdate.messageText = responseMessage
+      } else {
+          messageToUpdate.messageText! += responseMessage
       }
       saveData()
   

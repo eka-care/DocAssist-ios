@@ -117,11 +117,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       lastMesssageId
     )
     
-    /// Start streaming post request
-    startStreamingPostRequest(
-      vaultFiles: vaultFiles,
-      userChat: userMessage
-    )
+    sendWebSocketMessage(message: newMessage)
   }
   
   private func addUserMessage(
@@ -152,38 +148,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   static let dispatchSemaphore = DispatchSemaphore(value: 1)
-  
-  func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
-    guard let userChat else { return }
-    
-    ///Firestore handling
-    let ownerId = userDocId + "_" + userBid
-  }
-  /// Stream response handling
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
-      let splitLines = responseString.split(separator: "\n")
-
-      var message: Message?
-
-      for line in splitLines {
-          guard line.contains("data:") else { continue }
-          guard let jsonRange = line.range(of: "{") else { return }
-
-          let jsonString = String(line[jsonRange.lowerBound...])
-          guard let jsonData = jsonString.data(using: .utf8) else { return }
-
-          do {
-              message = try JSONDecoder().decode(Message.self, from: jsonData)
-          } catch {
-              print("Failed to decode JSON: \(error.localizedDescription)")
-          }
-      }
-//    await MainActor.run {
-//      Task {
-//          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
-//      }
-//    }
-  }
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
     do {
@@ -325,64 +289,61 @@ extension Notification.Name {
   static let addedMessage = Notification.Name("addedMessage")
 }
 
-extension ChatViewModel {
-  func navigateToDeepThought(id: String?) {
-    guard let id else { return }
-    deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
-  }
-}
-
 extension Data {
   func toString() -> String? {
     return String(data: self, encoding: .utf8)
   }
 }
 
-extension ChatViewModel {
-  func stopFirestoreStream() {
-    firestoreListener?.remove()
-    firestoreListener = nil
-    streamStarted = false
-  }
-}
 
 // MARK: - Web Socket flow
 extension ChatViewModel {
   
   func checkandValidateWebSocketConnection() async {
-    guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session") else { return }
     
-    do {
-      let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
-      
-      let networkRequest = HTTPNetworkRequest(
-        url: url,
-        method: .post,
-        headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
-        body: requestBody
-      )
-      
-      networkRequest.execute { [weak self] result in
-        guard let self else { return }
-        switch result {
-        case .success(let data):
-          do {
-            let decoder = JSONDecoder()
-            let sessionModel = try decoder.decode(AuthSessionResponseModel.self, from: data)
-            print("✅ #BB Session model:", sessionModel)
-            Task {
-              await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
-            }
-          } catch {
-            print("❌ #BB JSON decode error:", error)
-          }
-          
-        case .failure(let error):
-          print("❌ #BB Network error:", error.localizedDescription)
-        }
+    let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
+    if let webSocketSessionId {
+      await checkIfSessionIsActive(for: webSocketSessionId)
+      Task {
+        await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
       }
-    } catch {
-      print("❌ #BB Encoding error:", error)
+    }
+    else {
+      guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session") else { return }
+      
+      do {
+        let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
+        
+        let networkRequest = HTTPNetworkRequest(
+          url: url,
+          method: .post,
+          headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+          body: requestBody
+        )
+        
+        networkRequest.execute { [weak self] result in
+          guard let self else { return }
+          switch result {
+          case .success(let data):
+            do {
+              let decoder = JSONDecoder()
+              let sessionModel = try decoder.decode(AuthSessionResponseModel.self, from: data)
+              UserDefaults.standard.set(sessionModel.sessionID, forKey: "SessionId")
+              UserDefaults.standard.set(sessionModel.sessionToken, forKey: "SessionToken")
+              Task {
+                await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
+              }
+            } catch {
+              print("❌ #BB JSON decode error:", error)
+            }
+            
+          case .failure(let error):
+            print("❌ #BB Network error:", error.localizedDescription)
+          }
+        }
+      } catch {
+        print("❌ #BB Encoding error:", error)
+      }
     }
   }
   
@@ -396,12 +357,14 @@ extension ChatViewModel {
       body: nil
     )
     
-    networkRequest.execute { result in
+    networkRequest.execute { [weak self] result in
       switch result {
       case .success(let data):
         print("#BB Data:", String(data: data, encoding: .utf8)!)
-      case .failure(let error):
-        print("#BB failure error:", error.localizedDescription)
+      case .failure(_):
+        Task {
+          await self?.refreshSession(for: sessionId)
+        }
       }
     }
   }
@@ -436,7 +399,7 @@ extension ChatViewModel {
     
     webSocketClient = WebSocketNetworkRequest(url: url)
     webSocketClient?.onMessageDecoded = { [weak self] model in
-        Task { await self?.handleWebSocketModel(model) }
+      Task { await self?.handleWebSocketModel(model) }
     }
     webSocketClient?.connect { connected in
       guard connected else {
@@ -472,68 +435,63 @@ extension ChatViewModel {
   }
   
   func sendWebSocketMessage(message: String) {
-      guard let webSocketClient else {
-          print("❌ WebSocket not connected")
-          return
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+    
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    
+    let data = WebSocketData(text: message)
+    
+    let webSocketMessage = WebSocketModel(
+      ev: .chat,
+      ts: timestamp,
+      id: String(timestamp),
+      ct: .text,
+      msg: nil,
+      data: data
+    )
+    
+    do {
+      let jsonData = try JSONEncoder().encode(webSocketMessage)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Sending message: \(jsonString)")
+        webSocketClient.send(message: jsonString)
       }
-
-      let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-
-      let data = WebSocketData(text: message)
-
-      let webSocketMessage = WebSocketModel(
-          ev: .chat,
-          ts: timestamp,
-          id: String(timestamp),
-          ct: .text,
-          msg: nil,
-          data: data
-      )
-
-      do {
-          let jsonData = try JSONEncoder().encode(webSocketMessage)
-          if let jsonString = String(data: jsonData, encoding: .utf8) {
-              print("📤 Sending message: \(jsonString)")
-              webSocketClient.send(message: jsonString)
-          }
-      } catch {
-          print("❌ Failed to encode WebSocket message: \(error)")
-      }
+    } catch {
+      print("❌ Failed to encode WebSocket message: \(error)")
+    }
   }
   
   func handleWebSocketModel(_ model: WebSocketModel) async {
-          switch model.ev {
-          case .stream:
-              if let text = model.data?.text {
-                     // self.resultvalue += text
-                //    await MainActor.run {
-                
-                      Task {
-                        print("#BB text is \(text)")
-                        await DatabaseConfig.shared.upsertMessageV2(responseMessage: text, userChat: userMessage, suggestions: nil)
-                      }
-               //     }
-                      print("🧩 Stream text appended: \(text)")
-                  
-                   
-              } else if let progress = model.data?.text ?? model.data?.audio {
-                  DispatchQueue.main.async {
-                  //    self.resultvalue = progress
-                      print("⏳ Progress: \(progress)")
-                  }
-              }
-
-          case .eos:
-              DispatchQueue.main.async {
-                  print("✅ Stream ended.")
-              }
-
-          case .err:
-              print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
-
-          default:
-              break
-          }
+    switch model.ev {
+    case .stream:
+      if let text = model.data?.text {
+        Task {
+          print("#BB text is \(text)")
+          await DatabaseConfig.shared.upsertMessageV2(responseMessage: text, userChat: userMessage, suggestions: nil)
+        }
+        print("🧩 Stream text appended: \(text)")
+        
+        
+      } else if let progress = model.data?.text ?? model.data?.audio {
+        DispatchQueue.main.async {
+          print("⏳ Progress: \(progress)")
+        }
       }
+      
+    case .eos:
+      DispatchQueue.main.async {
+        print("✅ Stream ended.")
+      }
+      
+    case .err:
+      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
+      
+    default:
+      break
+    }
+  }
 }
 

@@ -119,15 +119,21 @@ final class StreamDelegate: NSObject, URLSessionDataDelegate {
 import Foundation
 import Network
 
+enum ApiError: Error {
+    case networkError(Error)
+    case serverError(statusCode: Int, data: Data)
+    case unknownError
+}
+
 protocol NetworkRequest {
-    func execute(completion: @escaping (Result<Data, Error>) -> Void)
+    func execute(completion: @escaping (Result<Data, ApiError>) -> Void)
 }
 
 final class NetworkManager {
   static let shared = NetworkManager()
   private init() {}
   
-  func perform(request: NetworkRequest, completion: @escaping (Result<Data, Error>) -> Void) {
+  func perform(request: NetworkRequest, completion: @escaping (Result<Data, ApiError>) -> Void) {
     request.execute(completion: completion)
   }
 }
