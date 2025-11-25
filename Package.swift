@@ -16,7 +16,7 @@ let package = Package(
   dependencies: [
     .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
-    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  from: "1.3.5"),
+    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git", branch: "sshfix"),
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     .package(url: "git@github.com:eka-care/EkaVoiceToRx.git", branch: "main"),
     .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
