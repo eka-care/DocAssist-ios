@@ -307,8 +307,7 @@ extension ChatViewModel {
       Task {
         await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
       }
-    }
-    else {
+    } else {
       guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session") else { return }
       
       do {
