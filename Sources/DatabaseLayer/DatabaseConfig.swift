@@ -171,15 +171,19 @@ extension DatabaseConfig {
 
 // Upsert
 extension DatabaseConfig {
-    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
+    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel?, suggestions: [String]?) {
+    
+    guard let userChat else { return }
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
-      DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
-          messageToUpdate.suggestions = suggestions
+     
+      if messageToUpdate.messageText == nil {
+          messageToUpdate.messageText = responseMessage
+      } else {
+          messageToUpdate.messageText! += responseMessage
       }
       saveData()
   
