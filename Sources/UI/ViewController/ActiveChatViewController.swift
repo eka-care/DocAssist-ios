@@ -44,7 +44,7 @@ public class ActiveChatViewController: UIViewController {
     calledFromPatientContext: Bool,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
+    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
     liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
@@ -93,28 +93,6 @@ public class ActiveChatViewController: UIViewController {
   }
   
   private func setupSwiftUIView() async {
-//    let sessionPresent = await vm.isSessionsPresent(oid: oid, userDocId: userDocId, userBId: userBId)
-//    if calledFromPatientContext, sessionPresent {
-//        let existingChatsView = ExistingPatientChatsView(
-//            patientName: patientSubtitle ?? "",
-//            viewModel: vm,
-//            oid: oid,
-//            userDocId: userDocId,
-//            userBId: userBId,
-//            calledFromPatientContext: true,
-//            authToken: authToken,
-//            authRefreshToken: authRefreshToken,
-//            liveActivityDelegate: liveActivityDelegate
-//        )
-//        .navigationBarHidden(true)
-//        .task {
-//            try? Tips.configure([
-//                .displayFrequency(.daily),
-//                .datastoreLocation(.applicationDefault)
-//            ])
-//        }
-//      docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
-//    } else {
     var chatSessionId: String = ""
     if let sessionId = UserDefaults.standard.string(forKey: "ChatSessionId") {
       chatSessionId = sessionId
@@ -143,7 +121,6 @@ public class ActiveChatViewController: UIViewController {
         }
       docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-  //  }
   }
   
   override public func viewWillAppear(_ animated: Bool) {
