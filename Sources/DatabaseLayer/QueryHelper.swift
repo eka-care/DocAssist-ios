@@ -38,39 +38,39 @@ extension QueryHelper {
 
 // MARK: - Core data
 
-extension QueryHelper {
-  /// Fetch message with messageID and sessionID
-  static func fetchMessage(
-    messageID: Int,
-    sessionID: String,
-    context: NSManagedObjectContext
-  ) -> NSFetchRequest<ChatData>? {
-    let fetchRequest: NSFetchRequest<ChatData> = ChatData.fetchRequest()
-    fetchRequest.predicate = NSPredicate(format: "toSessionData.sessionId == %@ AND messageID == %d", sessionID, messageID)
-    fetchRequest.sortDescriptors = [NSSortDescriptor(key: "messageID", ascending: false)]
-    fetchRequest.fetchLimit = 1
-    return fetchRequest
-  }
-  
-  static func fetchSession(sessionID: String) -> NSFetchRequest<SessionData> {
-    let fetchRequest: NSFetchRequest<SessionData> = SessionData.fetchRequest()
-    fetchRequest.predicate = NSPredicate(format: "sessionId == %@", sessionID)
-    fetchRequest.fetchLimit = 1
-    return fetchRequest
-  }
-  
+//extension QueryHelper {
+//  /// Fetch message with messageID and sessionID
 //  static func fetchMessage(
 //    messageID: Int,
-//    sessionID: UUID,
+//    sessionID: String,
 //    context: NSManagedObjectContext
-//  ) throws -> ChatData? {
+//  ) -> NSFetchRequest<ChatData>? {
 //    let fetchRequest: NSFetchRequest<ChatData> = ChatData.fetchRequest()
-//    fetchRequest.predicate = NSPredicate(format: "toSessionData.sessionID == %@ AND messageID == %d", sessionID as CVarArg, messageID)
+//    fetchRequest.predicate = NSPredicate(format: "toSessionData.sessionId == %@ AND messageID == %d", sessionID, messageID)
 //    fetchRequest.sortDescriptors = [NSSortDescriptor(key: "messageID", ascending: false)]
 //    fetchRequest.fetchLimit = 1
-//    
-//    let results = try context.fetch(fetchRequest)
-//    return results.first
+//    return fetchRequest
 //  }
-}
-
+//  
+//  static func fetchSession(sessionID: String) -> NSFetchRequest<SessionData> {
+//    let fetchRequest: NSFetchRequest<SessionData> = SessionData.fetchRequest()
+//    fetchRequest.predicate = NSPredicate(format: "sessionId == %@", sessionID)
+//    fetchRequest.fetchLimit = 1
+//    return fetchRequest
+//  }
+//  
+////  static func fetchMessage(
+////    messageID: Int,
+////    sessionID: UUID,
+////    context: NSManagedObjectContext
+////  ) throws -> ChatData? {
+////    let fetchRequest: NSFetchRequest<ChatData> = ChatData.fetchRequest()
+////    fetchRequest.predicate = NSPredicate(format: "toSessionData.sessionID == %@ AND messageID == %d", sessionID as CVarArg, messageID)
+////    fetchRequest.sortDescriptors = [NSSortDescriptor(key: "messageID", ascending: false)]
+////    fetchRequest.fetchLimit = 1
+////    
+////    let results = try context.fetch(fetchRequest)
+////    return results.first
+////  }
+//}
+//

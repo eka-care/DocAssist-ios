@@ -59,15 +59,6 @@ struct MessageTextView: View {
           .contentTransition(.numericText())
           .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
       }
-      
-      if let v2RxAudioSessionId = message.v2RxAudioSessionId {
-        V2RxChatView(
-          createdAt: createdAt,
-          viewModel: viewModel,
-          v2rxSessionId: v2RxAudioSessionId,
-          v2rxViewModel: v2rxViewModel
-        )
-      }
     }
   }
   
