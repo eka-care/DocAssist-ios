@@ -52,6 +52,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var showTranscriptionFailureAlert = false
   var openType: String?
   var userMessage: ChatMessageModel?
+  var messageText: String = ""
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -451,7 +452,7 @@ extension ChatViewModel {
       msg: nil,
       data: data
     )
-    
+    streamStarted = true
     do {
       let jsonData = try JSONEncoder().encode(webSocketMessage)
       if let jsonString = String(data: jsonData, encoding: .utf8) {
@@ -467,12 +468,8 @@ extension ChatViewModel {
     switch model.ev {
     case .stream:
       if let text = model.data?.text {
-        Task {
-          print("#BB text is \(text)")
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: text, userChat: userMessage, suggestions: nil)
-        }
-        print("🧩 Stream text appended: \(text)")
-        
+        messageText += text
+        print("#BB message text is \(messageText)")
         
       } else if let progress = model.data?.text ?? model.data?.audio {
         DispatchQueue.main.async {
@@ -481,8 +478,12 @@ extension ChatViewModel {
       }
       
     case .eos:
-      DispatchQueue.main.async {
-        print("✅ Stream ended.")
+      Task {
+        await DatabaseConfig.shared.upsertMessageV2(responseMessage: messageText, userChat: userMessage, suggestions: nil)
+        DispatchQueue.main.async { [weak self] in
+          self?.messageText = ""
+          self?.streamStarted = false
+        }
       }
       
     case .err:

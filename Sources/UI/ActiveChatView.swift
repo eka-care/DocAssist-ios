@@ -92,13 +92,13 @@ public struct ActiveChatView: View {
   
   public var body: some View {
     ZStack {
-      VStack {
-        Image(.bg)
-          .resizable()
-          .frame(height: 120)
-          .edgesIgnoringSafeArea(.all)
-        Spacer()
-      }
+//      VStack {
+//        Image(.bg)
+//          .resizable()
+//          .frame(height: 120)
+//          .edgesIgnoringSafeArea(.all)
+//        Spacer()
+//      }
       
       VStack(spacing: 0) {
         if calledFromPatientContext {
@@ -117,10 +117,14 @@ public struct ActiveChatView: View {
                     .padding(.horizontal)
                     .id(message.id)
                   
-                  if message.role == .user && messages.last?.id == message.id {
-                    if viewModel.streamStarted {
+                  
+                  if viewModel.streamStarted && messages.last?.id == message.id {
+                    if !viewModel.messageText.isEmpty {
                       LoadingView()
                     }
+                    
+                    Text(viewModel.messageText)
+                        .padding(.horizontal)
                   }
                 }
                 
