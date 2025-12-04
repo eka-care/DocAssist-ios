@@ -11,6 +11,13 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     private var session: URLSession?
     private var isConnected = false
     var onMessageDecoded: ((WebSocketModel) -> Void)?
+  
+  var operationQueue: OperationQueue = {
+    let queue = OperationQueue()
+    queue.maxConcurrentOperationCount = 1
+    queue.qualityOfService = .userInitiated
+    return queue
+   }()
 
     let url: URL
 
@@ -21,7 +28,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
 
     // 1️⃣ Establish the connection
     func connect(completion: @escaping (Bool) -> Void) {
-        session = URLSession(configuration: .default, delegate: self, delegateQueue: OperationQueue())
+        session = URLSession(configuration: .default, delegate: self, delegateQueue: operationQueue)
         webSocketTask = session?.webSocketTask(with: url)
         webSocketTask?.resume()
         isConnected = true
@@ -67,7 +74,8 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
           if let data = text.data(using: .utf8) {
             do {
               let decoded = try JSONDecoder().decode(WebSocketModel.self, from: data)
-              self.onMessageDecoded?(decoded)
+              print("#BB1 \(decoded)")
+              onMessageDecoded?(decoded)
             } catch {
               print("⚠️ Failed to decode WebSocketModel: \(error)")
             }

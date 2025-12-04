@@ -43,6 +43,7 @@ public struct ActiveChatView: View {
   private let authRefreshToken: String
   @State var voiceToRxTip = VoiceToRxTip()
   private let bottomScrollIdentifier = "bottomID"
+  @State private var animatedText: String = ""
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -92,14 +93,6 @@ public struct ActiveChatView: View {
   
   public var body: some View {
     ZStack {
-//      VStack {
-//        Image(.bg)
-//          .resizable()
-//          .frame(height: 120)
-//          .edgesIgnoringSafeArea(.all)
-//        Spacer()
-//      }
-      
       VStack(spacing: 0) {
         if calledFromPatientContext {
           headerView
@@ -119,12 +112,16 @@ public struct ActiveChatView: View {
                   
                   
                   if viewModel.streamStarted && messages.last?.id == message.id {
-                    if !viewModel.messageText.isEmpty {
+                    if viewModel.messageText.isEmpty {
                       LoadingView()
                     }
                     
                     Text(viewModel.messageText)
-                        .padding(.horizontal)
+//                    Text(animatedText)
+//                        .padding(.horizontal)
+//                        .onChange(of: viewModel.messageText) { _, newValue in
+//                            animateTypewriterText(fullText: newValue)
+//                        }
                   }
                 }
                 
@@ -255,11 +252,6 @@ public struct ActiveChatView: View {
             Font.custom("Lato-Bold", size: 34)
           )
           .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
-        
-        Text("Parrotlet Lite")
-          .font(Font.custom("Lato-Regular", size: 14))
-          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-          .frame(maxWidth: .infinity, alignment: .leading)
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)

@@ -53,6 +53,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var openType: String?
   var userMessage: ChatMessageModel?
   var messageText: String = ""
+  let serialTaskQueue = SerialTaskQueue()
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -309,46 +310,12 @@ extension ChatViewModel {
         await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
       }
     } else {
-      guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session") else { return }
-      
-      do {
-        let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
-        
-        let networkRequest = HTTPNetworkRequest(
-          url: url,
-          method: .post,
-          headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
-          body: requestBody
-        )
-        
-        networkRequest.execute { [weak self] result in
-          guard let self else { return }
-          switch result {
-          case .success(let data):
-            do {
-              let decoder = JSONDecoder()
-              let sessionModel = try decoder.decode(AuthSessionResponseModel.self, from: data)
-              UserDefaults.standard.set(sessionModel.sessionID, forKey: "SessionId")
-              UserDefaults.standard.set(sessionModel.sessionToken, forKey: "SessionToken")
-              Task {
-                await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
-              }
-            } catch {
-              print("❌ #BB JSON decode error:", error)
-            }
-            
-          case .failure(let error):
-            print("❌ #BB Network error:", error.localizedDescription)
-          }
-        }
-      } catch {
-        print("❌ #BB Encoding error:", error)
-      }
+      await createNewSession()
     }
   }
   
   func checkIfSessionIsActive(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session/\(sessionId)") else { return }
+    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)") else { return }
     
     let networkRequest = HTTPNetworkRequest(
       url: url,
@@ -362,15 +329,15 @@ extension ChatViewModel {
       case .success(let data):
         print("#BB Data:", String(data: data, encoding: .utf8)!)
       case .failure(_):
-        Task {
-          await self?.refreshSession(for: sessionId)
+        Task{
+          await self?.createNewSession()
         }
       }
     }
   }
   
   func refreshSession(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.dev.eka.care/med-assist/session/\(sessionId)/refresh") else  {
+    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)/refresh") else  {
       return
     }
     
@@ -392,14 +359,19 @@ extension ChatViewModel {
   }
   
   func webSocketAuthentication(sessionId: String, sessionToken: String) async {
-    guard let url = URL(string: "wss://matrix-ws.dev.eka.care/ws/med-assist/session/\(sessionId)/") else {
+    guard let url = URL(string: "wss://matrix-ws.eka.care/ws/med-assist/session/\(sessionId)/") else {
       print("❌ Invalid WebSocket URL")
       return
     }
     
     webSocketClient = WebSocketNetworkRequest(url: url)
     webSocketClient?.onMessageDecoded = { [weak self] model in
-      Task { await self?.handleWebSocketModel(model) }
+      //Task { await self?.handleWebSocketModel(model) }
+      guard let self else { return }
+      serialTaskQueue.enqueue { [weak self] in
+        guard let self else { return }
+        await handleWebSocketModel(model)
+      }
     }
     webSocketClient?.connect { connected in
       guard connected else {
@@ -493,5 +465,58 @@ extension ChatViewModel {
       break
     }
   }
+  
+  func createNewSession() async {
+    guard let url = URL(string: "https://matrix.eka.care/med-assist/session") else { return }
+    
+    do {
+      let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
+      
+      let networkRequest = HTTPNetworkRequest(
+        url: url,
+        method: .post,
+        headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+        body: requestBody
+      )
+      
+      networkRequest.execute { [weak self] result in
+        guard let self else { return }
+        switch result {
+        case .success(let data):
+          do {
+            let decoder = JSONDecoder()
+            let sessionModel = try decoder.decode(AuthSessionResponseModel.self, from: data)
+            UserDefaults.standard.set(sessionModel.sessionID, forKey: "SessionId")
+            UserDefaults.standard.set(sessionModel.sessionToken, forKey: "SessionToken")
+            Task {
+              await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
+            }
+          } catch {
+            print("❌ #BB JSON decode error:", error)
+          }
+          
+        case .failure(let error):
+          print("❌ #BB Network error:", error.localizedDescription)
+        }
+      }
+    } catch {
+      print("❌ #BB Encoding error:", error)
+    }
+  }
 }
 
+final class SerialTaskQueue {
+    private var currentTask: Task<Void, Never>?
+    
+    func enqueue(_ operation: @escaping () async -> Void) {
+        let previousTask = currentTask
+        currentTask = Task {
+            await previousTask?.value
+            await operation()
+        }
+    }
+    
+    func waitForAll() async {
+        await currentTask?.value
+    }
+}
