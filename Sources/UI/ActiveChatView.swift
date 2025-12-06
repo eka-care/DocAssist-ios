@@ -44,6 +44,7 @@ public struct ActiveChatView: View {
   @State var voiceToRxTip = VoiceToRxTip()
   private let bottomScrollIdentifier = "bottomID"
   @State private var animatedText: String = ""
+  @State private var lastAnimatedText: String = ""
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -116,12 +117,11 @@ public struct ActiveChatView: View {
                       LoadingView()
                     }
                     
-                    Text(viewModel.messageText)
-//                    Text(animatedText)
-//                        .padding(.horizontal)
-//                        .onChange(of: viewModel.messageText) { _, newValue in
-//                            animateTypewriterText(fullText: newValue)
-//                        }
+                  //  Text(viewModel.messageText)
+                    Text(animatedText)
+                      .onChange(of: viewModel.messageText) { _, newValue in
+                        animateText(newValue)
+                      }
                   }
                 }
                 
@@ -317,6 +317,28 @@ public struct ActiveChatView: View {
         MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userMergedOids: userMergedOids ?? [])
       })
     }
+  }
+  
+  private func animateText(_ newValue: String) {
+
+      if newValue.count <= lastAnimatedText.count {
+          animatedText = newValue
+          lastAnimatedText = newValue
+          return
+      }
+
+      let full = newValue
+      let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
+      let newChunk = full[startIndex...]
+
+      Task {
+          for char in newChunk {
+              try? await Task.sleep(nanoseconds: 30_000_000)   // 0.03 sec per char (smooth)
+              
+              animatedText.append(char)
+              lastAnimatedText.append(char)
+          }
+      }
   }
 }
 
