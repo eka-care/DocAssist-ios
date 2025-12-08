@@ -9,18 +9,18 @@ import Foundation
 
 
 struct WebSocketModel: Codable {
-  let ev: EventType
+  let eventType: EventType
   let ts: Int
   let id: String?
-  let ct: ContentType?
+  let contentType: ContentType?
   let msg: String?
   let data: WebSocketData?
   
   enum CodingKeys: String, CodingKey {
-    case ev
+    case eventType = "ev"
     case ts
     case id = "_id"
-    case ct
+    case contentType = "ct"
     case msg
     case data
   }

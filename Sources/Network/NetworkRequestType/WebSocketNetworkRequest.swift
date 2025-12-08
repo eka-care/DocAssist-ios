@@ -70,11 +70,9 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
       case .success(let message):
         switch message {
         case .string(let text):
-          print("📥 Received: \(text)")
           if let data = text.data(using: .utf8) {
             do {
               let decoded = try JSONDecoder().decode(WebSocketModel.self, from: data)
-              print("#BB1 \(decoded)")
               onMessageDecoded?(decoded)
             } catch {
               print("⚠️ Failed to decode WebSocketModel: \(error)")

@@ -116,12 +116,7 @@ public struct ActiveChatView: View {
                     if viewModel.messageText.isEmpty {
                       LoadingView()
                     }
-                    
-                  //  Text(viewModel.messageText)
-                    Text(animatedText)
-                      .onChange(of: viewModel.messageText) { _, newValue in
-                        animateText(newValue)
-                      }
+                    Text(viewModel.messageText)
                   }
                 }
                 
@@ -209,12 +204,12 @@ public struct ActiveChatView: View {
             suggestionText: (patientName == patientNameConstant) ?
             (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
               (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
-            viewModel: viewModel
+            viewModel: viewModel, isMultiSelect: true
           )
         } else {
           SuggestionsComponentView(
             suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
-            viewModel: viewModel
+            viewModel: viewModel, isMultiSelect: true
           )
         }
       }

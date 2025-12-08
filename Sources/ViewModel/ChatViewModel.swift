@@ -71,7 +71,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  
+  var delay = 0.0
   var showTranscriptionFailureAlertBinding: Binding<Bool> {
     Binding { [weak self] in
       self?.showTranscriptionFailureAlert ?? false
@@ -351,7 +351,8 @@ extension ChatViewModel {
     networkRequest.execute { result in
       switch result {
       case .success(let data):
-        print("#BB Data:", String(data: data, encoding: .utf8)!)
+        print(""
+              , String(data: data, encoding: .utf8)!)
       case .failure(let error):
         print("#BB failure error:", error.localizedDescription)
       }
@@ -441,11 +442,26 @@ extension ChatViewModel {
     case .stream:
       if let text = model.data?.text {
         messageText += text
-        print("#BB message text is \(messageText)")
-        
       } else if let progress = model.data?.text ?? model.data?.audio {
         DispatchQueue.main.async {
           print("⏳ Progress: \(progress)")
+        }
+      }
+      
+    case .err:
+      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
+      
+    case .chat:
+      if let choice = model.ct {
+        if choice == .pill {
+          
+          if let choices = model.data?.choices {
+            
+          }
+        } else if choice == .multi {
+          if let choices = model.data?.choices {
+           print("#BB multi select choices \(choices)")
+          }
         }
       }
       
@@ -457,9 +473,6 @@ extension ChatViewModel {
           self?.streamStarted = false
         }
       }
-      
-    case .err:
-      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
       
     default:
       break

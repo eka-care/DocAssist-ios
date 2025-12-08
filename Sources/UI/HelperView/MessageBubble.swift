@@ -41,16 +41,18 @@ struct MessageBubble: View {
             .alignmentGuide(.top) { d in d[.top] }
         }
         
-        MessageTextView(
-          text: m,
-          role: message.role,
-          url: url,
-          message: message,
-          viewModel: viewModel,
-          createdAt: message.createdAtDate ?? .now,
-          v2rxViewModel: v2rxViewModel
-        )
-        .alignmentGuide(.top) { d in d[.top] }
+      //  if shouldRenderTextBubble {
+          MessageTextView(
+            text: m,
+            role: message.role,
+            url: url,
+            message: message,
+            viewModel: viewModel,
+            createdAt: message.createdAtDate ?? .now,
+            v2rxViewModel: v2rxViewModel
+          )
+          .alignmentGuide(.top) { d in d[.top] }
+      //  }
         
         if message.role == .Bot {
           Spacer()
@@ -155,6 +157,14 @@ struct MessageBubble: View {
       }
   }
   
+  private var shouldRenderTextBubble: Bool {
+    if message.role == .Bot,
+       message.id == messages.last?.id {
+      return false
+    }
+    return true
+  }
+  
   func shareText() {
       guard let url = pdfURL else { return }
       let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
@@ -182,4 +192,3 @@ struct MessageBubble: View {
     feedbackGenerator.impactOccurred()
   }
 }
-
