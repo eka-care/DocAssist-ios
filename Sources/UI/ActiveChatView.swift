@@ -116,7 +116,6 @@ public struct ActiveChatView: View {
                     if viewModel.messageText.isEmpty {
                       LoadingView()
                     }
-                    Text(viewModel.messageText)
                   }
                 }
                 

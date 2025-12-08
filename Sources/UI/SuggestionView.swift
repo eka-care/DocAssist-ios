@@ -9,17 +9,17 @@ import SwiftUI
 import EkaUI
 
 struct SuggestionView: View {
-    
+  
   var suggestionText: [String]
   var viewModel: ChatViewModel
-  var isMultiSelect: Bool
+  var isMultiSelect: Bool? = nil
   
   private var constantSuggestionString = "Suggested questions you can ask me:"
   
   init(
     suggestionText: [String],
     viewModel: ChatViewModel,
-    isMultiSelect: Bool = false
+    isMultiSelect: Bool
   ) {
     self.suggestionText = suggestionText
     self.viewModel = viewModel
@@ -37,7 +37,7 @@ struct SuggestionView: View {
         SuggestionsComponentView(
           suggestionText: suggestionText,
           viewModel: viewModel,
-          isMultiSelect: isMultiSelect
+          isMultiSelect: isMultiSelect ?? false
         )
       }
     }
@@ -47,114 +47,85 @@ struct SuggestionView: View {
 struct SuggestionsComponentView: View {
   var suggestionText: [String]
   var viewModel: ChatViewModel
-  var isMultiSelect: Bool
+  var isMultiSelect: Bool = false
+  
   @State private var selectedSuggestions: Set<String> = []
-  @State private var selectionOrder: [String] = []
   
   var body: some View {
-    VStack(spacing: EkaSpacing.spacingXs) {
+    VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
       ForEach(suggestionText, id: \.self) { suggestion in
         Button {
-          handleTap(on: suggestion)
+          if isMultiSelect {
+            if selectedSuggestions.contains(suggestion) {
+              selectedSuggestions.remove(suggestion)
+            } else {
+              selectedSuggestions.insert(suggestion)
+            }
+          } else {
+            sendMessage(suggestion)
+          }
         } label: {
-          HStack {
+          HStack(spacing: EkaSpacing.spacingXs) {
+            if isMultiSelect {
+              Image(systemName: selectedSuggestions.contains(suggestion) ? "checkmark.square.fill" : "square")
+                .foregroundColor(selectedSuggestions.contains(suggestion) ? Color.primaryprimary : Color.neutrals400)
+                .font(.system(size: 20))
+            }
+            
             Text(suggestion)
               .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(foregroundColor(for: suggestion))
+              .foregroundColor(viewModel.streamStarted ? Color.neutrals400 : Color.primaryprimary)
               .multilineTextAlignment(.leading)
               .frame(maxWidth: .infinity, alignment: .leading)
-              .padding(.horizontal, EkaSpacing.spacingS)
-              .padding(.vertical, EkaSpacing.spacingXs)
-              .background(backgroundColor(for: suggestion))
-              .clipShape(RoundedRectangle(cornerRadius: 12))
-            Spacer(minLength: 0)
+            
+            Spacer()
           }
+          .padding(.horizontal, EkaSpacing.spacingS)
+          .padding(.vertical, EkaSpacing.spacingXs)
+          .background(Color.white)
+          .clipShape(RoundedRectangle(cornerRadius: 12))
+          //          .overlay(
+          //            RoundedRectangle(cornerRadius: 12)
+          //              .stroke(isMultiSelect && selectedSuggestions.contains(suggestion) ? Color.primaryprimary : Color.clear, lineWidth: 2)
+          //          )
         }
         .disabled(viewModel.streamStarted)
       }
       
-      if isMultiSelect, !selectedSuggestions.isEmpty {
-        HStack(spacing: EkaSpacing.spacingS) {
-          Button("Send selected") {
-            sendSelected()
-          }
-          .buttonStyle(.borderedProminent)
-          .disabled(viewModel.streamStarted)
-          
-          Button("Clear") {
-            selectedSuggestions.removeAll()
-          }
-          .buttonStyle(.bordered)
+      if isMultiSelect && !selectedSuggestions.isEmpty {
+        Button {
+          let combinedMessage = Array(selectedSuggestions).joined(separator: ", ")
+          sendMessage(combinedMessage)
+          selectedSuggestions.removeAll()
+        } label: {
+          Text("Confirm")
+            .font(Font.custom("Lato-Bold", size: 16))
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, EkaSpacing.spacingS)
+            .background(Color.primaryprimary)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .padding(.top, EkaSpacing.spacingXs)
+        .disabled(viewModel.streamStarted)
       }
     }
   }
   
-  private func handleTap(on suggestion: String) {
-    if isMultiSelect {
-      toggleSelection(suggestion)
-    } else {
-      sendSingle(suggestion)
-    }
-  }
-  
-  private func toggleSelection(_ suggestion: String) {
-    if selectedSuggestions.contains(suggestion) {
-      selectedSuggestions.remove(suggestion)
-      selectionOrder.removeAll { $0 == suggestion }
-    } else {
-      selectedSuggestions.insert(suggestion)
-      selectionOrder.append(suggestion)
-    }
-  }
-  
-  private func sendSingle(_ suggestion: String) {
+  private func sendMessage(_ message: String) {
     Task {
       do {
         let lastMessageId = try await DatabaseConfig.shared.fetchLatestMessage(bySessionId: viewModel.vmssid)
         await viewModel.sendMessage(
-          newMessage: suggestion,
+          newMessage: message,
           imageUrls: nil,
           vaultFiles: nil,
           sessionId: viewModel.vmssid,
           lastMesssageId: lastMessageId
         )
       } catch {
-        print("Error fetching last message id")
+        print("Error fetching last message id: \(error)")
       }
     }
-  }
-  
-  private func sendSelected() {
-    // Preserve user tap order when building the combined message.
-    let selections = selectionOrder
-    selectedSuggestions.removeAll()
-    selectionOrder.removeAll()
-    
-    Task {
-      do {
-        let combined = selections.joined(separator: "\n")
-        let lastMessageId = try await DatabaseConfig.shared.fetchLatestMessage(bySessionId: viewModel.vmssid)
-        await viewModel.sendMessage(
-          newMessage: combined,
-          imageUrls: nil,
-          vaultFiles: nil,
-          sessionId: viewModel.vmssid,
-          lastMesssageId: lastMessageId
-        )
-      } catch {
-        print("Error fetching last message id")
-      }
-    }
-  }
-  
-  private func foregroundColor(for suggestion: String) -> Color {
-    if viewModel.streamStarted { return .neutrals400 }
-    return selectedSuggestions.contains(suggestion) ? .white : Color.primaryprimary
-  }
-  
-  private func backgroundColor(for suggestion: String) -> Color {
-    selectedSuggestions.contains(suggestion) ? Color.primaryprimary : .white
   }
 }

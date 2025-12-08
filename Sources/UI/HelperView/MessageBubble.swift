@@ -149,7 +149,7 @@ struct MessageBubble: View {
       if message.role == .Bot {
           if let suggestions = message.suggestions {
               VStack(alignment: .leading) {
-                  SuggestionView(suggestionText: suggestions, viewModel: viewModel)
+                SuggestionView(suggestionText: suggestions, viewModel: viewModel, isMultiSelect: message.multiselect ?? false)
               }
               .padding(.bottom, 16)
               .padding(.top, 16)

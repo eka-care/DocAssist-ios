@@ -54,6 +54,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var userMessage: ChatMessageModel?
   var messageText: String = ""
   let serialTaskQueue = SerialTaskQueue()
+  var suggestions: [String]? = nil
+  var multiSelect: Bool? = nil
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -226,7 +228,8 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
       try recordingSession.setActive(true)
       
       let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-      let audioFilename = documentsPath.appendingPathComponent("\(Date().toString(dateFormat: "dd-MM-YY_'at'_HH:mm:ss")).m4a")
+      let fileName = Date().toString(dateFormat: "dd-MM-YY_'at'_HH:mm:ss") + ".m4a"
+      let audioURL = documentsPath.appendingPathComponent(fileName)
       
       let settings = [
         AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -235,26 +238,48 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
       ]
       
-      audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+      audioRecorder = try AVAudioRecorder(url: audioURL, settings: settings)
       audioRecorder?.delegate = self
       audioRecorder?.record()
       
       isRecording = true
-      currentRecording = audioFilename
+      currentRecording = audioURL
     } catch {
       print("Could not start recording: \(error)")
     }
   }
   
   func stopRecording() {
-    guard isRecording, let recorder = audioRecorder else {
+    guard isRecording, let recorder = audioRecorder, let url = currentRecording else {
       print("No recording to stop.")
       return
     }
+    
     recorder.stop()
-    onTapOfAudioButton()
     isRecording = false
+    audioRecorder = nil
+    
+    DispatchQueue.global(qos: .userInitiated).async {
+      do {
+        let audioData = try Data(contentsOf: url)
+        let bytes: [UInt8] = [UInt8](audioData)
+        print("Byte count: \(bytes.count)")
+        let base64String = audioData.base64EncodedString()
+        DispatchQueue.main.async {
+          self.sendAudioBase64ToServer(base64String)
+        }
+      } catch {
+        print("Failed to read audio file: \(error)")
+      }
+    }
   }
+
+  // Example API call stub
+  private func sendAudioBase64ToServer(_ base64: String) {
+      // Build your request body JSON and send with URLSession
+      // e.g. ["audio": base64]
+  }
+
   
   func dontRecord() {
     guard isRecording, let recorder = audioRecorder else {
@@ -418,10 +443,10 @@ extension ChatViewModel {
     let data = WebSocketData(text: message)
     
     let webSocketMessage = WebSocketModel(
-      ev: .chat,
+      eventType: .chat,
       ts: timestamp,
       id: String(timestamp),
-      ct: .text,
+      contentType: .text,
       msg: nil,
       data: data
     )
@@ -438,7 +463,7 @@ extension ChatViewModel {
   }
   
   func handleWebSocketModel(_ model: WebSocketModel) async {
-    switch model.ev {
+    switch model.eventType {
     case .stream:
       if let text = model.data?.text {
         messageText += text
@@ -452,25 +477,27 @@ extension ChatViewModel {
       print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
       
     case .chat:
-      if let choice = model.ct {
+      if let choice = model.contentType {
         if choice == .pill {
-          
           if let choices = model.data?.choices {
-            
+            suggestions = choices
+            multiSelect = false
           }
         } else if choice == .multi {
           if let choices = model.data?.choices {
-           print("#BB multi select choices \(choices)")
+            suggestions = choices
+            multiSelect = true
           }
         }
       }
       
     case .eos:
       Task {
-        await DatabaseConfig.shared.upsertMessageV2(responseMessage: messageText, userChat: userMessage, suggestions: nil)
+        await DatabaseConfig.shared.upsertMessageV2(responseMessage: messageText, userChat: userMessage, suggestions: suggestions, multiSelect: multiSelect)
         DispatchQueue.main.async { [weak self] in
           self?.messageText = ""
           self?.streamStarted = false
+          self?.multiSelect = nil
         }
       }
       
@@ -505,15 +532,15 @@ extension ChatViewModel {
               await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
             }
           } catch {
-            print("❌ #BB JSON decode error:", error)
+            print("JSON decode error:", error)
           }
           
         case .failure(let error):
-          print("❌ #BB Network error:", error.localizedDescription)
+          print("Network error:", error.localizedDescription)
         }
       }
     } catch {
-      print("❌ #BB Encoding error:", error)
+      print("Encoding error:", error)
     }
   }
 }
