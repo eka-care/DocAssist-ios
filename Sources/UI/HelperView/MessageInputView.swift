@@ -250,8 +250,7 @@ struct VoiceInputView: View {
           .frame(height: 36)
           .layoutPriority(1)
       } else {
-        Spacer()
-          .frame(height: 36)
+        Text("Converting to text...")
       }
       
       TimerView(isTimerRunning: !viewModel.voiceProcessing)

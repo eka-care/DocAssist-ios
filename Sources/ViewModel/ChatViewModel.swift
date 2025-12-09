@@ -194,16 +194,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  func onTapOfAudioButton() {
-    guard let currentRecording = currentRecording else {
-      return
-    }
-    voiceProcessing = true
-    
-    // send the data from the websocket
-    
-  }
-  
   func stopStreaming() {
     networkCall.cancelStreaming()
     streamStarted = false
@@ -248,6 +238,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     recorder.stop()
     DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [weak self] in
       do {
+        self?.voiceProcessing = true
         let audioData = try Data(contentsOf: url)
         let base64String = audioData.base64EncodedString()
         self?.sendAudioBase64ToServer(base64String)
@@ -417,6 +408,8 @@ extension ChatViewModel {
         self?.webSocketConnectionTitle = "Not connected"
         return
       }
+      
+      self?.webSocketConnectionTitle = "Connected"
       
       // Generate unique ID & timestamp
       let timestamp = Int(Date().timeIntervalSince1970 * 1000)

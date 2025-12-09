@@ -231,7 +231,12 @@ public struct ActiveChatView: View {
             Text("Back")
               .font(Font.custom("Lato-Regular", size: 16))
               .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
+            
+            Text("New chat")
+              .newTextStyle(ekaFont: .headlineRegular, color: .primaryPrimary)
+            
             Spacer()
+            
           }
         }
         .contentShape(Rectangle())
@@ -241,13 +246,8 @@ public struct ActiveChatView: View {
       .padding(.top, 9)
       
       VStack(alignment: .leading, spacing: 0) {
-        Text("New chat")
-          .font(
-            Font.custom("Lato-Bold", size: 34)
-          )
-          .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
         Text(viewModel.webSocketConnectionTitle)
-          .newTextStyle(ekaFont: .bodyEmphasized, color: .black)
+          .newTextStyle(ekaFont: .calloutRegular, color: .black)
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)
