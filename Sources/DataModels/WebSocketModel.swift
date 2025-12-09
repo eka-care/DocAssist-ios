@@ -43,7 +43,7 @@ struct WebSocketModel: Codable {
     case file
     case pill
     case multi
-    case inlineText
+    case inline_text
     case doctorCard
     case tips
     case mobileVerification

@@ -46,30 +46,30 @@ struct MessageInputView: View {
         .frame(minHeight: 25)
       
       HStack(spacing: 12) {
-        Button {
-          showMedicalRecords()
-        } label: {
-          Image(.paperClip)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 16)
-            .foregroundStyle(Color.neutrals600)
-        }
-        .fullScreenCover(isPresented: $showRecordsView) {
-          NavigationStack {
-            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
-              let images = data.compactMap { record in
-                record.image
-              }
-              let docIds = data.compactMap { record in
-                record.documentID
-              }
-              selectedImages = Array(images.prefix(3))
-              selectedDocumentId = Array(docIds.prefix(3))
-              showRecordsView = false
-            })
-          }
-        }
+//        Button {
+//          showMedicalRecords()
+//        } label: {
+//          Image(.paperClip)
+//            .resizable()
+//            .scaledToFit()
+//            .frame(width: 16)
+//            .foregroundStyle(Color.neutrals600)
+//        }
+//        .fullScreenCover(isPresented: $showRecordsView) {
+//          NavigationStack {
+//            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
+//              let images = data.compactMap { record in
+//                record.image
+//              }
+//              let docIds = data.compactMap { record in
+//                record.documentID
+//              }
+//              selectedImages = Array(images.prefix(3))
+//              selectedDocumentId = Array(docIds.prefix(3))
+//              showRecordsView = false
+//            })
+//          }
+//        }
         
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {

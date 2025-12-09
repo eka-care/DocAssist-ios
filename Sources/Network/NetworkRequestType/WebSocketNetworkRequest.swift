@@ -86,7 +86,6 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
           break
         }
         
-        // Keep listening
         self.listenForMessages()
       }
     }

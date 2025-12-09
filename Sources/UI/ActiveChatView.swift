@@ -246,6 +246,8 @@ public struct ActiveChatView: View {
             Font.custom("Lato-Bold", size: 34)
           )
           .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
+        Text(viewModel.webSocketConnectionTitle)
+          .newTextStyle(ekaFont: .bodyEmphasized, color: .black)
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)

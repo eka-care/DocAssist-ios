@@ -56,6 +56,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   let serialTaskQueue = SerialTaskQueue()
   var suggestions: [String]? = nil
   var multiSelect: Bool? = nil
+  var webSocketConnectionTitle: String = "Idle"
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -198,20 +199,9 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       return
     }
     voiceProcessing = true
-    delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] result in
-      guard let self = self else { return }
-      self.voiceProcessing = false
-      self.messageInput = true
-      switch result {
-        case .success(let transcribedText):
-          self.inputString = transcribedText
-
-        case .failure(let error):
-          self.alertTitle = "Transcription Failed"
-          self.alertMessage = error.localizedDescription
-          self.showTranscriptionFailureAlert = true
-        }
-      })
+    
+    // send the data from the websocket
+    
   }
   
   func stopStreaming() {
@@ -256,30 +246,49 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     }
     
     recorder.stop()
-    isRecording = false
-    audioRecorder = nil
-    
-    DispatchQueue.global(qos: .userInitiated).async {
+    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [weak self] in
       do {
         let audioData = try Data(contentsOf: url)
-        let bytes: [UInt8] = [UInt8](audioData)
-        print("Byte count: \(bytes.count)")
         let base64String = audioData.base64EncodedString()
-        DispatchQueue.main.async {
-          self.sendAudioBase64ToServer(base64String)
-        }
+        self?.sendAudioBase64ToServer(base64String)
+        self?.isRecording = false
+        self?.audioRecorder = nil
       } catch {
-        print("Failed to read audio file: \(error)")
+        print("❌ Failed to read audio file:", error)
       }
     }
   }
-
-  // Example API call stub
-  private func sendAudioBase64ToServer(_ base64: String) {
-      // Build your request body JSON and send with URLSession
-      // e.g. ["audio": base64]
+  
+  func sendAudioBase64ToServer(_ base64String: String) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+    
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let id = String(timestamp)
+    
+    let payload: [String: Any] = [
+      "ev": "stream",
+      "ct": "audio",
+      "ts": timestamp,
+      "_id": id,
+      "data": [
+        "audio": base64String,
+        "format": "audio/mp4"
+      ]
+    ]
+    
+    do {
+      let json = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: json, encoding: .utf8) {
+        print("📤 Sending audio message: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ Audio payload encoding error:", error)
+    }
   }
-
   
   func dontRecord() {
     guard isRecording, let recorder = audioRecorder else {
@@ -300,7 +309,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
-      NetworkConfig.shared.queryParams["pt_oid"] = oid
+    NetworkConfig.shared.queryParams["pt_oid"] = oid
   }
 }
 
@@ -353,6 +362,9 @@ extension ChatViewModel {
       switch result {
       case .success(let data):
         print("#BB Data:", String(data: data, encoding: .utf8)!)
+        DispatchQueue.main.async {
+          self?.webSocketConnectionTitle = "Connected"
+        }
       case .failure(_):
         Task{
           await self?.createNewSession()
@@ -387,21 +399,22 @@ extension ChatViewModel {
   func webSocketAuthentication(sessionId: String, sessionToken: String) async {
     guard let url = URL(string: "wss://matrix-ws.eka.care/ws/med-assist/session/\(sessionId)/") else {
       print("❌ Invalid WebSocket URL")
+      webSocketConnectionTitle = "Not connected"
       return
     }
     
     webSocketClient = WebSocketNetworkRequest(url: url)
     webSocketClient?.onMessageDecoded = { [weak self] model in
-      //Task { await self?.handleWebSocketModel(model) }
       guard let self else { return }
       serialTaskQueue.enqueue { [weak self] in
         guard let self else { return }
         await handleWebSocketModel(model)
       }
     }
-    webSocketClient?.connect { connected in
+    webSocketClient?.connect { [weak self] connected in
       guard connected else {
         print("❌ WebSocket connection failed")
+        self?.webSocketConnectionTitle = "Not connected"
         return
       }
       
@@ -424,7 +437,7 @@ extension ChatViewModel {
         let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
         if let jsonString = String(data: jsonData, encoding: .utf8) {
           print("📤 Sending auth message: \(jsonString)")
-          self.webSocketClient?.send(message: jsonString)
+          self?.webSocketClient?.send(message: jsonString)
         }
       } catch {
         print("❌ Failed to encode auth payload: \(error)")
@@ -474,6 +487,7 @@ extension ChatViewModel {
       }
       
     case .err:
+      webSocketConnectionTitle = "\(model.msg)"
       print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
       
     case .chat:
@@ -487,6 +501,12 @@ extension ChatViewModel {
           if let choices = model.data?.choices {
             suggestions = choices
             multiSelect = true
+          }
+        } else if choice == .inline_text {
+          if let textData = model.data?.text {
+            voiceProcessing = false
+            messageInput = true
+            inputString = textData
           }
         }
       }
@@ -545,18 +565,4 @@ extension ChatViewModel {
   }
 }
 
-final class SerialTaskQueue {
-    private var currentTask: Task<Void, Never>?
-    
-    func enqueue(_ operation: @escaping () async -> Void) {
-        let previousTask = currentTask
-        currentTask = Task {
-            await previousTask?.value
-            await operation()
-        }
-    }
-    
-    func waitForAll() async {
-        await currentTask?.value
-    }
-}
+
