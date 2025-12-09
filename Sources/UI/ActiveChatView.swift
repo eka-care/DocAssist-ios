@@ -208,7 +208,7 @@ public struct ActiveChatView: View {
         } else {
           SuggestionsComponentView(
             suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
-            viewModel: viewModel, isMultiSelect: true
+            viewModel: viewModel, isMultiSelect: false
           )
         }
       }
@@ -232,9 +232,6 @@ public struct ActiveChatView: View {
               .font(Font.custom("Lato-Regular", size: 16))
               .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
             
-            Text("New chat")
-              .newTextStyle(ekaFont: .headlineRegular, color: .primaryPrimary)
-            
             Spacer()
             
           }
@@ -246,6 +243,11 @@ public struct ActiveChatView: View {
       .padding(.top, 9)
       
       VStack(alignment: .leading, spacing: 0) {
+        Text("New chat")
+          .font(
+            Font.custom("Lato-Bold", size: 24)
+          )
+          .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
         Text(viewModel.webSocketConnectionTitle)
           .newTextStyle(ekaFont: .calloutRegular, color: .black)
       }
