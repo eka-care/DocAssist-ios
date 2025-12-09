@@ -94,33 +94,30 @@ public class ActiveChatViewController: UIViewController {
   
   private func setupSwiftUIView() async {
     var chatSessionId: String = ""
-    if let sessionId = UserDefaults.standard.string(forKey: "ChatSessionId") {
-      chatSessionId = sessionId
-    } else {
-      let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
-      UserDefaults.standard.set(newSession, forKey: "ChatSessionId")
-      chatSessionId = newSession
-    }
-        let activeChatView = ActiveChatView(
-            session: chatSessionId,
-            viewModel: vm,
-            backgroundColor: backgroundColor,
-            patientName: patientSubtitle ?? "",
-            calledFromPatientContext: true,
-            userDocId: userDocId,
-            userBId: userBId,
-            authToken: authToken,
-            authRefreshToken: authRefreshToken
-        )
-        .navigationBarHidden(true)
-        .task {
-            try? Tips.configure([
-            .displayFrequency(.daily),
-            .datastoreLocation(.applicationDefault)
-            ])
-        }
-      docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
-      DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
+    let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
+    print("#BB newsession is \(newSession)")
+    chatSessionId = newSession
+    
+    let activeChatView = ActiveChatView(
+      session: chatSessionId,
+      viewModel: vm,
+      backgroundColor: backgroundColor,
+      patientName: patientSubtitle ?? "",
+      calledFromPatientContext: true,
+      userDocId: userDocId,
+      userBId: userBId,
+      authToken: authToken,
+      authRefreshToken: authRefreshToken
+    )
+      .navigationBarHidden(true)
+      .task {
+        try? Tips.configure([
+          .displayFrequency(.daily),
+          .datastoreLocation(.applicationDefault)
+        ])
+      }
+    docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
+    DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
   }
   
   override public func viewWillAppear(_ animated: Bool) {

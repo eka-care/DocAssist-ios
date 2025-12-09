@@ -169,11 +169,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     return false
   }
   
-  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
-    switchToSession(session)
-    return session
-  }
+  //  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
+  //    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
+  //    switchToSession(session)
+  //    return session
+  //  }
   
   func switchToSession(_ id: String) {
     vmssid = id
@@ -335,30 +335,37 @@ extension ChatViewModel {
         await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
       }
     } else {
-      await createNewSession()
+      // await createSession()
     }
   }
   
-  func checkIfSessionIsActive(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)") else { return }
+  func checkIfSessionIsActive(for sessionId: String) async -> Bool {
+    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)") else {
+      return false
+    }
     
-    let networkRequest = HTTPNetworkRequest(
-      url: url,
-      method: .get,
-      headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
-      body: nil
-    )
-    
-    networkRequest.execute { [weak self] result in
-      switch result {
-      case .success(let data):
-        print("#BB Data:", String(data: data, encoding: .utf8)!)
-        DispatchQueue.main.async {
-          self?.webSocketConnectionTitle = "Connected"
-        }
-      case .failure(_):
-        Task{
-          await self?.createNewSession()
+    return await withCheckedContinuation { continuation in
+      let networkRequest = HTTPNetworkRequest(
+        url: url,
+        method: .get,
+        headers: [
+          "Content-Type": "application/json",
+          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
+        ],
+        body: nil
+      )
+      
+      networkRequest.execute { [weak self] result in
+        switch result {
+        case .success(let data):
+          print("#BB Data:", String(data: data, encoding: .utf8)!)
+          DispatchQueue.main.async {
+            self?.webSocketConnectionTitle = "Connected"
+          }
+          continuation.resume(returning: true)   // Session is valid
+          
+        case .failure(_):
+          continuation.resume(returning: false)  // Not active or expired
         }
       }
     }
@@ -519,8 +526,40 @@ extension ChatViewModel {
     }
   }
   
-  func createNewSession() async {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session") else { return }
+  public func createSession(
+    subTitle: String?,
+    oid: String = "",
+    userDocId: String,
+    userBId: String
+  ) async -> String {
+    
+    if let existing = try? await DatabaseConfig.shared
+      .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
+      .last {
+      
+      let existingSessionId = existing.sessionId
+      let existingToken = existing.sessionToken
+      
+      if await checkIfSessionIsActive(for: existingSessionId) {
+        print("🔄 Reusing existing session: \(existingSessionId)")
+        
+        self.switchToSession(existingSessionId)
+        Task {
+          await self.webSocketAuthentication(
+            sessionId: existingSessionId,
+            sessionToken: existingToken
+          )
+        }
+        
+        return existingSessionId
+      }
+    }
+    
+    print("🆕 Creating new session")
+    
+    guard let url = URL(string: "https://matrix.eka.care/med-assist/session") else {
+      return ""
+    }
     
     do {
       let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
@@ -528,34 +567,55 @@ extension ChatViewModel {
       let networkRequest = HTTPNetworkRequest(
         url: url,
         method: .post,
-        headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+        headers: [
+          "Content-Type": "application/json",
+          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
+        ],
         body: requestBody
       )
       
-      networkRequest.execute { [weak self] result in
-        guard let self else { return }
-        switch result {
-        case .success(let data):
-          do {
-            let decoder = JSONDecoder()
-            let sessionModel = try decoder.decode(AuthSessionResponseModel.self, from: data)
-            UserDefaults.standard.set(sessionModel.sessionID, forKey: "SessionId")
-            UserDefaults.standard.set(sessionModel.sessionToken, forKey: "SessionToken")
-            Task {
-              await self.webSocketAuthentication(sessionId: sessionModel.sessionID, sessionToken: sessionModel.sessionToken)
-            }
-          } catch {
-            print("JSON decode error:", error)
-          }
+      return try await withCheckedThrowingContinuation { continuation in
+        networkRequest.execute { [weak self] result in
+          guard let self else { return }
           
-        case .failure(let error):
-          print("Network error:", error.localizedDescription)
+          switch result {
+          case .success(let data):
+            do {
+              let sessionResponse = try JSONDecoder().decode(AuthSessionResponseModel.self, from: data)
+              
+              Task {
+                let _ = await DatabaseConfig.shared.createSession(
+                  subTitle: subTitle,
+                  oid: oid,
+                  userDocId: userDocId,
+                  userBId: userBId,
+                  sessionId: sessionResponse.sessionID,
+                  sessionToken: sessionResponse.sessionToken
+                )
+                
+                self.switchToSession(sessionResponse.sessionID)
+                
+                await self.webSocketAuthentication(
+                  sessionId: sessionResponse.sessionID,
+                  sessionToken: sessionResponse.sessionToken
+                )
+                
+                continuation.resume(returning: sessionResponse.sessionID)
+              }
+              
+            } catch {
+              continuation.resume(throwing: error)
+            }
+            
+          case .failure(let error):
+            continuation.resume(throwing: error)
+          }
         }
       }
     } catch {
-      print("Encoding error:", error)
+      print("Encoding error: \(error)")
+      return ""
     }
   }
 }
-
 

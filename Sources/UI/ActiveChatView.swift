@@ -203,7 +203,7 @@ public struct ActiveChatView: View {
             suggestionText: (patientName == patientNameConstant) ?
             (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
               (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
-            viewModel: viewModel, isMultiSelect: true
+            viewModel: viewModel, isMultiSelect: false
           )
         } else {
           SuggestionsComponentView(
