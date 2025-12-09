@@ -547,7 +547,7 @@ extension ChatViewModel {
         Task {
           await self.webSocketAuthentication(
             sessionId: existingSessionId,
-            sessionToken: existingToken
+            sessionToken: existingToken ?? ""
           )
         }
         

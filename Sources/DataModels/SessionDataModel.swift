@@ -29,9 +29,9 @@ public enum SessionDataV1: VersionedSchema {
     public var oid: String?
     public var userDocId: String
     public var userBId: String
-    public var sessionToken: String
+    public var sessionToken: String?
     
-    init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", subTitle: String?, oid: String?, userDocId: String, userBId: String, sessionToken: String) {
+    init(userId: UUID = UUID(), sessionId: String, createdAt: Date, lastUpdatedAt: Date, title: String = "", subTitle: String?, oid: String?, userDocId: String, userBId: String, sessionToken: String? = nil) {
       self.userId = userId
       self.sessionId = sessionId
       self.createdAt = createdAt
