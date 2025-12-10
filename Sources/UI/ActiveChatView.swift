@@ -113,9 +113,9 @@ public struct ActiveChatView: View {
                   
                   
                   if viewModel.streamStarted && messages.last?.id == message.id {
-                    if viewModel.messageText.isEmpty {
+                   // if viewModel.messageText.isEmpty {
                       LoadingView()
-                    }
+                   // }
                   }
                 }
                 

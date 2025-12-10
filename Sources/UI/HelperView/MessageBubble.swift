@@ -10,9 +10,9 @@ import EkaVoiceToRx
 import EkaPDFMaker
 
 enum SuggestionsState {
-    case generate
-    case loading
-    case noMore
+  case generate
+  case loading
+  case noMore
 }
 
 struct MessageBubble: View {
