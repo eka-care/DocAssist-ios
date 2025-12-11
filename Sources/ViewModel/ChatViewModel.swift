@@ -9,8 +9,6 @@ import SwiftUI
 import SwiftData
 import AVFAudio
 import AVFoundation
-import EkaVoiceToRx
-import FirebaseFirestore
 
 @Observable
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
@@ -25,10 +23,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   private(set) var vmssid: String = ""
   private var context: ModelContext
-  private var delegate: ConvertVoiceToText? = nil
-  private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
   var liveActivityDelegate: LiveActivityDelegate? = nil
-  var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails? = nil
   
   private let networkCall = NetworkCall()
@@ -86,24 +81,18 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   init(
     context: ModelContext,
     delegate: ConvertVoiceToText? = nil,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
     liveActivityDelegate: LiveActivityDelegate? = nil,
     userBid: String,
     userDocId: String,
     patientName: String = "",
-    suggestionsDelegate: GetMoreSuggestions? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
     openType: String? = nil
   ) {
     self.context = context
-    self.delegate = delegate
-    self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
     self.liveActivityDelegate = liveActivityDelegate
     self.userBid = userBid
     self.userDocId = userDocId
     self.patientName = patientName
-    self.suggestionsDelegate = suggestionsDelegate
-    self.getPatientDetailsDelegate = getPatientDetailsDelegate
     self.openType = openType
   }
   
@@ -168,12 +157,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
     return false
   }
-  
-  //  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-  //    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
-  //    switchToSession(session)
-  //    return session
-  //  }
   
   func switchToSession(_ id: String) {
     vmssid = id
