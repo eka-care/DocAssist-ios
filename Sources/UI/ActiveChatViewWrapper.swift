@@ -9,7 +9,6 @@ import SwiftUI
 import EkaMedicalRecordsCore
 import EkaMedicalRecordsUI
 import SwiftData
-import EkaVoiceToRx
 
 /// Todo: - session handling
 @MainActor
