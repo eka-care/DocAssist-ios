@@ -18,7 +18,7 @@ public struct ActiveChatView: View {
   private let session: String
   @Environment(\.modelContext) var modelContext
   @Query private var messages: [ChatMessageModel] = []
-  private var viewModel: ChatViewModel
+  @State var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
   @State private var scrollToBottom = false
@@ -43,6 +43,8 @@ public struct ActiveChatView: View {
   private let authRefreshToken: String
   @State var voiceToRxTip = VoiceToRxTip()
   private let bottomScrollIdentifier = "bottomID"
+  @State private var animatedText: String = ""
+  @State private var lastAnimatedText: String = ""
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -92,14 +94,6 @@ public struct ActiveChatView: View {
   
   public var body: some View {
     ZStack {
-      VStack {
-        Image(.bg)
-          .resizable()
-          .frame(height: 120)
-          .edgesIgnoringSafeArea(.all)
-        Spacer()
-      }
-      
       VStack(spacing: 0) {
         if calledFromPatientContext {
           headerView
@@ -117,10 +111,11 @@ public struct ActiveChatView: View {
                     .padding(.horizontal)
                     .id(message.id)
                   
-                  if message.role == .user && messages.last?.id == message.id {
-                    if viewModel.streamStarted {
+                  
+                  if viewModel.streamStarted && messages.last?.id == message.id {
+                   // if viewModel.messageText.isEmpty {
                       LoadingView()
-                    }
+                   // }
                   }
                 }
                 
@@ -172,24 +167,6 @@ public struct ActiveChatView: View {
         dismissButton: .default(Text("OK"))
       )
     }
-    .onChange(of: voiceToRxViewModel.screenState) { oldValue, newValue in
-      switch newValue {
-      case .resultDisplay:
-        // Enable v2rx regardless of success being true or false
-        viewModel.v2rxEnabled = true
-        
-      case .deletedRecording:
-        Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(
-            v2RxAudioSessionId: voiceToRxViewModel.sessionID
-          )
-        }
-        viewModel.v2rxEnabled = true
-
-      default:
-        break
-      }
-    }
     .onAppear {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
@@ -198,9 +175,9 @@ public struct ActiveChatView: View {
           if fetchedOid != "" {
             setupView(with: fetchedOid ?? "")
           }
+        await viewModel.checkandValidateWebSocketConnection()
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
-      handleVoiceToRxStates()
     }
     .onDisappear {
       viewModel.inputString = ""
@@ -226,12 +203,12 @@ public struct ActiveChatView: View {
             suggestionText: (patientName == patientNameConstant) ?
             (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
               (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
-            viewModel: viewModel
+            viewModel: viewModel, isMultiSelect: false
           )
         } else {
           SuggestionsComponentView(
             suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
-            viewModel: viewModel
+            viewModel: viewModel, isMultiSelect: false
           )
         }
       }
@@ -254,7 +231,9 @@ public struct ActiveChatView: View {
             Text("Back")
               .font(Font.custom("Lato-Regular", size: 16))
               .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
+            
             Spacer()
+            
           }
         }
         .contentShape(Rectangle())
@@ -266,14 +245,11 @@ public struct ActiveChatView: View {
       VStack(alignment: .leading, spacing: 0) {
         Text("New chat")
           .font(
-            Font.custom("Lato-Bold", size: 34)
+            Font.custom("Lato-Bold", size: 24)
           )
           .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
-        
-        Text("Parrotlet Lite")
-          .font(Font.custom("Lato-Regular", size: 14))
-          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-          .frame(maxWidth: .infinity, alignment: .leading)
+        Text(viewModel.webSocketConnectionTitle)
+          .newTextStyle(ekaFont: .calloutRegular, color: .black)
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)
@@ -339,6 +315,28 @@ public struct ActiveChatView: View {
         MRInitializer.shared.registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userMergedOids: userMergedOids ?? [])
       })
     }
+  }
+  
+  private func animateText(_ newValue: String) {
+
+      if newValue.count <= lastAnimatedText.count {
+          animatedText = newValue
+          lastAnimatedText = newValue
+          return
+      }
+
+      let full = newValue
+      let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
+      let newChunk = full[startIndex...]
+
+      Task {
+          for char in newChunk {
+              try? await Task.sleep(nanoseconds: 30_000_000)   // 0.03 sec per char (smooth)
+              
+              animatedText.append(char)
+              lastAnimatedText.append(char)
+          }
+      }
   }
 }
 

@@ -12,6 +12,7 @@ import EkaMedicalRecordsUI
 import TipKit
 import SwiftData
 
+/// Todo: - session handling
 @MainActor
 public struct ActiveChatViewWrapper: View {
   @State private var sessionPresent: Bool? = nil
