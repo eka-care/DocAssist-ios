@@ -7,7 +7,6 @@
 
 import SwiftUI
 import MarkdownUI
-import EkaVoiceToRx
 import EkaPDFMaker
 import EkaUI
 
@@ -18,7 +17,6 @@ struct MessageTextView: View {
   let message: ChatMessageModel
   let viewModel: ChatViewModel
   let createdAt: Date
-  @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   @State private var showShareSheet = false
   @State private var pdfURL: URL?
   

@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsCore
 import EkaMedicalRecordsUI
-import EkaVoiceToRx
 
 public struct ExistingPatientChatsView: View {
   private let patientName: String
@@ -39,7 +38,6 @@ public struct ExistingPatientChatsView: View {
     authToken: String,
     authRefreshToken: String,
     useNavigationStack: Bool = true,
-    liveActivityDelegate: LiveActivityDelegate? = nil
   ) {
     self.patientName = patientName
     self.viewModel = viewModel
@@ -51,7 +49,6 @@ public struct ExistingPatientChatsView: View {
     self.useNavigationStack = useNavigationStack
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveActivityDelegate
     
     _chats = Query(
       filter: #Predicate<SessionDataModel> { eachChat in

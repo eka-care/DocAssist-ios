@@ -77,8 +77,7 @@ public struct ActiveChatViewWrapper: View {
             calledFromPatientContext: true,
             authToken: authToken,
             authRefreshToken: authRefreshToken,
-            useNavigationStack: false,
-            liveActivityDelegate: liveActivityDelegate
+            useNavigationStack: false
           )
           .modelContext(DatabaseConfig.shared.modelContext)
         } else if let sessionId = newSession {
@@ -93,7 +92,6 @@ public struct ActiveChatViewWrapper: View {
             authToken: authToken,
             authRefreshToken: authRefreshToken
           )
-        //  .navigationBarHidden(true)
           .modelContext(DatabaseConfig.shared.modelContext)
         } else {
           ProgressView("Loading chat…")

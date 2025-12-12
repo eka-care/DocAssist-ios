@@ -35,8 +35,8 @@ struct PatientSummaryView: View {
         Text("Patient Detail")
         
         HStack(alignment: .center, spacing: 8) {
-          BlurButton(image: UIImage(resource: .chats), title: "New chat")
-          BlurButton(image: UIImage(resource: .vToRx), title: "New document")
+//          BlurButton(image: UIImage(resource: .chats), title: "New chat")
+          //BlurButton(image: UIImage(resource: .vToRx), title: "New document")
         }
         .padding(0)
         .frame(maxWidth: .infinity, alignment: .leading)

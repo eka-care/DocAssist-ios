@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import EkaVoiceToRx
 
 enum ChatSegment: String, CaseIterable {
     case patients = "Patients"
@@ -43,9 +42,6 @@ struct ChatsScreenView: View {
   var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
-  var liveActivityDelegate: LiveActivityDelegate?
-  var delegate: ConvertVoiceToText?
-  var suggestionsDelegate: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
   
   var thread: [SessionDataModel] {
@@ -87,29 +83,21 @@ struct ChatsScreenView: View {
        userDocId: String,
        userBid: String,
        ctx: ModelContext,
-       delegate: ConvertVoiceToText?,
        patientDelegate: NavigateToPatientDirectory?,
        searchForPatient: (() -> Void)?,
        authToken: String,
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
-       deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-       liveActivityDelegate: LiveActivityDelegate? = nil,
        patientName: String? = nil,
-       suggestionsDelegate: GetMoreSuggestions? = nil,
        getPatientDetailsDelegate: GetPatientDetails? = nil
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
     self.viewModel = ChatViewModel(
       context: ctx,
-      delegate: delegate,
-      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBid,
       userDocId: userDocId,
       patientName: patientName ?? "General Chat",
-      suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate
     )
     self.userDocId = userDocId
@@ -119,7 +107,6 @@ struct ChatsScreenView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
-    self.liveActivityDelegate = liveActivityDelegate
     self.patientName = patientName
   }
   
@@ -168,11 +155,11 @@ struct ChatsScreenView: View {
   private var chatView: some View {
     ZStack {
       VStack {
-        Image(.bg)
-          .resizable()
-          .frame(height: 180)
-          .edgesIgnoringSafeArea(.all)
-        Spacer()
+//        Image(.bg)
+//          .resizable()
+//          .frame(height: 180)
+//          .edgesIgnoringSafeArea(.all)
+//        Spacer()
       }
       
       VStack {
@@ -324,7 +311,6 @@ struct ChatsScreenView: View {
                   date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
                   authToken: authToken,
                   authRefreshToken: authRefreshToken,
-                  liveActivityDelegate: liveActivityDelegate
                 )
               }
             }
@@ -345,7 +331,6 @@ struct ChatsScreenView: View {
     var date: String
     var authToken: String
     var authRefreshToken: String
-    var liveActivityDelegate: LiveActivityDelegate?
     
     var body: some View {
       switch currentDevice {
@@ -360,7 +345,7 @@ struct ChatsScreenView: View {
     
     private var messageSubViewIPhone: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken, liveActivityDelegate: liveActivityDelegate)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
           .modelContext( DatabaseConfig.shared.modelContext)
       } label: {
         messageSubView
@@ -511,11 +496,11 @@ func nameInitialsView(initials: String) -> some View {
     )
     .frame(width: 38, height: 38)
     Group {
-      if initials == "GeneralChat" {
-        Image(.chatMsgs)
-      } else {
+//      if initials == "GeneralChat" {
+//        Image(.chatMsgs)
+//      } else {
         Text(initials)
-      }
+//      }
     }
     .foregroundStyle(LinearGradient(
       colors: [

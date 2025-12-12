@@ -10,16 +10,12 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
-import TipKit
 
 public class ChatsViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory?
   let ctx: ModelContext
-  var liveActivityDelegate: LiveActivityDelegate?
-  var suggestionsDelegate: GetMoreSuggestions?
   var userMergedOids: [String]?
   var getPatientDetailsDelegate: GetPatientDetails?
   
@@ -36,15 +32,11 @@ public class ChatsViewController: UIViewController {
     patientDelegate: NavigateToPatientDirectory?,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
-    suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails?
   ) {
     self.patientDelegate = patientDelegate
     self.ctx = ctx
-    self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
@@ -57,21 +49,12 @@ public class ChatsViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate,
         patientDelegate: patientDelegate,
         searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
-        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-        suggestionsDelegate: suggestionsDelegate,
         getPatientDetailsDelegate: getPatientDetailsDelegate
       )
-            .task {
-                try? Tips.configure([
-                    .displayFrequency(.daily),
-                    .datastoreLocation(.applicationDefault)
-                ])
-            }
       uiHostingController = UIHostingController(rootView: AnyView(ipadView))
       
     default:
@@ -83,23 +66,13 @@ public class ChatsViewController: UIViewController {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate,
         patientDelegate: patientDelegate,
         searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         selectedScreen: Binding.constant(nil),
-        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-        liveActivityDelegate: liveActivityDelegate,
-        suggestionsDelegate: suggestionsDelegate,
         getPatientDetailsDelegate: getPatientDetailsDelegate
       )
-            .task {
-                try? Tips.configure([
-                    .displayFrequency(.daily),
-                    .datastoreLocation(.applicationDefault)
-                ])
-            }
       uiHostingController = UIHostingController(rootView: AnyView(iphoneView))
     }
   }

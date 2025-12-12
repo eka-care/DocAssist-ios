@@ -17,16 +17,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private let role = "user"
   private let sessionId = "session_id"
   private let userAgent = "d-iOS"
-  private var firestoreListener: ListenerRegistration?
-  
-  var streamStarted: Bool = false
-  
+  var streamStarted: Bool = false  
   private(set) var vmssid: String = ""
   private var context: ModelContext
-  var liveActivityDelegate: LiveActivityDelegate? = nil
   var getPatientDetailsDelegate: GetPatientDetails? = nil
-  
-  private let networkCall = NetworkCall()
   private var webSocketClient: WebSocketNetworkRequest?
   
   var inputString = ""
@@ -81,7 +75,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   init(
     context: ModelContext,
     delegate: ConvertVoiceToText? = nil,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     userBid: String,
     userDocId: String,
     patientName: String = "",
@@ -89,7 +82,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     openType: String? = nil
   ) {
     self.context = context
-    self.liveActivityDelegate = liveActivityDelegate
     self.userBid = userBid
     self.userDocId = userDocId
     self.patientName = patientName
@@ -178,7 +170,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   func stopStreaming() {
-    networkCall.cancelStreaming()
+    //networkCall.cancelStreaming()
     streamStarted = false
   }
 }

@@ -60,9 +60,6 @@ public struct ActiveChatView: View {
     self.userBId = userBId
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    AuthTokenHolder.shared.authToken = authToken
-    AuthTokenHolder.shared.refreshToken = authRefreshToken
-    AuthTokenHolder.shared.bid = userBId
   }
   
   public var body: some View {

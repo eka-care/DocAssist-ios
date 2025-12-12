@@ -7,7 +7,6 @@
 
 import Foundation
 import SwiftUI
-import EkaVoiceToRx
 
 public class SetUIComponents {
   
@@ -35,8 +34,6 @@ public class SetUIComponents {
   public var docOId: String?
   public var docUUId: String?
   public var docName: String?
-  public weak var v2rxDelegate: FloatingVoiceToRxDelegate?
-  public weak var v2rxLoggingDelegate: EkaVoiceToRx.EventLoggerProtocol?
   public var isPatientApp: Bool?
   
   public static let shared = SetUIComponents()

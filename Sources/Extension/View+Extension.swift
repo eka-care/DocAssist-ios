@@ -5,6 +5,7 @@
 //  Created by Brunda  B on 11/12/25.
 //
 
+import SwiftUI
 
 extension View {
   func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
