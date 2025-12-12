@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import EkaVoiceToRx
 import EkaPDFMaker
 
 enum SuggestionsState {
@@ -22,7 +21,6 @@ struct MessageBubble: View {
   let viewModel: ChatViewModel
   @State var suggestionViewModel = SuggestionsViewModel()
   @State private var pdfURL: URL?
-  @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   
   @State private var thumsUpClicked: Bool = false
   @State private var thumsDownClicked: Bool = false
@@ -59,7 +57,6 @@ struct MessageBubble: View {
             message: message,
             viewModel: viewModel,
             createdAt: message.createdAtDate ?? .now,
-            v2rxViewModel: v2rxViewModel
           )
           .alignmentGuide(.top) { d in d[.top] }
         }

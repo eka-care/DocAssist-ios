@@ -24,15 +24,12 @@ public struct IpadChatView: View {
   var editButtonColor: Color?
   var subTitle: String?
   var ctx: ModelContext
-  var delegate: ConvertVoiceToText?
   var userDocId: String
   var userBId: String
   var patientDelegate: NavigateToPatientDirectory?
   var searchForPatient: (()->Void)
   var authToken: String
   var authRefreshToken: String
-  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-  var suggestionsDelegate: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
   
   public init(
@@ -43,14 +40,11 @@ public struct IpadChatView: View {
     ctx: ModelContext,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText?,
     patientDelegate: NavigateToPatientDirectory?,
     searchForPatient: @escaping (()->Void),
     authToken: String,
     authRefreshToken: String,
     selectedScreen: SelectedScreen? = .emptyScreen,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    suggestionsDelegate: GetMoreSuggestions? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil
   ) {
     self.backgroundColor = backgroundColor
@@ -60,14 +54,11 @@ public struct IpadChatView: View {
     self.ctx = ctx
     self.userDocId = userDocId
     self.userBId = userBId
-    self.delegate = delegate
     self.patientDelegate = patientDelegate
     self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     self.selectedScreen = selectedScreen
-    self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
   }
   
@@ -81,14 +72,11 @@ public struct IpadChatView: View {
         ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
-        delegate: delegate,
         patientDelegate: patientDelegate,
         searchForPatient: searchForPatient,
         authToken: authToken,
         authRefreshToken: authRefreshToken,
         selectedScreen: $selectedScreen,
-        deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-        suggestionsDelegate: suggestionsDelegate,
         getPatientDetailsDelegate: getPatientDetailsDelegate
       )
       .modelContext( DatabaseConfig.shared.modelContext)
@@ -101,13 +89,6 @@ public struct IpadChatView: View {
       .modelContext( DatabaseConfig.shared.modelContext)
     }
     .navigationSplitViewStyle(.balanced)
-    .task {
-        try? Tips.resetDatastore()
-        try? Tips.configure([
-            .displayFrequency(.immediate),
-            .datastoreLocation(.applicationDefault)
-        ])
-    }
     
   }
   

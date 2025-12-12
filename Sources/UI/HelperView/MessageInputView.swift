@@ -8,7 +8,6 @@
 import SwiftUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 
 struct MessageInputView: View {
   @Binding var inputString: String
@@ -20,11 +19,8 @@ struct MessageInputView: View {
   let viewModel: ChatViewModel
   let session: String
   let messages: [ChatMessageModel]
-  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
-  var liveActivityDelegate: LiveActivityDelegate?
   @State var showVoiceToRxPopUp: Bool = false
-  @Binding var voiceToRxTip: VoiceToRxTip
   
   var body: some View {
     VStack(spacing: 15) {
@@ -45,32 +41,7 @@ struct MessageInputView: View {
       TextField("Start typing...", text: $inputString, axis: .vertical)
         .frame(minHeight: 25)
       
-      HStack(spacing: 12) {
-//        Button {
-//          showMedicalRecords()
-//        } label: {
-//          Image(.paperClip)
-//            .resizable()
-//            .scaledToFit()
-//            .frame(width: 16)
-//            .foregroundStyle(Color.neutrals600)
-//        }
-//        .fullScreenCover(isPresented: $showRecordsView) {
-//          NavigationStack {
-//            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
-//              let images = data.compactMap { record in
-//                record.image
-//              }
-//              let docIds = data.compactMap { record in
-//                record.documentID
-//              }
-//              selectedImages = Array(images.prefix(3))
-//              selectedDocumentId = Array(docIds.prefix(3))
-//              showRecordsView = false
-//            })
-//          }
-//        }
-        
+      HStack(spacing: 12) {        
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {
             VStack(alignment: .center, spacing: 10) {
@@ -130,9 +101,7 @@ struct MessageInputView: View {
     .background(Color(.white))
     .onAppear {
       guard let type = viewModel.openType else { return }
-      if type == "EkaScribe" {
-        startVoiceToRx()
-      } else if type == "MedicalRecords" {
+      if type == "MedicalRecords" {
         showMedicalRecords()
       } else if type == "chat" {
         isTextFieldFocused = true
@@ -208,16 +177,6 @@ struct MessageInputView: View {
       } else {
           InitConfiguration.shared.recordsTitle = "My documents"
       }
-  }
-  
-  private func startVoiceToRx() {
-    AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
-      showVoiceToRxPopUp = true
-      Task {
-        await VoiceToRxTip.voiceToRxVisited.donate()
-      }
-      voiceToRxTip.invalidate(reason: .actionPerformed)
-    }
   }
   
   private func startVoiceToText() {

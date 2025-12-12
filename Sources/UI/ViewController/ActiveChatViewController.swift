@@ -10,8 +10,6 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
-import TipKit
 
 public class ActiveChatViewController: UIViewController {
   
@@ -28,8 +26,6 @@ public class ActiveChatViewController: UIViewController {
   
   var docAssistView: AnyView?
   var vm: ChatViewModel
-  var liveActivityDelegate: LiveActivityDelegate?
-  var suggestionsDelegae: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
   var openType: String? = nil
     
@@ -40,12 +36,9 @@ public class ActiveChatViewController: UIViewController {
     oid: String,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText,
     calledFromPatientContext: Bool,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
@@ -53,13 +46,9 @@ public class ActiveChatViewController: UIViewController {
   ) {
     self.vm = ChatViewModel(
       context: ctx,
-      delegate: delegate,
-      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBId,
       userDocId: userDocId,
       patientName: patientSubtitle ?? "",
-      suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate,
       openType: openType
     )
@@ -72,11 +61,9 @@ public class ActiveChatViewController: UIViewController {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
     
     super.init(nibName: nil, bundle: nil)
- //   registerUISdk()
     registerCoreSdk(authToken: authToken, refreshToken: authRefreshToken, oid: oid, bid: userBId, userDocId: userDocId, userMergeOids: userMergedOids)
   }
   
@@ -109,13 +96,7 @@ public class ActiveChatViewController: UIViewController {
       authToken: authToken,
       authRefreshToken: authRefreshToken
     )
-      .navigationBarHidden(true)
-      .task {
-        try? Tips.configure([
-          .displayFrequency(.daily),
-          .datastoreLocation(.applicationDefault)
-        ])
-      }
+    .navigationBarHidden(true)
     docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
     DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
   }
