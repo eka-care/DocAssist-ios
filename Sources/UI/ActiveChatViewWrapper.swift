@@ -7,9 +7,7 @@
 
 import SwiftUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 import EkaMedicalRecordsUI
-import TipKit
 import SwiftData
 
 /// Todo: - session handling
@@ -28,7 +26,6 @@ public struct ActiveChatViewWrapper: View {
   private let calledFromPatientContext: Bool
   private let authToken: String
   private let authRefreshToken: String
-  private let liveActivityDelegate: LiveActivityDelegate?
   private let userMergedOids: [String]?
   
   private let viewModel: ChatViewModel
@@ -40,26 +37,18 @@ public struct ActiveChatViewWrapper: View {
     oid: String,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText,
     calledFromPatientContext: Bool,
     authToken: String,
     authRefreshToken: String,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
-    suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
     openType: String? = nil
   ) {
     self.viewModel = ChatViewModel(
       context: ctx,
-      delegate: delegate,
-      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBId,
       userDocId: userDocId,
       patientName: patientSubtitle ?? "",
-      suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate,
       openType: openType
     )
@@ -72,7 +61,6 @@ public struct ActiveChatViewWrapper: View {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
   }
   
@@ -89,8 +77,7 @@ public struct ActiveChatViewWrapper: View {
             calledFromPatientContext: true,
             authToken: authToken,
             authRefreshToken: authRefreshToken,
-            useNavigationStack: false,
-            liveActivityDelegate: liveActivityDelegate
+            useNavigationStack: false
           )
           .modelContext(DatabaseConfig.shared.modelContext)
         } else if let sessionId = newSession {
@@ -105,7 +92,6 @@ public struct ActiveChatViewWrapper: View {
             authToken: authToken,
             authRefreshToken: authRefreshToken
           )
-        //  .navigationBarHidden(true)
           .modelContext(DatabaseConfig.shared.modelContext)
         } else {
           ProgressView("Loading chat…")

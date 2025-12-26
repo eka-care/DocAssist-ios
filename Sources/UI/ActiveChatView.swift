@@ -9,8 +9,6 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
-import TipKit
 import AVFAudio
 
 @MainActor
@@ -31,7 +29,6 @@ public struct ActiveChatView: View {
   @State private var selectedImages: [String] = []
   @State private var selectedDocumentId: [String] = []
   var title: String?
-  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo = RecordsRepo.shared
   let patientNameConstant = "General Chat"
   @State private var showFeedback = false
@@ -41,7 +38,6 @@ public struct ActiveChatView: View {
   private let userBId: String
   private let authToken: String
   private let authRefreshToken: String
-  @State var voiceToRxTip = VoiceToRxTip()
   private let bottomScrollIdentifier = "bottomID"
   @State private var animatedText: String = ""
   @State private var lastAnimatedText: String = ""
@@ -60,36 +56,10 @@ public struct ActiveChatView: View {
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
-    
-    V2RxInitConfigurations.shared.modelContainer = DatabaseConfig.shared.modelContainer
-    V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
-    V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
-    V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
-    V2RxInitConfigurations.shared.delegate = SetUIComponents.shared.v2rxLoggingDelegate
-    if patientName != patientNameConstant {
-      V2RxInitConfigurations.shared.subOwnerName = patientName
-    } else {
-      V2RxInitConfigurations.shared.subOwnerName = "Clinical Note"
-    }
-    
-    /// If reference is present use that
-    if let v2rxViewModel = FloatingVoiceToRxViewController.shared.viewModel {
-      voiceToRxViewModel = v2rxViewModel
-    } else { /// Making sure to initialise voice init configurations before voice to rx view model
-      voiceToRxViewModel = VoiceToRxViewModel(
-        voiceToRxInitConfig: V2RxInitConfigurations.shared,
-        voiceToRxDelegate: SetUIComponents.shared.v2rxDelegate
-      )
-    }
     self.userDocId = userDocId
     self.userBId = userBId
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    AuthTokenHolder.shared.authToken = authToken
-    AuthTokenHolder.shared.refreshToken = authRefreshToken
-    AuthTokenHolder.shared.bid = userBId
-    /// To maintain the same reference
-    FloatingVoiceToRxViewController.shared.viewModel = voiceToRxViewModel
   }
   
   public var body: some View {
@@ -113,9 +83,7 @@ public struct ActiveChatView: View {
                   
                   
                   if viewModel.streamStarted && messages.last?.id == message.id {
-                   // if viewModel.messageText.isEmpty {
-                      LoadingView()
-                   // }
+                    LoadingView()
                   }
                 }
                 
@@ -271,9 +239,7 @@ public struct ActiveChatView: View {
           viewModel: viewModel,
           session: session,
           messages: messages,
-          voiceToRxViewModel: voiceToRxViewModel,
-          recordsRepo: recordsRepo,
-          voiceToRxTip: $voiceToRxTip
+          recordsRepo: recordsRepo
         )
       )
     } else {
@@ -289,7 +255,6 @@ public struct ActiveChatView: View {
       m: message.messageText,
       url: message.imageUrls,
       viewModel: viewModel,
-      v2rxViewModel: voiceToRxViewModel,
       onClickOfFeedback: {
         showFeedback = true
         feedbackText = "Thank you for your feedback!"
@@ -337,58 +302,5 @@ public struct ActiveChatView: View {
               lastAnimatedText.append(char)
           }
       }
-  }
-}
-
-extension ActiveChatView {
-  func handleVoiceToRxStates() {
-    guard let sessionID = voiceToRxViewModel.sessionID else { return }
-    let v2rxState = V2RxDocAssistHelper.fetchV2RxState(for: sessionID)
-    /// Handle mic enable status
-    if voiceToRxViewModel.screenState == .listening(conversationType: .conversation) ||
-        voiceToRxViewModel.screenState == .listening(conversationType: .dictation) ||
-        voiceToRxViewModel.screenState == .processing {
-      DispatchQueue.main.async {
-        viewModel.v2rxEnabled = false
-      }
-    } else {
-      DispatchQueue.main.async {
-        viewModel.v2rxEnabled = true
-      }
-    }
-    if v2rxState == .deleted {
-      Task {
-        await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: sessionID)
-      }
-    }
-  }
-}
-
-extension View {
-  func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-    clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
-  }
-  
-  func customCornerBorder(_ radius: CGFloat, corners: UIRectCorner, color: Color, lineWidth: CGFloat = 1) -> some View {
-    self
-      .overlay(
-        CustomCornerShape(cornerRadius: radius, corners: corners)
-          .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
-      )
-      .clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
-  }
-}
-
-struct CustomCornerShape: Shape {
-  var cornerRadius: CGFloat
-  var corners: UIRectCorner
-  
-  func path(in rect: CGRect) -> Path {
-    let path = UIBezierPath(
-      roundedRect: rect,
-      byRoundingCorners: corners,
-      cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
-    )
-    return Path(path.cgPath)
   }
 }

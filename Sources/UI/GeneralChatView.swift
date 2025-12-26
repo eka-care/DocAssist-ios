@@ -7,8 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import EkaVoiceToRx
-import TipKit
 
 public struct GeneralChatView: View {
   
@@ -17,7 +15,6 @@ public struct GeneralChatView: View {
   var editButtonColor: Color?
   var subTitle: String?
   var ctx: ModelContext
-  var delegate: ConvertVoiceToText?
   var userDocId: String
   var userBId: String
   var patientDelegate: NavigateToPatientDirectory?
@@ -25,8 +22,6 @@ public struct GeneralChatView: View {
   var authToken: String
   var authRefreshToken: String
   @Binding var selectedScreen: SelectedScreen?
-  var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-  var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails?
   
@@ -38,14 +33,11 @@ public struct GeneralChatView: View {
     ctx: ModelContext,
     userDocId: String,
     userBId: String,
-    delegate: ConvertVoiceToText?,
     patientDelegate: NavigateToPatientDirectory?,
     searchForPatient: (() -> Void)?,
     authToken: String,
     authRefreshToken: String,
     selectedScreen: Binding<SelectedScreen?>,
-    deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil
   ) {
@@ -56,15 +48,11 @@ public struct GeneralChatView: View {
     self.ctx = ctx
     self.userDocId = userDocId
     self.userBId = userBId
-    self.delegate = delegate
     self.patientDelegate = patientDelegate
     self.searchForPatient = searchForPatient
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
-    self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.liveActivityDelegate = liveActivityDelegate
-    self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
   }
   
@@ -75,15 +63,11 @@ public struct GeneralChatView: View {
       userDocId: userDocId,
       userBid: userBId,
       ctx: ctx,
-      delegate: delegate,
       patientDelegate: patientDelegate,
       searchForPatient: searchForPatient,
       authToken: authToken,
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen,
-      deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
-      suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate
     )
     .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
