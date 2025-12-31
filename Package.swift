@@ -16,7 +16,7 @@ let package = Package(
   ],
   dependencies: [
     // MarkdownUI package dependency
-    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.3"),
+    .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
     // Medical Record
