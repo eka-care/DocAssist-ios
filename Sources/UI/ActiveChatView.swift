@@ -345,7 +345,6 @@ public struct ActiveChatView: View {
 extension ActiveChatView {
   func handleVoiceToRxStates() {
     guard let sessionID = voiceToRxViewModel.sessionID else { return }
-    let v2rxState = V2RxDocAssistHelper.fetchV2RxState(for: sessionID)
     /// Handle mic enable status
     if voiceToRxViewModel.screenState == .listening(conversationType: .conversation) ||
         voiceToRxViewModel.screenState == .listening(conversationType: .dictation) ||
@@ -356,11 +355,6 @@ extension ActiveChatView {
     } else {
       DispatchQueue.main.async {
         viewModel.v2rxEnabled = true
-      }
-    }
-    if v2rxState == .deleted {
-      Task {
-        await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(v2RxAudioSessionId: sessionID)
       }
     }
   }
