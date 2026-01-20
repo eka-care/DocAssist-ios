@@ -18,13 +18,13 @@ let package = Package(
     // MarkdownUI package dependency
     .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
-    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
+    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "12.0.0"),
     // Medical Record
     .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  from: "1.4.4"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
-    .package(url: "git@github.com:eka-care/EkaVoiceToRx.git", branch: "main"),
+    .package(url: "git@github.com:eka-care/EkaVoiceToRx.git", branch: "firebase-upgrade"),
     // EkaPDFMaker
     .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
   ],
