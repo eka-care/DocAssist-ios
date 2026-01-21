@@ -23,6 +23,8 @@ let package = Package(
     .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  branch: "1.4.0"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
+    // VoiceToRx
+    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", branch: "main"),
     // EkaPDFMaker
     .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
   ],
