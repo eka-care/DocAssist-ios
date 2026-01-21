@@ -42,6 +42,8 @@ let package = Package(
         .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
         // Mixpanel
         .product(name: "Mixpanel", package: "mixpanel-swift"),
+        // VoiceToRx
+        .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx"),
         // PdfRender
         .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
       ],
