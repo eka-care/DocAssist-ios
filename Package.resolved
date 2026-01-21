@@ -1,5 +1,5 @@
 {
-  "originHash" : "a1dfc658d3915a6543ee666b14af68b8fe63c822508e29e5e050fce7f84ccc5f",
+  "originHash" : "c474b48684ac6e8e009bc73c77315c3e167d939b450285da351532ff2f3cdab6",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaVoiceToRx.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "2e83633bbe4764679ffcac0193805e29ff6bb712"
+        "branch" : "patient-app-pointing-sdk",
+        "revision" : "008203b5d29554dc0963059e31353a035ac4165b"
       }
     },
     {
