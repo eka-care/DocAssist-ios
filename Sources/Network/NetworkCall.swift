@@ -20,8 +20,10 @@ public final class NetworkConfig {
 final class NetworkCall: NSObject, URLSessionTaskDelegate {
   
   private var dataTask: URLSessionDataTask?
+  private let authInterceptor: AuthInterceptor
   
   override init() {
+    self.authInterceptor = AuthInterceptor()
     super.init()
     dataTask?.delegate = self
   }
@@ -41,6 +43,14 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
     request.httpMethod = NetworkConfig.shared.httpMethod
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.setValue("text/event-stream", forHTTPHeaderField: "Accept")
+    
+    // Apply authentication interceptor
+    do {
+      try authInterceptor.intercept(&request)
+    } catch {
+      completion(.failure(error))
+      return
+    }
     
     var messageData: [String: Any] = ["role": "user"]
     
