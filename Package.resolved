@@ -78,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/eka-care/EkaVoiceToRx.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "2e83633bbe4764679ffcac0193805e29ff6bb712"
+        "branch" : "patient-app-pointing-sdk",
+        "revision" : "008203b5d29554dc0963059e31353a035ac4165b"
       }
     },
     {
