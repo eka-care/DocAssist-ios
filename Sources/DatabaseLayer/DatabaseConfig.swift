@@ -74,6 +74,17 @@ public final actor DatabaseConfig {
     return results
   }
   
+  func fetchSessionIdwithoutoid(userDocId: String, userBId: String) throws -> [SessionDataModel] {
+    lock.lock()
+    defer{ lock.unlock() }
+    
+    let fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId}
+    )
+    let results = try modelContext.fetch(fetchDescriptor)
+    return results
+  }
+  
   func insertSession(session: SessionDataModel) {
     modelContext.insert(session)
   }
@@ -142,7 +153,8 @@ extension DatabaseConfig {
     role: MessageRole,
     imageUrls: [String]?,
     v2RxAudioSessionId: UUID? = nil,
-    suggestions: [String]? = nil
+    suggestions: [String]? = nil,
+    multiSelect: Bool? = nil
   ) -> ChatMessageModel? {
     let chat = ChatMessageModel(
       msgId: messageId,
@@ -155,7 +167,8 @@ extension DatabaseConfig {
       imageUrls: imageUrls,
       v2RxAudioSessionId: v2RxAudioSessionId,
       createdAtDate: .now,
-      suggestions: suggestions
+      suggestions: suggestions,
+      multiSelect: multiSelect
     )
     
     if let session = try? fetchSession(bySessionId: sessionId) {
@@ -171,15 +184,19 @@ extension DatabaseConfig {
 
 // Upsert
 extension DatabaseConfig {
-    func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel, suggestions: [String]?) {
+  func upsertMessageV2(responseMessage: String, userChat: ChatMessageModel?, suggestions: [String]?, multiSelect: Bool?) {
+    
+    guard let userChat else { return }
     let sessionId = userChat.sessionId
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
-      DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
-          messageToUpdate.suggestions = suggestions
+     
+      if messageToUpdate.messageText == nil {
+          messageToUpdate.messageText = responseMessage
+      } else {
+          messageToUpdate.messageText! += responseMessage
       }
       saveData()
   
@@ -192,7 +209,8 @@ extension DatabaseConfig {
       messageId: streamMessageId,
       role: .Bot,
       imageUrls: nil,
-      suggestions: suggestions
+      suggestions: suggestions,
+      multiSelect: multiSelect
     )
   }
 }
@@ -228,19 +246,22 @@ extension DatabaseConfig {
     subTitle: String?,
     oid: String = "",
     userDocId: String,
-    userBId: String
+    userBId: String,
+    sessionId: String,
+    sessionToken: String
   ) async -> String {
     let currentDate = Date()
     let ssid = UUID().uuidString
     let createSessionModel = SessionDataModel(
-      sessionId: ssid,
+      sessionId: sessionId,
       createdAt: currentDate,
       lastUpdatedAt: currentDate,
       title: "New Chat",
       subTitle: subTitle,
       oid: oid,
       userDocId: userDocId,
-      userBId: userBId
+      userBId: userBId,
+      sessionToken: sessionToken
     )
     await DatabaseConfig.shared
       .insertSession(
@@ -250,26 +271,4 @@ extension DatabaseConfig {
       .saveData()
     return ssid
   }
-  
-  public func createChat(
-    title: String? = nil,
-    oId: String,
-    userDocId:String,
-    userBId: String,
-    v2RxAudioSessionId: UUID
-  ) async {
-    let session = await createSession(
-      subTitle: title,
-      oid: oId,
-      userDocId: userDocId,
-      userBId: userBId
-    )
-    let _ = await DatabaseConfig.shared.createMessage(
-      sessionId: session,
-      messageId: 0 ,
-      role: .Bot,
-      imageUrls: nil,
-      v2RxAudioSessionId: v2RxAudioSessionId
-    )
-  }  
 }

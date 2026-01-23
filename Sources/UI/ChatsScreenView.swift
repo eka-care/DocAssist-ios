@@ -210,7 +210,7 @@ struct ChatsScreenView: View {
             .font(.system(size: 24, weight: .regular))
             .padding(12)
         }
-        .glassEffect(.clear.interactive(), in: .circle)
+       // .glassEffect(.clear.interactive(), in: .circle)
         .padding(.leading, 10)
         .padding(.top, 4)
       } else {
