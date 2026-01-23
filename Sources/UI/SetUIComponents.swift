@@ -38,6 +38,7 @@ public class SetUIComponents {
   public weak var v2rxDelegate: FloatingVoiceToRxDelegate?
   public weak var v2rxLoggingDelegate: EkaVoiceToRx.EventLoggerProtocol?
   public var isPatientApp: Bool?
+  public var xAgentId: String?
   
   public static let shared = SetUIComponents()
 
