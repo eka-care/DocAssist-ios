@@ -340,7 +340,7 @@ extension ChatViewModel {
   }
   
   func checkIfSessionIsActive(for sessionId: String) async -> Bool {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)") else {
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)") else {
       return false
     }
     
@@ -350,7 +350,7 @@ extension ChatViewModel {
         method: .get,
         headers: [
           "Content-Type": "application/json",
-          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
+          "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId
         ],
         body: nil
       )
@@ -372,14 +372,14 @@ extension ChatViewModel {
   }
   
   func refreshSession(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)/refresh") else  {
+    guard let url = URL(string: "https://matrix.eka.care/med-assist/reloaded/session/\(sessionId)/refresh") else  {
       return
     }
     
     let networkRequest = HTTPNetworkRequest(
       url: url,
       method: .post,
-      headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+      headers: ["Content-Type": "application/json", "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId,
       body: nil
     )
     
@@ -395,7 +395,7 @@ extension ChatViewModel {
   }
   
   func webSocketAuthentication(sessionId: String, sessionToken: String) async {
-    guard let url = URL(string: "wss://matrix-ws.eka.care/ws/med-assist/session/\(sessionId)/") else {
+    guard let url = URL(string: "wss://matrix-ws.eka.care/reloaded/ws/med-assist/session/\(sessionId)/") else {
       print("❌ Invalid WebSocket URL")
       webSocketConnectionTitle = "Not connected"
       return
@@ -557,7 +557,7 @@ extension ChatViewModel {
     
     print("🆕 Creating new session")
     
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session") else {
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session") else {
       return ""
     }
     
@@ -569,7 +569,7 @@ extension ChatViewModel {
         method: .post,
         headers: [
           "Content-Type": "application/json",
-          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
+          "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId
         ],
         body: requestBody
       )
