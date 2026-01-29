@@ -7,6 +7,7 @@
 
 import Foundation
 import Network
+import Alamofire
 
 public final class NetworkConfig {
   public var baseUrl: String = ""
@@ -136,4 +137,8 @@ final class NetworkManager {
   func perform(request: NetworkRequest, completion: @escaping (Result<Data, ApiError>) -> Void) {
     request.execute(completion: completion)
   }
+}
+
+protocol RequestProvider {
+  var urlRequest: DataRequest { get }
 }

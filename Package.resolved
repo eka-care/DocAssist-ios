@@ -1,5 +1,5 @@
 {
-  "originHash" : "6f5526bda47d039c531db709a73a7bfc37ca0eb6ef2990ddcde176386baebe0a",
+  "originHash" : "c474b48684ac6e8e009bc73c77315c3e167d939b450285da351532ff2f3cdab6",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -70,7 +70,7 @@
       "location" : "git@github.com:eka-care/EkaUI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "bcc1ec0899e9e573669543343994f35bad7426a0"
+        "revision" : "45318267e085aaf3caea10367c55e1596b4829af"
       }
     },
     {
@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/JonasGessner/JGProgressHUD",
       "state" : {
-        "branch" : "master",
-        "revision" : "6336c426fb147ee19c15252eaf363f29720c3eb5"
+        "revision" : "78d7cd35f1d90ff74fd82e486f2cbe4b24be8cf9",
+        "version" : "2.2.0"
       }
     },
     {

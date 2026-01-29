@@ -379,7 +379,7 @@ extension ChatViewModel {
     let networkRequest = HTTPNetworkRequest(
       url: url,
       method: .post,
-      headers: ["Content-Type": "application/json", "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId,
+      headers: ["Content-Type": "application/json", "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId],
       body: nil
     )
     
