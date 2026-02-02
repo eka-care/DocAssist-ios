@@ -1,8 +1,8 @@
 //
-//  AuthSessionModel.swift
+//  AuthSessionResponseModel.swift
 //  DocAssist-ios
 //
-//  Created by Brunda  B on 07/11/25.
+//  Created by Brunda  B on 28/01/26.
 //
 
 import Foundation

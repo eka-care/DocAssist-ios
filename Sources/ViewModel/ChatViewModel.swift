@@ -379,7 +379,7 @@ extension ChatViewModel {
     let networkRequest = HTTPNetworkRequest(
       url: url,
       method: .post,
-      headers: ["Content-Type": "application/json", "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId,
+      headers: ["Content-Type": "application/json", "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId],
       body: nil
     )
     
@@ -543,9 +543,9 @@ extension ChatViewModel {
       if await checkIfSessionIsActive(for: existingSessionId) {
         print("🔄 Reusing existing session: \(existingSessionId)")
         
-        self.switchToSession(existingSessionId)
+        switchToSession(existingSessionId)
         Task {
-          await self.webSocketAuthentication(
+          await webSocketAuthentication(
             sessionId: existingSessionId,
             sessionToken: existingToken ?? ""
           )
@@ -557,6 +557,8 @@ extension ChatViewModel {
     
     print("🆕 Creating new session")
     
+    // MARK: - Old implementation (commented out)
+    /*
     guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session") else {
       return ""
     }
@@ -614,6 +616,48 @@ extension ChatViewModel {
       }
     } catch {
       print("Encoding error: \(error)")
+      return ""
+    }
+    */
+    
+    // MARK: - New Alamofire implementation using Matrix Provider
+    let requestModel = AuthSessionRequestModel(uerId: userDocId)
+    
+    do {
+     return try await withCheckedThrowingContinuation { continuation in
+        
+        MatrixApiService.shared.createSession(requestModel: requestModel) { [weak self] result, _ in
+          guard let self else { return }
+          
+          switch result {
+          case .success(let sessionResponse):
+            Task {
+              let _ = await DatabaseConfig.shared.createSession(
+                subTitle: subTitle,
+                oid: oid,
+                userDocId: userDocId,
+                userBId: userBId,
+                sessionId: sessionResponse.sessionID,
+                sessionToken: sessionResponse.sessionToken
+              )
+              
+              self.switchToSession(sessionResponse.sessionID)
+              
+              await self.webSocketAuthentication(
+                sessionId: sessionResponse.sessionID,
+                sessionToken: sessionResponse.sessionToken
+              )
+              
+              continuation.resume(returning: sessionResponse.sessionID)
+            }
+            
+          case .failure(let error):
+            continuation.resume(throwing: error)
+          }
+        }
+      }
+    } catch {
+      print("Error creating session: \(error)")
       return ""
     }
   }
