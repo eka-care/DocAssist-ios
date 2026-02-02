@@ -7,5 +7,8 @@
 
 
 final class MatrixApiService: MatrixProvider, Sendable {
+  static let shared = MatrixApiService()
   let networkService: Networking = NetworkService.shared
+  
+  private init() {}
 }

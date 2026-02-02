@@ -8,7 +8,7 @@
 import Alamofire
 
 enum MatrixEndpoint {
-  case createSession
+  case createSession(requestModel: AuthSessionRequestModel)
   case checkSessionStatus(sessionId: String)
   case refreshSession(sessionId: String)
 }
@@ -16,9 +16,11 @@ enum MatrixEndpoint {
 extension MatrixEndpoint: RequestProvider {
   var urlRequest: Alamofire.DataRequest {
     switch self {
-    case .createSession:
+    case .createSession(let requestModel):
       AF.request("https://matrix.eka.care/reloaded/med-assist/session",
                  method: .post,
+                 parameters: requestModel,
+                 encoder: JSONParameterEncoder.default,
                  headers: [
                   "Content-Type": "application/json",
                   "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId
@@ -27,7 +29,7 @@ extension MatrixEndpoint: RequestProvider {
       ).validate()
     case let .checkSessionStatus(sessionId):
       AF.request("https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)",
-                 method: .post,
+                 method: .get,
                  headers: [
                   "Content-Type": "application/json",
                   "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId
