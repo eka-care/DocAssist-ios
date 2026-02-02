@@ -11,13 +11,19 @@ import Foundation
 protocol MatrixProvider {
   var networkService: Networking { get }
   
-  /// Create a new session
-  /// - Parameters:
-  ///   - requestModel: AuthSessionRequestModel containing user ID
-  ///   - completion: Completion callback with AuthSessionResponseModel or Error
   func createSession(
     requestModel: AuthSessionRequestModel,
     _ completion: @escaping (Result<AuthSessionResponseModel, Error>, Int?) -> Void
+  )
+  
+  func checkSessionStatus(
+    sessionId: String,
+    _ completion: @escaping (Result<AuthSessionResponseModel, Error>, Int?) -> Void
+  )
+  
+  func refreshSession(
+    sessionId: String,
+    _ completion: @escaping (Result<SessionValidResponseModel, Error>, Int?) -> Void
   )
 }
 
@@ -27,5 +33,19 @@ extension MatrixProvider {
     _ completion: @escaping (Result<AuthSessionResponseModel, Error>, Int?) -> Void
   ) {
     networkService.execute(MatrixEndpoint.createSession(requestModel: requestModel), completion: completion)
+  }
+  
+  func checkSessionStatus(
+    sessionId: String,
+    _ completion: @escaping (Result<AuthSessionResponseModel, Error>, Int?) -> Void
+  ) {
+    networkService.execute(MatrixEndpoint.checkSessionStatus(sessionId: sessionId), completion: completion)
+  }
+  
+  func refreshSession(
+    sessionId: String,
+    _ completion: @escaping (Result<SessionValidResponseModel, Error>, Int?) -> Void
+  ) {
+    networkService.execute(MatrixEndpoint.refreshSession(sessionId: sessionId), completion: completion)
   }
 }

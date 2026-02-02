@@ -362,32 +362,20 @@ extension ChatViewModel {
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          continuation.resume(returning: true)   // Session is valid
+          continuation.resume(returning: true)
           
         case .failure(_):
-          continuation.resume(returning: false)  // Not active or expired
+          continuation.resume(returning: false) 
         }
       }
     }
   }
   
   func refreshSession(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/reloaded/session/\(sessionId)/refresh") else  {
-      return
-    }
-    
-    let networkRequest = HTTPNetworkRequest(
-      url: url,
-      method: .post,
-      headers: ["Content-Type": "application/json", "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId],
-      body: nil
-    )
-    
-    networkRequest.execute { result in
+    MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
       switch result {
-      case .success(let data):
-        print(""
-              , String(data: data, encoding: .utf8)!)
+      case .success(let response):
+        print("Session refreshed successfully: \(response)")
       case .failure(let error):
         print("#BB failure error:", error.localizedDescription)
       }
