@@ -531,71 +531,7 @@ extension ChatViewModel {
     }
     
     print("🆕 Creating new session")
-    
-    // MARK: - Old implementation (commented out)
-    /*
-    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session") else {
-      return ""
-    }
-    
-    do {
-      let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
-      
-      let networkRequest = HTTPNetworkRequest(
-        url: url,
-        method: .post,
-        headers: [
-          "Content-Type": "application/json",
-          "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId
-        ],
-        body: requestBody
-      )
-      
-      return try await withCheckedThrowingContinuation { continuation in
-        networkRequest.execute { [weak self] result in
-          guard let self else { return }
-          
-          switch result {
-          case .success(let data):
-            do {
-              let sessionResponse = try JSONDecoder().decode(AuthSessionResponseModel.self, from: data)
-              
-              Task {
-                let _ = await DatabaseConfig.shared.createSession(
-                  subTitle: subTitle,
-                  oid: oid,
-                  userDocId: userDocId,
-                  userBId: userBId,
-                  sessionId: sessionResponse.sessionID,
-                  sessionToken: sessionResponse.sessionToken
-                )
-                
-                self.switchToSession(sessionResponse.sessionID)
-                
-                await self.webSocketAuthentication(
-                  sessionId: sessionResponse.sessionID,
-                  sessionToken: sessionResponse.sessionToken
-                )
-                
-                continuation.resume(returning: sessionResponse.sessionID)
-              }
-              
-            } catch {
-              continuation.resume(throwing: error)
-            }
-            
-          case .failure(let error):
-            continuation.resume(throwing: error)
-          }
-        }
-      }
-    } catch {
-      print("Encoding error: \(error)")
-      return ""
-    }
-    */
-    
-    // MARK: - New Alamofire implementation using Matrix Provider
+  
     let requestModel = AuthSessionRequestModel(uerId: userDocId)
     
     do {
