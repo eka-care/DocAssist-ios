@@ -62,9 +62,9 @@ public struct ActiveChatView: View {
     self.title = title
     
     V2RxInitConfigurations.shared.modelContainer = DatabaseConfig.shared.modelContainer
-    V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
-    V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
-    V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
+    V2RxInitConfigurations.shared.ownerOID = AuthAndUserDetailsSetter.shared.docOId
+    V2RxInitConfigurations.shared.ownerUUID = AuthAndUserDetailsSetter.shared.docUUId
+    V2RxInitConfigurations.shared.ownerName = AuthAndUserDetailsSetter.shared.docName
     V2RxInitConfigurations.shared.delegate = SetUIComponents.shared.v2rxLoggingDelegate
     if patientName != patientNameConstant {
       V2RxInitConfigurations.shared.subOwnerName = patientName
@@ -191,7 +191,7 @@ public struct ActiveChatView: View {
   
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-        Text("Hello \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
+        Text("Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
           .font(Font.custom("Lato-Regular", size: 16))
           .foregroundStyle(Color.neutrals600)
           .padding(.bottom, 4)
