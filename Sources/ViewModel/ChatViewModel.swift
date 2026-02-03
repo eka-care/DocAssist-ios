@@ -331,53 +331,40 @@ extension ChatViewModel {
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     if let webSocketSessionId {
       await checkIfSessionIsActive(for: webSocketSessionId)
-      Task {
-        await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
-      }
+      await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
     } else {
       // await createSession()
     }
   }
   
   func checkIfSessionIsActive(for sessionId: String) async -> Bool {
-    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)") else {
-      return false
-    }
-    
     return await withCheckedContinuation { continuation in
-      let networkRequest = HTTPNetworkRequest(
-        url: url,
-        method: .get,
-        headers: [
-          "Content-Type": "application/json",
-          "x-agent-id": AuthAndUserDetailsSetter.shared.xAgentId
-        ],
-        body: nil
-      )
-      
-      networkRequest.execute { [weak self] result in
+      MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
         switch result {
-        case .success(let data):
-          print("#BB Data:", String(data: data, encoding: .utf8)!)
+        case .success(let sessionResponse):
+          print("#BB Data: Session is valid - \(sessionResponse.sessionId)")
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          continuation.resume(returning: true)
+          continuation.resume(returning: true)   // Session is valid
           
         case .failure(_):
-          continuation.resume(returning: false) 
+          continuation.resume(returning: false)  // Not active or expired
         }
       }
     }
   }
   
   func refreshSession(for sessionId: String) async {
-    MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
-      switch result {
-      case .success(let response):
-        print("Session refreshed successfully: \(response)")
-      case .failure(let error):
-        print("#BB failure error:", error.localizedDescription)
+    await withCheckedContinuation { continuation in
+      MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
+        switch result {
+        case .success(let sessionResponse):
+          print("#BB refreshSession success: \(sessionResponse.sessionId)")
+        case .failure(let error):
+          print("#BB failure error:", error.localizedDescription)
+        }
+        continuation.resume()
       }
     }
   }

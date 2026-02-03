@@ -18,7 +18,7 @@ protocol MatrixProvider {
   
   func checkSessionStatus(
     sessionId: String,
-    _ completion: @escaping (Result<AuthSessionResponseModel, Error>, Int?) -> Void
+    _ completion: @escaping (Result<SessionValidResponseModel, Error>, Int?) -> Void
   )
   
   func refreshSession(
@@ -37,7 +37,7 @@ extension MatrixProvider {
   
   func checkSessionStatus(
     sessionId: String,
-    _ completion: @escaping (Result<AuthSessionResponseModel, Error>, Int?) -> Void
+    _ completion: @escaping (Result<SessionValidResponseModel, Error>, Int?) -> Void
   ) {
     networkService.execute(MatrixEndpoint.checkSessionStatus(sessionId: sessionId), completion: completion)
   }
