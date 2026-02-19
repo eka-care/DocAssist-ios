@@ -1,5 +1,5 @@
 {
-  "originHash" : "57674d8c9dd5841472c1357e5c9e1f3e76d2de3f3e5e0c28600ed20af386c097",
+  "originHash" : "f104c55fa86dcf636cae73a6d969a100d3f9ccee1b2660729134623ffdab165f",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -106,7 +106,7 @@
       "location" : "git@github.com:eka-care/EkaUI.git",
       "state" : {
         "branch" : "main",
-        "revision" : "bcc1ec0899e9e573669543343994f35bad7426a0"
+        "revision" : "45318267e085aaf3caea10367c55e1596b4829af"
       }
     },
     {
