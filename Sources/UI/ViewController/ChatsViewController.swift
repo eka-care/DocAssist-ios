@@ -10,7 +10,6 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 import TipKit
 
 public class ChatsViewController: UIViewController {
@@ -18,7 +17,6 @@ public class ChatsViewController: UIViewController {
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory?
   let ctx: ModelContext
-  var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegate: GetMoreSuggestions?
   var userMergedOids: [String]?
   var getPatientDetailsDelegate: GetPatientDetails?
@@ -37,14 +35,12 @@ public class ChatsViewController: UIViewController {
     authToken: String,
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails?
   ) {
     self.patientDelegate = patientDelegate
     self.ctx = ctx
-    self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
     super.init(nibName: nil, bundle: nil)
     switch deviceType?.lowercased() {
@@ -90,7 +86,6 @@ public class ChatsViewController: UIViewController {
         authRefreshToken: authRefreshToken,
         selectedScreen: Binding.constant(nil),
         deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-        liveActivityDelegate: liveActivityDelegate,
         suggestionsDelegate: suggestionsDelegate,
         getPatientDetailsDelegate: getPatientDetailsDelegate
       )

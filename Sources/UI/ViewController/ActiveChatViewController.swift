@@ -10,7 +10,6 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 import TipKit
 
 public class ActiveChatViewController: UIViewController {
@@ -28,7 +27,6 @@ public class ActiveChatViewController: UIViewController {
   
   var docAssistView: AnyView?
   var vm: ChatViewModel
-  var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegae: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
   var openType: String? = nil
@@ -45,7 +43,6 @@ public class ActiveChatViewController: UIViewController {
     authToken: String,
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
@@ -55,7 +52,6 @@ public class ActiveChatViewController: UIViewController {
       context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBId,
       userDocId: userDocId,
       patientName: patientSubtitle ?? "",
@@ -72,7 +68,6 @@ public class ActiveChatViewController: UIViewController {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
     
     super.init(nibName: nil, bundle: nil)
