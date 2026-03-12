@@ -19,7 +19,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private let role = "user"
   private let sessionId = "session_id"
   private let userAgent = "d-iOS"
-  private var firestoreListener: ListenerRegistration?
   
   var streamStarted: Bool = false
   
@@ -168,12 +167,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
     return false
   }
-  
-  //  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-  //    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
-  //    switchToSession(session)
-  //    return session
-  //  }
   
   func switchToSession(_ id: String) {
     vmssid = id
@@ -491,25 +484,26 @@ extension ChatViewModel {
       print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
       
     case .chat:
-      if let choice = model.contentType {
-        if choice == .pill {
-          if let choices = model.data?.choices {
-            suggestions = choices
-            multiSelect = false
-          }
-        } else if choice == .multi {
-          if let choices = model.data?.choices {
-            suggestions = choices
-            multiSelect = true
-          }
-        } else if choice == .inline_text {
-          if let textData = model.data?.text {
-            voiceProcessing = false
-            messageInput = true
-            inputString = textData
-          }
-        }
-      }
+      print("#BB this is chat component")
+//      if let choice = model.contentType {
+//        if choice == .pill {
+//          if let choices = model.data?.choices {
+//            suggestions = choices
+//            multiSelect = false
+//          }
+//        } else if choice == .multi {
+//          if let choices = model.data?.choices {
+//            suggestions = choices
+//            multiSelect = true
+//          }
+//        } else if choice == .inline_text {
+//          if let textData = model.data?.text {
+//            voiceProcessing = false
+//            messageInput = true
+//            inputString = textData
+//          }
+//        }
+//      }
       
     case .eos:
       Task {
