@@ -343,7 +343,7 @@ extension ChatViewModel {
         method: .get,
         headers: [
           "Content-Type": "application/json",
-          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
+          "x-agent-id": "&quot;Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk="
         ],
         body: nil
       )
