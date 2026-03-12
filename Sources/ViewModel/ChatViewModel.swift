@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 import AVFAudio
 import AVFoundation
-import EkaVoiceToRx
 import FirebaseFirestore
 
 @Observable
@@ -26,7 +25,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private var context: ModelContext
   private var delegate: ConvertVoiceToText? = nil
   private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
-  var liveActivityDelegate: LiveActivityDelegate? = nil
   var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails? = nil
   
@@ -86,7 +84,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     context: ModelContext,
     delegate: ConvertVoiceToText? = nil,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     userBid: String,
     userDocId: String,
     patientName: String = "",
@@ -97,7 +94,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.context = context
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.liveActivityDelegate = liveActivityDelegate
     self.userBid = userBid
     self.userDocId = userDocId
     self.patientName = patientName

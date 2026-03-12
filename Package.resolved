@@ -1,5 +1,5 @@
 {
-  "originHash" : "554cfe27207e487ea204045f3670b9d58def83ea9ef8877f386b8c6e6f85cd1b",
+  "originHash" : "6d0f8169b8cff90fc6756ce0707e610639aa6c06c9e2c907d6caee3077ce364c",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -15,8 +15,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Alamofire/Alamofire.git",
       "state" : {
-        "revision" : "513364f870f6bfc468f9d2ff0a95caccc10044c5",
-        "version" : "5.10.2"
+        "revision" : "3f99050e75bbc6fe71fc323adabb039756680016",
+        "version" : "5.11.1"
       }
     },
     {
@@ -26,15 +26,6 @@
       "state" : {
         "revision" : "61b85103a1aeed8218f17c794687781505fbbef5",
         "version" : "11.2.0"
-      }
-    },
-    {
-      "identity" : "aws-sdk-ios-spm",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/aws-amplify/aws-sdk-ios-spm.git",
-      "state" : {
-        "revision" : "512a43ed2770957d40618ad415a9826e6dd99ea9",
-        "version" : "2.40.1"
       }
     },
     {
@@ -61,7 +52,7 @@
       "location" : "git@github.com:eka-care/EkaPDFMaker.git",
       "state" : {
         "branch" : "main",
-        "revision" : "06d20473db838ea245d63597d6c3a560bd933c29"
+        "revision" : "f19e66752f8b1a0af72b3a2197d38b37c45d7230"
       }
     },
     {
@@ -71,15 +62,6 @@
       "state" : {
         "branch" : "main",
         "revision" : "1dcf67f7cbb85a2366f38e0571ab5ef836fc80cc"
-      }
-    },
-    {
-      "identity" : "ekavoicetorx",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/eka-care/EkaVoiceToRx.git",
-      "state" : {
-        "branch" : "patient-app-pointing-sdk",
-        "revision" : "008203b5d29554dc0963059e31353a035ac4165b"
       }
     },
     {
@@ -96,8 +78,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/firebase-ios-sdk.git",
       "state" : {
-        "revision" : "674d9a7ee9858207181a3dd0b42c77298c6fb71b",
-        "version" : "12.8.0"
+        "revision" : "85560b48b0ff099ad83fe53d67df3c67fbc2b7a6",
+        "version" : "12.10.0"
       }
     },
     {
@@ -105,8 +87,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/googleads/google-ads-on-device-conversion-ios-sdk",
       "state" : {
-        "revision" : "35b601a60fbbea2de3ea461f604deaaa4d8bbd0c",
-        "version" : "3.2.0"
+        "revision" : "a5cd95c80e8efdd02155c6cea1cecf743bb683a5",
+        "version" : "3.3.0"
       }
     },
     {
@@ -114,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/GoogleAppMeasurement.git",
       "state" : {
-        "revision" : "2ffd220823f3716904733162e9ae685545c276d1",
-        "version" : "12.8.0"
+        "revision" : "68ba955e540dcff5e0805970ef4b1fd0150be100",
+        "version" : "12.10.0"
       }
     },
     {
@@ -150,8 +132,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/gtm-session-fetcher.git",
       "state" : {
-        "revision" : "a2ab612cb980066ee56d90d60d8462992c07f24b",
-        "version" : "3.5.0"
+        "revision" : "a883ddb9fd464216133a5ab441f1ae8995978573",
+        "version" : "5.1.0"
       }
     },
     {
@@ -179,15 +161,6 @@
       "state" : {
         "revision" : "a0bc79961d7be727d258d33d5a6b2f1023270ba1",
         "version" : "1.22.5"
-      }
-    },
-    {
-      "identity" : "libfvad",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/gfreezy/libfvad.git",
-      "state" : {
-        "revision" : "b685985209f19e9f94c04514e849089869b1d5d5",
-        "version" : "1.0.0"
       }
     },
     {
@@ -232,7 +205,7 @@
       "location" : "git@github.com:eka-care/PatientUtility.git",
       "state" : {
         "branch" : "main",
-        "revision" : "1d46e3c5e75a368076092d1a70f7818b4d61449d"
+        "revision" : "eaa7295aff65aaa149a9cf157f55fb124a8356ac"
       }
     },
     {
@@ -285,8 +258,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/swiftlang/swift-cmark",
       "state" : {
-        "revision" : "3ccff77b2dc5b96b77db3da0d68d28068593fa53",
-        "version" : "0.5.0"
+        "revision" : "5d9bdaa4228b381639fff09403e39a04926e2dbe",
+        "version" : "0.7.1"
       }
     },
     {
@@ -296,15 +269,6 @@
       "state" : {
         "revision" : "5f613358148239d0292c0cef674a3c2314737f9e",
         "version" : "2.4.1"
-      }
-    },
-    {
-      "identity" : "swift-protobuf",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-protobuf.git",
-      "state" : {
-        "revision" : "d72aed98f8253ec1aa9ea1141e28150f408cf17f",
-        "version" : "1.29.0"
       }
     },
     {
