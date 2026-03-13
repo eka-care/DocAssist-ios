@@ -183,15 +183,13 @@ struct MessageBubble: View {
       }
     
       if message.role == .Bot {
-        if let suggestions = message.suggestions {
-          VStack(alignment: .leading) {
-            SuggestionView(
-              suggestionText: suggestions,
-              viewModel: viewModel,
-              isMultiSelect: message.multiselect ?? false
-            )
-          }
-          .padding(.vertical, 16)
+        if let suggestions = message.suggestions, !suggestions.isEmpty {
+          ElicitPillsView(
+            suggestions: suggestions,
+            viewModel: viewModel,
+            isMultiSelect: message.multiselect ?? false
+          )
+          .padding(.vertical, 8)
         }
       }
     }

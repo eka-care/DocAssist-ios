@@ -54,6 +54,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var suggestions: [String]? = nil
   var multiSelect: Bool? = nil
   var webSocketConnectionTitle: String = "Idle"
+  var initialMessage: InitialMessage? = nil
+  var onFileUploadUrlsReceived: (([URLElement]) -> Void)?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -316,34 +318,35 @@ extension Data {
 extension ChatViewModel {
   
   func checkandValidateWebSocketConnection() async {
-    
-    let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
-    if let webSocketSessionId {
-      await checkIfSessionIsActive(for: webSocketSessionId)
-      Task {
-        await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
-      }
+    guard let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId"),
+          let sessionToken = UserDefaults.standard.string(forKey: "SessionToken") else {
+      return
+    }
+
+    let isActive = await checkIfSessionIsActive(for: webSocketSessionId)
+    if isActive {
+      await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: sessionToken)
     } else {
-      // await createSession()
+      await refreshSession(for: webSocketSessionId)
     }
   }
   
   func checkIfSessionIsActive(for sessionId: String) async -> Bool {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)") else {
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)") else {
       return false
     }
-    
+
     return await withCheckedContinuation { continuation in
       let networkRequest = HTTPNetworkRequest(
         url: url,
         method: .get,
         headers: [
           "Content-Type": "application/json",
-          "x-agent-id": "&quot;Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk="
+          "x-agent-id": "Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk="
         ],
         body: nil
       )
-      
+
       networkRequest.execute { [weak self] result in
         switch result {
         case .success(let data):
@@ -351,34 +354,50 @@ extension ChatViewModel {
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          continuation.resume(returning: true)   // Session is valid
-          
+          continuation.resume(returning: true)
+
         case .failure(_):
-          continuation.resume(returning: false)  // Not active or expired
+          continuation.resume(returning: false)
         }
       }
     }
   }
-  
+
+  /// Refreshes a session using GET /reloaded/med-assist/session/{id}/refresh.
+  /// On success, updates the stored session token and re-authenticates the WebSocket.
   func refreshSession(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)/refresh") else  {
+    let sessionToken = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)/refresh") else {
       return
     }
-    
+
     let networkRequest = HTTPNetworkRequest(
       url: url,
-      method: .post,
-      headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
+      method: .get,
+      headers: [
+        "Content-Type": "application/json",
+        "x-agent-id": "Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk=",
+        "x-sess-token": sessionToken
+      ],
       body: nil
     )
-    
-    networkRequest.execute { result in
+
+    networkRequest.execute { [weak self] result in
+      guard let self else { return }
       switch result {
       case .success(let data):
-        print(""
-              , String(data: data, encoding: .utf8)!)
+        print("#BB Refresh response:", String(data: data, encoding: .utf8) ?? "")
+        if let response = try? JSONDecoder().decode(AuthSessionResponseModel.self, from: data) {
+          UserDefaults.standard.set(response.sessionToken, forKey: "SessionToken")
+          Task {
+            await self.webSocketAuthentication(
+              sessionId: response.sessionID,
+              sessionToken: response.sessionToken
+            )
+          }
+        }
       case .failure(let error):
-        print("#BB failure error:", error.localizedDescription)
+        print("#BB refresh failure:", error.localizedDescription)
       }
     }
   }
@@ -467,52 +486,151 @@ extension ChatViewModel {
   func handleWebSocketModel(_ model: WebSocketModel) async {
     switch model.eventType {
     case .stream:
-      if let text = model.data?.text {
+      if model.contentType == .tool {
+        await handleToolEvent(model)
+      } else if let text = model.data?.text {
         messageText += text
-      } else if let progress = model.data?.text ?? model.data?.audio {
-        DispatchQueue.main.async {
-          print("⏳ Progress: \(progress)")
+      }
+
+    case .chat:
+      if model.contentType == .file {
+        // Server returned pre-signed upload URL(s)
+        if let urls = model.data?.urls, !urls.isEmpty {
+          DispatchQueue.main.async { [weak self] in
+            self?.onFileUploadUrlsReceived?(urls)
+          }
         }
       }
-      
-    case .err:
-      webSocketConnectionTitle = "\(model.msg)"
-      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
-      
-    case .chat:
-      print("#BB this is chat component")
-//      if let choice = model.contentType {
-//        if choice == .pill {
-//          if let choices = model.data?.choices {
-//            suggestions = choices
-//            multiSelect = false
-//          }
-//        } else if choice == .multi {
-//          if let choices = model.data?.choices {
-//            suggestions = choices
-//            multiSelect = true
-//          }
-//        } else if choice == .inline_text {
-//          if let textData = model.data?.text {
-//            voiceProcessing = false
-//            messageInput = true
-//            inputString = textData
-//          }
-//        }
-//      }
-      
+
     case .eos:
       Task {
-        await DatabaseConfig.shared.upsertMessageV2(responseMessage: messageText, userChat: userMessage, suggestions: suggestions, multiSelect: multiSelect)
+        await DatabaseConfig.shared.upsertMessageV2(
+          responseMessage: messageText,
+          userChat: userMessage,
+          suggestions: suggestions,
+          multiSelect: multiSelect
+        )
         DispatchQueue.main.async { [weak self] in
           self?.messageText = ""
           self?.streamStarted = false
+          self?.suggestions = nil
           self?.multiSelect = nil
         }
       }
-      
+
+    case .err:
+      webSocketConnectionTitle = "\(model.msg ?? "error")"
+      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
+
     default:
       break
+    }
+  }
+
+  // MARK: - File Upload Flow
+
+  /// Step 1: Request a pre-signed upload slot from the server.
+  /// The server responds with a `chat/file` event containing pre-signed URL(s).
+  func requestFileUpload(extensions fileExtensions: [String]) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let payload: [String: Any] = [
+      "ev": "chat",
+      "ct": "file",
+      "_id": String(timestamp),
+      "ts": timestamp,
+      "data": ["extensions": fileExtensions]
+    ]
+
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Requesting file upload slot: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ File upload request encoding error:", error)
+    }
+  }
+
+  /// Step 3: Upload the file to the pre-signed URL using HTTP PUT.
+  func uploadFileToPresignedUrl(data fileData: Data, urlString: String, mimeType: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    guard let url = URL(string: urlString) else {
+      completion(.failure(URLError(.badURL)))
+      return
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "PUT"
+    request.setValue(mimeType, forHTTPHeaderField: "Content-Type")
+    request.httpBody = fileData
+
+    URLSession.shared.dataTask(with: request) { _, response, error in
+      if let error = error {
+        completion(.failure(error))
+        return
+      }
+      if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+        completion(.success(()))
+      } else {
+        completion(.failure(URLError(.badServerResponse)))
+      }
+    }.resume()
+  }
+
+  /// Step 4: Notify the server that the file has been uploaded successfully.
+  func notifyFileUploaded(fileId: String) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let payload: [String: Any] = [
+      "ev": "chat",
+      "ct": "file",
+      "_id": String(timestamp),
+      "ts": timestamp,
+      "data": ["urls": [fileId]]
+    ]
+
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Notifying file uploaded: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ File uploaded notification encoding error:", error)
+    }
+  }
+
+  private func handleToolEvent(_ model: WebSocketModel) async {
+    guard let details = model.data?.details else { return }
+    // Ignore if this tool call has already resolved
+    if let status = details.status, status != .progress { return }
+
+    let options = details.input.options.map { $0.value }
+    let isMulti = details.component == .multi
+
+    // Persist the tool question + options as a bot message immediately.
+    // Tool events are self-contained — no eos follows them.
+    await DatabaseConfig.shared.upsertMessageV2(
+      responseMessage: details.input.text,
+      userChat: userMessage,
+      suggestions: options,
+      multiSelect: isMulti
+    )
+
+    DispatchQueue.main.async { [weak self] in
+      self?.messageText = ""
+      self?.streamStarted = false
+      self?.suggestions = nil
+      self?.multiSelect = nil
     }
   }
   
@@ -546,8 +664,8 @@ extension ChatViewModel {
     }
     
     print("🆕 Creating new session")
-    
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session") else {
+
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session") else {
       return ""
     }
     
@@ -559,7 +677,7 @@ extension ChatViewModel {
         method: .post,
         headers: [
           "Content-Type": "application/json",
-          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
+          "x-agent-id": "Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk="
         ],
         body: requestBody
       )
@@ -572,7 +690,7 @@ extension ChatViewModel {
           case .success(let data):
             do {
               let sessionResponse = try JSONDecoder().decode(AuthSessionResponseModel.self, from: data)
-              
+
               Task {
                 let _ = await DatabaseConfig.shared.createSession(
                   subTitle: subTitle,
@@ -582,14 +700,18 @@ extension ChatViewModel {
                   sessionId: sessionResponse.sessionID,
                   sessionToken: sessionResponse.sessionToken
                 )
-                
+
+                DispatchQueue.main.async {
+                  self.initialMessage = sessionResponse.initialMessage
+                }
+
                 self.switchToSession(sessionResponse.sessionID)
-                
+
                 await self.webSocketAuthentication(
                   sessionId: sessionResponse.sessionID,
                   sessionToken: sessionResponse.sessionToken
                 )
-                
+
                 continuation.resume(returning: sessionResponse.sessionID)
               }
               
