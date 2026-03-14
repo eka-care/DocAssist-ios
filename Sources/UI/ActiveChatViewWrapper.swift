@@ -7,7 +7,6 @@
 
 import SwiftUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 import EkaMedicalRecordsUI
 import TipKit
 import SwiftData
@@ -28,7 +27,6 @@ public struct ActiveChatViewWrapper: View {
   private let calledFromPatientContext: Bool
   private let authToken: String
   private let authRefreshToken: String
-  private let liveActivityDelegate: LiveActivityDelegate?
   private let userMergedOids: [String]?
   
   private let viewModel: ChatViewModel
@@ -45,7 +43,6 @@ public struct ActiveChatViewWrapper: View {
     authToken: String,
     authRefreshToken: String,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
@@ -55,7 +52,6 @@ public struct ActiveChatViewWrapper: View {
       context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBId,
       userDocId: userDocId,
       patientName: patientSubtitle ?? "",
@@ -72,7 +68,6 @@ public struct ActiveChatViewWrapper: View {
     self.calledFromPatientContext = calledFromPatientContext
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
   }
   
@@ -90,7 +85,6 @@ public struct ActiveChatViewWrapper: View {
             authToken: authToken,
             authRefreshToken: authRefreshToken,
             useNavigationStack: false,
-            liveActivityDelegate: liveActivityDelegate
           )
           .modelContext(DatabaseConfig.shared.modelContext)
         } else if let sessionId = newSession {
