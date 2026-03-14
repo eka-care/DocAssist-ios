@@ -163,7 +163,7 @@ public struct ActiveChatView: View {
   
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-        Text("Hello \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
+        Text("Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
           .font(Font.custom("Lato-Regular", size: 16))
           .foregroundStyle(Color.neutrals600)
           .padding(.bottom, 4)

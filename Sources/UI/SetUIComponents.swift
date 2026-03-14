@@ -41,3 +41,16 @@ public class SetUIComponents {
   private init() {}
   
 }
+
+public class AuthAndUserDetailsSetter {
+  public var docOId: String?
+  public var docUUId: String?
+  public var docName: String?
+  public var xAgentId: String = "MjRlMjhhOGItZWU5OC00OTk4LTlhYTktZWJkYmVhZDllNmU0IzE3MDE0MjYxMjk4NTU4OA=="
+  public var authToken: String?
+  public var refreshToken: String?
+  
+  public static let shared = AuthAndUserDetailsSetter()
+  
+  private init() {}
+}

@@ -160,7 +160,7 @@ struct MessageBubble: View {
               let fileURL = PDFRenderer().renderSinglePage(
                 headerView: AnyView(DTPDFHeaderView(
                   data: DTPDFHeaderViewData.formDeepthoughtHeaderViewData(
-                    doctorName: "DR.\(SetUIComponents.shared.docName ?? "" )",
+                    doctorName: "DR.\(AuthAndUserDetailsSetter.shared.docName ?? "" )",
                     clinicName: "",
                     address: ""
                   )
