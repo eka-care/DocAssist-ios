@@ -331,34 +331,18 @@ extension ChatViewModel {
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     if let webSocketSessionId {
       await checkIfSessionIsActive(for: webSocketSessionId)
-      Task {
-        await self.webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
-      }
+      await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
     } else {
       // await createSession()
     }
   }
   
   func checkIfSessionIsActive(for sessionId: String) async -> Bool {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)") else {
-      return false
-    }
-    
     return await withCheckedContinuation { continuation in
-      let networkRequest = HTTPNetworkRequest(
-        url: url,
-        method: .get,
-        headers: [
-          "Content-Type": "application/json",
-          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
-        ],
-        body: nil
-      )
-      
-      networkRequest.execute { [weak self] result in
+      MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
         switch result {
-        case .success(let data):
-          print("#BB Data:", String(data: data, encoding: .utf8)!)
+        case .success(let sessionResponse):
+          print("#BB Data: Session is valid - \(sessionResponse.sessionId)")
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
@@ -372,30 +356,21 @@ extension ChatViewModel {
   }
   
   func refreshSession(for sessionId: String) async {
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session/\(sessionId)/refresh") else  {
-      return
-    }
-    
-    let networkRequest = HTTPNetworkRequest(
-      url: url,
-      method: .post,
-      headers: ["Content-Type": "application/json", "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="],
-      body: nil
-    )
-    
-    networkRequest.execute { result in
-      switch result {
-      case .success(let data):
-        print(""
-              , String(data: data, encoding: .utf8)!)
-      case .failure(let error):
-        print("#BB failure error:", error.localizedDescription)
+    await withCheckedContinuation { continuation in
+      MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
+        switch result {
+        case .success(let sessionResponse):
+          print("#BB refreshSession success: \(sessionResponse.sessionId)")
+        case .failure(let error):
+          print("#BB failure error:", error.localizedDescription)
+        }
+        continuation.resume()
       }
     }
   }
   
   func webSocketAuthentication(sessionId: String, sessionToken: String) async {
-    guard let url = URL(string: "wss://matrix-ws.eka.care/ws/med-assist/session/\(sessionId)/") else {
+    guard let url = URL(string: "wss://matrix-ws.eka.care/reloaded/ws/med-assist/session/\(sessionId)/") else {
       print("❌ Invalid WebSocket URL")
       webSocketConnectionTitle = "Not connected"
       return
@@ -543,9 +518,9 @@ extension ChatViewModel {
       if await checkIfSessionIsActive(for: existingSessionId) {
         print("🔄 Reusing existing session: \(existingSessionId)")
         
-        self.switchToSession(existingSessionId)
+        switchToSession(existingSessionId)
         Task {
-          await self.webSocketAuthentication(
+          await webSocketAuthentication(
             sessionId: existingSessionId,
             sessionToken: existingToken ?? ""
           )
@@ -556,55 +531,35 @@ extension ChatViewModel {
     }
     
     print("🆕 Creating new session")
-    
-    guard let url = URL(string: "https://matrix.eka.care/med-assist/session") else {
-      return ""
-    }
+  
+    let requestModel = AuthSessionRequestModel(uerId: userDocId)
     
     do {
-      let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
-      
-      let networkRequest = HTTPNetworkRequest(
-        url: url,
-        method: .post,
-        headers: [
-          "Content-Type": "application/json",
-          "x-agent-id": "NDBkNmM4OTEtNGEzMC00MDBlLWE4NjEtN2ZkYjliMDY2MDZhI2VrYV9waHI="
-        ],
-        body: requestBody
-      )
-      
-      return try await withCheckedThrowingContinuation { continuation in
-        networkRequest.execute { [weak self] result in
+     return try await withCheckedThrowingContinuation { continuation in
+        
+        MatrixApiService.shared.createSession(requestModel: requestModel) { [weak self] result, _ in
           guard let self else { return }
           
           switch result {
-          case .success(let data):
-            do {
-              let sessionResponse = try JSONDecoder().decode(AuthSessionResponseModel.self, from: data)
+          case .success(let sessionResponse):
+            Task {
+              let _ = await DatabaseConfig.shared.createSession(
+                subTitle: subTitle,
+                oid: oid,
+                userDocId: userDocId,
+                userBId: userBId,
+                sessionId: sessionResponse.sessionID,
+                sessionToken: sessionResponse.sessionToken
+              )
               
-              Task {
-                let _ = await DatabaseConfig.shared.createSession(
-                  subTitle: subTitle,
-                  oid: oid,
-                  userDocId: userDocId,
-                  userBId: userBId,
-                  sessionId: sessionResponse.sessionID,
-                  sessionToken: sessionResponse.sessionToken
-                )
-                
-                self.switchToSession(sessionResponse.sessionID)
-                
-                await self.webSocketAuthentication(
-                  sessionId: sessionResponse.sessionID,
-                  sessionToken: sessionResponse.sessionToken
-                )
-                
-                continuation.resume(returning: sessionResponse.sessionID)
-              }
+              self.switchToSession(sessionResponse.sessionID)
               
-            } catch {
-              continuation.resume(throwing: error)
+              await self.webSocketAuthentication(
+                sessionId: sessionResponse.sessionID,
+                sessionToken: sessionResponse.sessionToken
+              )
+              
+              continuation.resume(returning: sessionResponse.sessionID)
             }
             
           case .failure(let error):
@@ -613,7 +568,7 @@ extension ChatViewModel {
         }
       }
     } catch {
-      print("Encoding error: \(error)")
+      print("Error creating session: \(error)")
       return ""
     }
   }
