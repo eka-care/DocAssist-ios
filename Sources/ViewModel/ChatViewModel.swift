@@ -9,13 +9,7 @@ import SwiftUI
 import SwiftData
 import AVFAudio
 import AVFoundation
-import EkaVoiceToRx
 import FirebaseFirestore
-
-public struct ExistingChatResponse {
-  var chatExist: Bool
-  var sessionId: [String]
-}
 
 @Observable
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
@@ -24,7 +18,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private let role = "user"
   private let sessionId = "session_id"
   private let userAgent = "d-iOS"
-  private var firestoreListener: ListenerRegistration?
   
   var streamStarted: Bool = false
   
@@ -32,11 +25,12 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private var context: ModelContext
   private var delegate: ConvertVoiceToText? = nil
   private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
-  var liveActivityDelegate: LiveActivityDelegate? = nil
   var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails? = nil
   
   private let networkCall = NetworkCall()
+  private var webSocketClient: WebSocketNetworkRequest?
+  
   var inputString = ""
   var isRecording = false
   var currentRecording: URL?
@@ -52,6 +46,16 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var patientName: String
   var isOidPresent: String? = ""
   var lastMsgId: Int?
+  var showTranscriptionFailureAlert = false
+  var openType: String?
+  var userMessage: ChatMessageModel?
+  var messageText: String = ""
+  let serialTaskQueue = SerialTaskQueue()
+  var suggestions: [String]? = nil
+  var multiSelect: Bool? = nil
+  var webSocketConnectionTitle: String = "Idle"
+  var initialMessage: InitialMessage? = nil
+  var onFileUploadUrlsReceived: (([URLElement]) -> Void)?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -69,26 +73,35 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
+  var delay = 0.0
+  var showTranscriptionFailureAlertBinding: Binding<Bool> {
+    Binding { [weak self] in
+      self?.showTranscriptionFailureAlert ?? false
+    } set: { [weak self] newValue in
+      self?.showTranscriptionFailureAlert = newValue
+    }
+  }
+  
   init(
     context: ModelContext,
     delegate: ConvertVoiceToText? = nil,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     userBid: String,
     userDocId: String,
     patientName: String = "",
     suggestionsDelegate: GetMoreSuggestions? = nil,
-    getPatientDetailsDelegate: GetPatientDetails? = nil
+    getPatientDetailsDelegate: GetPatientDetails? = nil,
+    openType: String? = nil
   ) {
     self.context = context
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.liveActivityDelegate = liveActivityDelegate
     self.userBid = userBid
     self.userDocId = userDocId
     self.patientName = patientName
     self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
+    self.openType = openType
   }
   
   func sendMessage(
@@ -99,18 +112,14 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     lastMesssageId: Int?
   ) async {
     /// Create user message
-    let userMessage =  await addUserMessage(
+    userMessage =  await addUserMessage(
       newMessage,
       imageUrls,
       sessionId,
       lastMesssageId
     )
     
-    /// Start streaming post request
-    startStreamingPostRequest(
-      vaultFiles: vaultFiles,
-      userChat: userMessage
-    )
+    sendWebSocketMessage(message: newMessage)
   }
   
   private func addUserMessage(
@@ -142,144 +151,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   static let dispatchSemaphore = DispatchSemaphore(value: 1)
   
-  func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
-      guard let userChat else { return }
-      
-    ///Firestore handling
-    let ownerId = userDocId + "_" + userBid
-    DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = true
-    }
-//      Task {
-//          do {
-//              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
-//              
-//              // Calculate patientContext after getting isOidPresent
-//              let patientContext = isOidPresent != nil && isOidPresent != ""
-//              
-//            /// if patient context is true then chat context should be a json object which as field oid and patientName
-//            
-//            var chatContext: String? = nil
-//            if let oid = isOidPresent, !oid.isEmpty {
-//                let contextDict: [String: String] = [
-//                    "patientId": oid,
-//                    "patientName": patientName
-//                ]
-//                if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
-//                   let jsonString = String(data: jsonData, encoding: .utf8) {
-//                    chatContext = jsonString
-//                }
-//            }
-//
-//              DocAssistFireStoreManager.shared
-//                  .sendMessageToFirestore(
-//                      businessId: userBid,
-//                      doctorId: userDocId,
-//                      context: patientContext,
-//                      sessionId: userChat.sessionId,
-//                      messageId: userChat.msgId - 1,
-//                      message: .init(
-//                          message: userChat.messageText ?? "",
-//                          sessionId: userChat.sessionId,
-//                          doctorId: userDocId,
-//                          patientId: isOidPresent ?? "", // Use the fetched OID
-//                          role: role,
-//                          vaultFiles: userChat.imageUrls,
-//                          userAgent: userAgent,
-//                          ownerId: ownerId,
-//                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
-//                          chatContext: chatContext
-//                      )
-//                  ) { [weak self] str in
-//                      guard let self else { return }
-//                      print("Message sent to Firestore: \(str)")
-//                      self.startFirestoreListener(userChat: userChat)
-//                  }
-//          } catch {
-//              print("#BB Error determining OID presence: \(error)")
-//          }
-//      }
-
-      
-    /// Stream api
-    NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
-    networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
-      DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = false
-      }
-    }) { [weak self] result in
-      guard let self else { return }
-      Task {
-        switch result {
-        case .success(let responseString):
-          await self.handleStreamResponse(responseString: responseString, userChat: userChat)
-        case .failure(let error):
-          print("Error streaming: \(error)")
-        }
-      }
-    }
-  }
-  
-  func startFirestoreListener(userChat: ChatMessageModel) {
-    let patientContext = isOidPresent != nil && !isOidPresent!.isEmpty
-    
-    DocAssistFireStoreManager.shared.listenToFirestoreMessages(
-      businessId: self.userBid,
-      doctorId: self.userDocId,
-      sessionId: userChat.sessionId,
-      context: patientContext,  // Added context parameter
-      patientId: self.isOidPresent ?? "",
-      messageId: userChat.msgId
-    ) { [weak self] data in
-      guard let self = self else { return }
-      
-      if let message = data["message"] as? String,
-         let status = data["status"] as? String,
-         let role = data["role"] as? String,
-         role == "assistant" {
-        Task { @MainActor in
-          await DatabaseConfig.shared.upsertMessageV2(
-            responseMessage: message,
-            userChat: userChat, suggestions: nil
-          )
-        }
-      }
-      
-      if let eof = data["is_eof"] as? Bool, eof == true {
-        DispatchQueue.main.async { [weak self] in
-          self?.streamStarted = false
-        }
-      }
-      
-    }
-  }
-  
-  /// Stream response handling
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
-      let splitLines = responseString.split(separator: "\n")
-
-      var message: Message?
-
-      for line in splitLines {
-          guard line.contains("data:") else { continue }
-          guard let jsonRange = line.range(of: "{") else { return }
-
-          let jsonString = String(line[jsonRange.lowerBound...])
-          guard let jsonData = jsonString.data(using: .utf8) else { return }
-
-          do {
-              message = try JSONDecoder().decode(Message.self, from: jsonData)
-          } catch {
-              print("Failed to decode JSON: \(error.localizedDescription)")
-          }
-      }
-    await MainActor.run {
-      Task {
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
-      }
-    }
-  }
-  
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
     do {
       let sessions = try await DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId)
@@ -293,17 +164,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       print("Can't fetch the sessions")
     }
     return false
-  }
-  
-  public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    //    let currentDate = Date()
-    //    let ssid = UUID().uuidString
-    //    let createSessionModel = SessionDataModel(sessionId: ssid, createdAt: currentDate, lastUpdatedAt: currentDate, title: "New Chat", subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
-    //    await DatabaseConfig.shared.insertSession(session: createSessionModel)
-    //    await DatabaseConfig.shared.saveData()
-    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
-    switchToSession(session)
-    return session
   }
   
   func switchToSession(_ id: String) {
@@ -325,24 +185,10 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  func onTapOfAudioButton() {
-    guard let currentRecording = currentRecording else {
-      return
-    }
-    voiceProcessing = true
-    delegate?.convertVoiceToText(audioFileURL:  currentRecording, completion: { [weak self] text in
-      guard let self = self else { return }
-      self.inputString = text
-      self.voiceProcessing = false
-      self.messageInput = true
-    })
-  }
-  
   func stopStreaming() {
     networkCall.cancelStreaming()
     streamStarted = false
   }
-  
 }
 
 extension ChatViewModel: AVAudioRecorderDelegate  {
@@ -353,7 +199,8 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
       try recordingSession.setActive(true)
       
       let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-      let audioFilename = documentsPath.appendingPathComponent("\(Date().toString(dateFormat: "dd-MM-YY_'at'_HH:mm:ss")).m4a")
+      let fileName = Date().toString(dateFormat: "dd-MM-YY_'at'_HH:mm:ss") + ".m4a"
+      let audioURL = documentsPath.appendingPathComponent(fileName)
       
       let settings = [
         AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
@@ -362,67 +209,76 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
         AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
       ]
       
-      audioRecorder = try AVAudioRecorder(url: audioFilename, settings: settings)
+      audioRecorder = try AVAudioRecorder(url: audioURL, settings: settings)
       audioRecorder?.delegate = self
       audioRecorder?.record()
       
       isRecording = true
-      currentRecording = audioFilename
+      currentRecording = audioURL
     } catch {
       print("Could not start recording: \(error)")
     }
   }
   
   func stopRecording() {
+    guard isRecording, let recorder = audioRecorder, let url = currentRecording else {
+      print("No recording to stop.")
+      return
+    }
+    
+    recorder.stop()
+    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [weak self] in
+      do {
+        self?.voiceProcessing = true
+        let audioData = try Data(contentsOf: url)
+        let base64String = audioData.base64EncodedString()
+        self?.sendAudioBase64ToServer(base64String)
+        self?.isRecording = false
+        self?.audioRecorder = nil
+      } catch {
+        print("❌ Failed to read audio file:", error)
+      }
+    }
+  }
+  
+  func sendAudioBase64ToServer(_ base64String: String) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+    
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let id = String(timestamp)
+    
+    let payload: [String: Any] = [
+      "ev": "stream",
+      "ct": "audio",
+      "ts": timestamp,
+      "_id": id,
+      "data": [
+        "audio": base64String,
+        "format": "audio/mp4"
+      ]
+    ]
+    
+    do {
+      let json = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: json, encoding: .utf8) {
+        print("📤 Sending audio message: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ Audio payload encoding error:", error)
+    }
+  }
+  
+  func dontRecord() {
     guard isRecording, let recorder = audioRecorder else {
       print("No recording to stop.")
       return
     }
     recorder.stop()
-    onTapOfAudioButton()
-    isRecording = false
-  }
-  
-  func dontRecord() {
     messageInput = true
-  }
-  
-  func handleMicrophoneTap() {
-    let micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-    
-    switch micStatus {
-    case .authorized:
-      messageInput = false
-      startRecording()
-      
-    case .denied:
-      alertTitle = "Microphone Access Denied"
-      alertMessage = "To record audio, please enable microphone access in Settings."
-      showPermissionAlert = true
-      
-    case .notDetermined:
-      AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
-        DispatchQueue.main.async {
-          guard let self = self else { return }
-          if granted {
-            self.messageInput = false
-            self.startRecording()
-          } else {
-            self.alertTitle = "Microphone Access Denied"
-            self.alertMessage = "To record audio, please enable microphone access in Settings."
-            self.showPermissionAlert = true
-          }
-        }
-      }
-      
-    case .restricted:
-      alertTitle = "Microphone Access Restricted"
-      alertMessage = "Microphone access is restricted and cannot be changed."
-      showPermissionAlert = true
-      
-    @unknown default:
-      break
-    }
   }
   
   func openAppSettings() {
@@ -435,7 +291,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
-      NetworkConfig.shared.queryParams["pt_oid"] = oid
+    NetworkConfig.shared.queryParams["pt_oid"] = oid
   }
 }
 
@@ -451,23 +307,427 @@ extension Notification.Name {
   static let addedMessage = Notification.Name("addedMessage")
 }
 
-extension ChatViewModel {
-  func navigateToDeepThought(id: String?) {
-    guard let id else { return }
-    deepThoughtNavigationDelegate?.navigateToDeepThoughtPage(id: id)
-  }
-}
-
 extension Data {
   func toString() -> String? {
     return String(data: self, encoding: .utf8)
   }
 }
 
+
+// MARK: - Web Socket flow
 extension ChatViewModel {
-  func stopFirestoreStream() {
-    firestoreListener?.remove()
-    firestoreListener = nil
-    streamStarted = false
+  
+  func checkandValidateWebSocketConnection() async {
+    guard let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId"),
+          let sessionToken = UserDefaults.standard.string(forKey: "SessionToken") else {
+      return
+    }
+
+    let isActive = await checkIfSessionIsActive(for: webSocketSessionId)
+    if isActive {
+      await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: sessionToken)
+    } else {
+      await refreshSession(for: webSocketSessionId)
+    }
+  }
+  
+  func checkIfSessionIsActive(for sessionId: String) async -> Bool {
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)") else {
+      return false
+    }
+
+    return await withCheckedContinuation { continuation in
+      let networkRequest = HTTPNetworkRequest(
+        url: url,
+        method: .get,
+        headers: [
+          "Content-Type": "application/json",
+          "x-agent-id": "Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk="
+        ],
+        body: nil
+      )
+
+      networkRequest.execute { [weak self] result in
+        switch result {
+        case .success(let data):
+          print("#BB Data:", String(data: data, encoding: .utf8)!)
+          DispatchQueue.main.async {
+            self?.webSocketConnectionTitle = "Connected"
+          }
+          continuation.resume(returning: true)
+
+        case .failure(_):
+          continuation.resume(returning: false)
+        }
+      }
+    }
+  }
+
+  /// Refreshes a session using GET /reloaded/med-assist/session/{id}/refresh.
+  /// On success, updates the stored session token and re-authenticates the WebSocket.
+  func refreshSession(for sessionId: String) async {
+    let sessionToken = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session/\(sessionId)/refresh") else {
+      return
+    }
+
+    let networkRequest = HTTPNetworkRequest(
+      url: url,
+      method: .get,
+      headers: [
+        "Content-Type": "application/json",
+        "x-agent-id": "Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk=",
+        "x-sess-token": sessionToken
+      ],
+      body: nil
+    )
+
+    networkRequest.execute { [weak self] result in
+      guard let self else { return }
+      switch result {
+      case .success(let data):
+        print("#BB Refresh response:", String(data: data, encoding: .utf8) ?? "")
+        if let response = try? JSONDecoder().decode(AuthSessionResponseModel.self, from: data) {
+          UserDefaults.standard.set(response.sessionToken, forKey: "SessionToken")
+          Task {
+            await self.webSocketAuthentication(
+              sessionId: response.sessionID,
+              sessionToken: response.sessionToken
+            )
+          }
+        }
+      case .failure(let error):
+        print("#BB refresh failure:", error.localizedDescription)
+      }
+    }
+  }
+  
+  func webSocketAuthentication(sessionId: String, sessionToken: String) async {
+    guard let url = URL(string: "wss://matrix-ws.eka.care/ws/med-assist/session/\(sessionId)/") else {
+      print("❌ Invalid WebSocket URL")
+      webSocketConnectionTitle = "Not connected"
+      return
+    }
+    
+    webSocketClient = WebSocketNetworkRequest(url: url)
+    webSocketClient?.onMessageDecoded = { [weak self] model in
+      guard let self else { return }
+      serialTaskQueue.enqueue { [weak self] in
+        guard let self else { return }
+        await handleWebSocketModel(model)
+      }
+    }
+    webSocketClient?.connect { [weak self] connected in
+      guard connected else {
+        print("❌ WebSocket connection failed")
+        self?.webSocketConnectionTitle = "Not connected"
+        return
+      }
+      
+      self?.webSocketConnectionTitle = "Connected"
+      
+      // Generate unique ID & timestamp
+      let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+      let authId = String(timestamp)
+      
+      // Construct auth payload
+      let authPayload: [String: Any] = [
+        "ev": "auth",
+        "_id": authId,
+        "ts": timestamp,
+        "data": [
+          "token": sessionToken
+        ]
+      ]
+      
+      // Convert to JSON string
+      do {
+        let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+          print("📤 Sending auth message: \(jsonString)")
+          self?.webSocketClient?.send(message: jsonString)
+        }
+      } catch {
+        print("❌ Failed to encode auth payload: \(error)")
+      }
+    }
+  }
+  
+  func sendWebSocketMessage(message: String) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+    
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    
+    let data = WebSocketData(text: message)
+    
+    let webSocketMessage = WebSocketModel(
+      eventType: .chat,
+      ts: timestamp,
+      id: String(timestamp),
+      contentType: .text,
+      msg: nil,
+      data: data
+    )
+    streamStarted = true
+    do {
+      let jsonData = try JSONEncoder().encode(webSocketMessage)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Sending message: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ Failed to encode WebSocket message: \(error)")
+    }
+  }
+  
+  func handleWebSocketModel(_ model: WebSocketModel) async {
+    switch model.eventType {
+    case .stream:
+      if model.contentType == .tool {
+        await handleToolEvent(model)
+      } else if let text = model.data?.text {
+        messageText += text
+      }
+
+    case .chat:
+      if model.contentType == .file {
+        // Server returned pre-signed upload URL(s)
+        if let urls = model.data?.urls, !urls.isEmpty {
+          DispatchQueue.main.async { [weak self] in
+            self?.onFileUploadUrlsReceived?(urls)
+          }
+        }
+      }
+
+    case .eos:
+      Task {
+        await DatabaseConfig.shared.upsertMessageV2(
+          responseMessage: messageText,
+          userChat: userMessage,
+          suggestions: suggestions,
+          multiSelect: multiSelect
+        )
+        DispatchQueue.main.async { [weak self] in
+          self?.messageText = ""
+          self?.streamStarted = false
+          self?.suggestions = nil
+          self?.multiSelect = nil
+        }
+      }
+
+    case .err:
+      webSocketConnectionTitle = "\(model.msg ?? "error")"
+      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
+
+    default:
+      break
+    }
+  }
+
+  // MARK: - File Upload Flow
+
+  /// Step 1: Request a pre-signed upload slot from the server.
+  /// The server responds with a `chat/file` event containing pre-signed URL(s).
+  func requestFileUpload(extensions fileExtensions: [String]) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let payload: [String: Any] = [
+      "ev": "chat",
+      "ct": "file",
+      "_id": String(timestamp),
+      "ts": timestamp,
+      "data": ["extensions": fileExtensions]
+    ]
+
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Requesting file upload slot: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ File upload request encoding error:", error)
+    }
+  }
+
+  /// Step 3: Upload the file to the pre-signed URL using HTTP PUT.
+  func uploadFileToPresignedUrl(data fileData: Data, urlString: String, mimeType: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    guard let url = URL(string: urlString) else {
+      completion(.failure(URLError(.badURL)))
+      return
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "PUT"
+    request.setValue(mimeType, forHTTPHeaderField: "Content-Type")
+    request.httpBody = fileData
+
+    URLSession.shared.dataTask(with: request) { _, response, error in
+      if let error = error {
+        completion(.failure(error))
+        return
+      }
+      if let http = response as? HTTPURLResponse, (200...299).contains(http.statusCode) {
+        completion(.success(()))
+      } else {
+        completion(.failure(URLError(.badServerResponse)))
+      }
+    }.resume()
+  }
+
+  /// Step 4: Notify the server that the file has been uploaded successfully.
+  func notifyFileUploaded(fileId: String) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let payload: [String: Any] = [
+      "ev": "chat",
+      "ct": "file",
+      "_id": String(timestamp),
+      "ts": timestamp,
+      "data": ["urls": [fileId]]
+    ]
+
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Notifying file uploaded: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ File uploaded notification encoding error:", error)
+    }
+  }
+
+  private func handleToolEvent(_ model: WebSocketModel) async {
+    guard let details = model.data?.details else { return }
+    // Ignore if this tool call has already resolved
+    if let status = details.status, status != .progress { return }
+
+    let options = details.input.options.map { $0.value }
+    let isMulti = details.component == .multi
+
+    // Persist the tool question + options as a bot message immediately.
+    // Tool events are self-contained — no eos follows them.
+    await DatabaseConfig.shared.upsertMessageV2(
+      responseMessage: details.input.text,
+      userChat: userMessage,
+      suggestions: options,
+      multiSelect: isMulti
+    )
+
+    DispatchQueue.main.async { [weak self] in
+      self?.messageText = ""
+      self?.streamStarted = false
+      self?.suggestions = nil
+      self?.multiSelect = nil
+    }
+  }
+  
+  public func createSession(
+    subTitle: String?,
+    oid: String = "",
+    userDocId: String,
+    userBId: String
+  ) async -> String {
+    
+    if let existing = try? await DatabaseConfig.shared
+      .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
+      .last {
+      
+      let existingSessionId = existing.sessionId
+      let existingToken = existing.sessionToken
+      
+      if await checkIfSessionIsActive(for: existingSessionId) {
+        print("🔄 Reusing existing session: \(existingSessionId)")
+        
+        self.switchToSession(existingSessionId)
+        Task {
+          await self.webSocketAuthentication(
+            sessionId: existingSessionId,
+            sessionToken: existingToken ?? ""
+          )
+        }
+        
+        return existingSessionId
+      }
+    }
+    
+    print("🆕 Creating new session")
+
+    guard let url = URL(string: "https://matrix.eka.care/reloaded/med-assist/session") else {
+      return ""
+    }
+    
+    do {
+      let requestBody = try JSONEncoder().encode(AuthSessionRequestModel(uerId: userDocId))
+      
+      let networkRequest = HTTPNetworkRequest(
+        url: url,
+        method: .post,
+        headers: [
+          "Content-Type": "application/json",
+          "x-agent-id": "Y2I2MDk1MTgtYWZmNy00N2U0LWI5ZDctODRiMWM0ODMxNzcwIzcxNzU1Mzc2MzcxMjg5NDk="
+        ],
+        body: requestBody
+      )
+      
+      return try await withCheckedThrowingContinuation { continuation in
+        networkRequest.execute { [weak self] result in
+          guard let self else { return }
+          
+          switch result {
+          case .success(let data):
+            do {
+              let sessionResponse = try JSONDecoder().decode(AuthSessionResponseModel.self, from: data)
+
+              Task {
+                let _ = await DatabaseConfig.shared.createSession(
+                  subTitle: subTitle,
+                  oid: oid,
+                  userDocId: userDocId,
+                  userBId: userBId,
+                  sessionId: sessionResponse.sessionID,
+                  sessionToken: sessionResponse.sessionToken
+                )
+
+                DispatchQueue.main.async {
+                  self.initialMessage = sessionResponse.initialMessage
+                }
+
+                self.switchToSession(sessionResponse.sessionID)
+
+                await self.webSocketAuthentication(
+                  sessionId: sessionResponse.sessionID,
+                  sessionToken: sessionResponse.sessionToken
+                )
+
+                continuation.resume(returning: sessionResponse.sessionID)
+              }
+              
+            } catch {
+              continuation.resume(throwing: error)
+            }
+            
+          case .failure(let error):
+            continuation.resume(throwing: error)
+          }
+        }
+      }
+    } catch {
+      print("Encoding error: \(error)")
+      return ""
+    }
   }
 }
+

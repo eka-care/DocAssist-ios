@@ -12,7 +12,7 @@ public protocol NavigateToPatientDirectory {
 }
 
 public protocol ConvertVoiceToText {
-  func convertVoiceToText(audioFileURL: URL, completion: @escaping (String) -> Void)
+  func convertVoiceToText(audioFileURL: URL, completion: @escaping (Result<String, Error>) -> Void)
 }
 
 public protocol DeepThoughtsViewDelegate: AnyObject {

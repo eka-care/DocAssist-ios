@@ -12,7 +12,7 @@ struct EmptyStateView: View {
     VStack {
       Divider()
       HStack {
-        Text("Start a new chat with Doc Assist to-")
+        Text(SetUIComponents.shared.isPatientApp ?? false ? "Start a new chat with Health Bot to-" : "Start a new chat with Doc Assist to-")
           .fontWeight(.bold)
           .font(.custom("Lato-Bold", size: 18))
           .foregroundStyle(SetUIComponents.shared.emptyHistoryFgColor ?? Color.gray)

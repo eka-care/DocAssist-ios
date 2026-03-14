@@ -9,7 +9,6 @@ import SwiftUI
 import SwiftData
 import EkaMedicalRecordsCore
 import EkaMedicalRecordsUI
-import EkaVoiceToRx
 
 public struct ExistingPatientChatsView: View {
   private let patientName: String
@@ -21,15 +20,26 @@ public struct ExistingPatientChatsView: View {
   @State private var createNewSession: String? = "createNewSession"
   @Environment(\.dismiss) var dismiss
   private let calledFromPatientContext: Bool
+  private let useNavigationStack: Bool
   
   @Query private var chats: [SessionDataModel] = []
   
   @State private var path = NavigationPath()
   private let authToken: String
   private let authRefreshToken: String
-  var liveActivityDelegate: LiveActivityDelegate?
   
-  init(patientName: String, viewModel: ChatViewModel, backgroundColor: Color? = nil, oid: String, userDocId: String, userBId: String, calledFromPatientContext: Bool, authToken: String, authRefreshToken: String, liveActivityDelegate: LiveActivityDelegate? = nil) {
+  public init(
+    patientName: String,
+    viewModel: ChatViewModel,
+    backgroundColor: Color? = nil,
+    oid: String,
+    userDocId: String,
+    userBId: String,
+    calledFromPatientContext: Bool,
+    authToken: String,
+    authRefreshToken: String,
+    useNavigationStack: Bool = true,
+  ) {
     self.patientName = patientName
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
@@ -37,9 +47,10 @@ public struct ExistingPatientChatsView: View {
     self.userDocId = userDocId
     self.userBId = userBId
     self.calledFromPatientContext = calledFromPatientContext
+    self.useNavigationStack = useNavigationStack
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
-    self.liveActivityDelegate = liveActivityDelegate
+    
     _chats = Query(
       filter: #Predicate<SessionDataModel> { eachChat in
         eachChat.oid == oid
@@ -50,24 +61,26 @@ public struct ExistingPatientChatsView: View {
   }
   
   public var body: some View {
-   NavigationStack(path: $path) {
+    Group {
+      if useNavigationStack {
+        NavigationStack(path: $path) {
+          listContent
+            .navigationTitle(patientName)
+            .navigationBarTitleDisplayMode(.large)
+        }
+      } else {
+        listContent
+          .navigationTitle(patientName)
+          .navigationBarTitleDisplayMode(.large)
+      }
+    }
+  }
+  
+  private var listContent: some View {
     list
       .toolbarBackground(Color.white, for: .navigationBar)
       .toolbarBackground(.visible, for: .navigationBar)
       .toolbar {
-        if calledFromPatientContext {
-          ToolbarItem(placement: .navigationBarLeading) {
-            Button {
-              dismiss()
-            } label: {
-              Image(systemName: "chevron.left")
-                .font(.system(size: 21, weight: .medium))
-                .foregroundColor(Color.primaryprimary)
-              Text("Back")
-                .foregroundStyle(Color.primaryprimary)
-            }
-          }
-        }
         ToolbarItem(placement: .navigationBarTrailing) {
           Button {
             Task {
@@ -79,21 +92,20 @@ public struct ExistingPatientChatsView: View {
               )
               createNewSession = newSession
               viewModel.switchToSession(newSession)
-              
               DispatchQueue.main.async {
                 path.append("ActiveView")
               }
             }
-            DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryClicks, properties: ["type": "start_new_chat"])
-          }
-          label: {
+            DocAssistEventManager.shared.trackEvent(
+              event: .docAssistHistoryClicks,
+              properties: ["type": "start_new_chat"]
+            )
+          } label: {
             Text("New chat")
               .foregroundStyle(Color.primaryprimary)
           }
         }
       }
-      .navigationTitle(patientName)
-      .navigationBarTitleDisplayMode(.large)
       .navigationDestination(for: String.self) { _ in
         ActiveChatView(
           session: viewModel.vmssid,
@@ -106,12 +118,12 @@ public struct ExistingPatientChatsView: View {
           authToken: authToken,
           authRefreshToken: authRefreshToken
         )
-        .modelContext( DatabaseConfig.shared.modelContext)
+        .modelContext(DatabaseConfig.shared.modelContext)
       }
-        }
   }
-  var list: some View {
-    ScrollView() {
+  
+  private var list: some View {
+    ScrollView {
       VStack {
         HStack {
           Text("\(chats.count) chats found")
@@ -146,7 +158,10 @@ public struct ExistingPatientChatsView: View {
     .background(Color(red: 0.96, green: 0.96, blue: 0.96))
     .scrollIndicators(.hidden)
     .onAppear {
-      DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "particular_pt"])
+      DocAssistEventManager.shared.trackEvent(
+        event: .docAssistHistoryPage,
+        properties: ["type": "particular_pt"]
+      )
     }
   }
 }

@@ -18,15 +18,13 @@ let package = Package(
     // MarkdownUI package dependency
     .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
-    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", from: "10.0.1"),
+    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.0.0")),
     // Medical Record
-    .package(url: "https://github.com/eka-care/EkaMedicalRecordsUI.git", from: "1.0.19"),
+    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  branch: "1.4.7"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
-    // VoiceToRx
-    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", from: "1.1.9"),
     // EkaPDFMaker
-    .package(url: "https://github.com/aryaIOS/EkaPDFMaker.git", branch: "main")
+    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -42,8 +40,6 @@ let package = Package(
         .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
         // Mixpanel
         .product(name: "Mixpanel", package: "mixpanel-swift"),
-        // VoiceToRx
-        .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx"),
         // PdfRender
         .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
       ],

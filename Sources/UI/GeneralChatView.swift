@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import EkaVoiceToRx
 import TipKit
 
 public struct GeneralChatView: View {
@@ -26,7 +25,6 @@ public struct GeneralChatView: View {
   var authRefreshToken: String
   @Binding var selectedScreen: SelectedScreen?
   var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?
-  var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails?
   
@@ -45,7 +43,6 @@ public struct GeneralChatView: View {
     authRefreshToken: String,
     selectedScreen: Binding<SelectedScreen?>,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-    liveActivityDelegate: LiveActivityDelegate? = nil,
     suggestionsDelegate: GetMoreSuggestions? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil
   ) {
@@ -63,7 +60,6 @@ public struct GeneralChatView: View {
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
-    self.liveActivityDelegate = liveActivityDelegate
     self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
   }
@@ -82,11 +78,9 @@ public struct GeneralChatView: View {
       authRefreshToken: authRefreshToken,
       selectedScreen: $selectedScreen,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate
     )
     .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
-    .navigationBarHidden(true)
   }
 }

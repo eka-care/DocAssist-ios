@@ -8,7 +8,6 @@
 import SwiftUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 
 struct MessageInputView: View {
   @Binding var inputString: String
@@ -20,12 +19,10 @@ struct MessageInputView: View {
   let viewModel: ChatViewModel
   let session: String
   let messages: [ChatMessageModel]
-  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
-  var liveActivityDelegate: LiveActivityDelegate?
   @State var showVoiceToRxPopUp: Bool = false
   @Binding var voiceToRxTip: VoiceToRxTip
-    
+  
   var body: some View {
     VStack(spacing: 15) {
       if !selectedImages.isEmpty {
@@ -46,39 +43,30 @@ struct MessageInputView: View {
         .frame(minHeight: 25)
       
       HStack(spacing: 12) {
-        Button {
-          showRecordsView = true
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "records"])
-          if patientName != "General Chat" {
-            InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
-          } else {
-            InitConfiguration.shared.recordsTitle = "My documents"
-          }
-        } label: {
-          Image(.paperClip)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 16)
-            .foregroundStyle(Color.neutrals600)
-        }
-        .sheet(isPresented: $showRecordsView) {
-          NavigationStack {
-            RecordsView(recordsRepo: recordsRepo, recordPresentationState: .picker) { data in
-              
-              let images = data.compactMap { record in
-                record.image
-              }
-              let docIds = data.compactMap { record in
-                record.documentID
-              }
-              
-              selectedImages = Array(images.prefix(3))
-              selectedDocumentId = Array(docIds.prefix(3))
-              showRecordsView = false
-            }
-            .environment(\.managedObjectContext, recordsRepo.databaseManager.container.viewContext)
-          }
-        }
+//        Button {
+//          showMedicalRecords()
+//        } label: {
+//          Image(.paperClip)
+//            .resizable()
+//            .scaledToFit()
+//            .frame(width: 16)
+//            .foregroundStyle(Color.neutrals600)
+//        }
+//        .fullScreenCover(isPresented: $showRecordsView) {
+//          NavigationStack {
+//            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
+//              let images = data.compactMap { record in
+//                record.image
+//              }
+//              let docIds = data.compactMap { record in
+//                record.documentID
+//              }
+//              selectedImages = Array(images.prefix(3))
+//              selectedDocumentId = Array(docIds.prefix(3))
+//              showRecordsView = false
+//            })
+//          }
+//        }
         
         if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
           HStack(alignment: .center, spacing: 4) {
@@ -101,8 +89,7 @@ struct MessageInputView: View {
         Spacer()
         
         Button {
-          viewModel.handleMicrophoneTap()
-          DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
+          startVoiceToText()
         } label: {
           Image(.mic)
             .resizable()
@@ -122,85 +109,14 @@ struct MessageInputView: View {
           )
         }
         
-        if !inputString.isEmpty {
-          Button {
-            inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
-            
-            guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
-            Task {
-              await viewModel.sendMessage(
-                newMessage: inputString,
-                imageUrls: selectedImages,
-                vaultFiles: selectedDocumentId,
-                sessionId: session,
-                lastMesssageId: messages.last?.msgId
-              )
-              inputString = ""
-              selectedImages = []
-              selectedDocumentId = []
-              DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
-              isTextFieldFocused.toggle()
-            }
-          } label: {
-            Image(systemName: "arrow.up.circle.fill")
-              .resizable()
-              .scaledToFit()
-              .frame(width: 30,height: 30)
-              .foregroundStyle((inputString.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.5) : Color.primaryprimary)
-              .frame(width: 36,height: 36)
-          }
-          .disabled(inputString.isEmpty || viewModel.streamStarted)
-        } else {
-          if viewModel.streamStarted {
-            Button {
-              viewModel.stopStreaming()
-              viewModel.stopFirestoreStream()
-            } label: {
-              Image(systemName: "stop.circle")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 24,height: 24)
-                .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
-                .padding(4)
-            }
+        Group {
+          if !inputString.isEmpty {
+            sendButton
           } else {
-              Button {
-                  showVoiceToRxPopUp = true
-                  Task {
-                      await VoiceToRxTip.voiceToRxVisited.donate()
-                  }
-                  voiceToRxTip.invalidate(reason: .actionPerformed)
-              } label: {
-                  Image(systemName: "waveform.circle.fill")
-                      .resizable()
-                      .scaledToFit()
-                      .frame(width: 30,height: 30)
-                      .foregroundStyle(viewModel.v2rxEnabled ? LinearGradient(
-                        stops: [
-                            Gradient.Stop(color: Color(red: 0.13, green: 0.36, blue: 1), location: 0.00),
-                            Gradient.Stop(color: Color(red: 0.68, green: 0.44, blue: 0.82), location: 1.00),
-                        ],
-                        startPoint: UnitPoint(x: 0, y: 0.5),
-                        endPoint: UnitPoint(x: 1, y: 0.5)
-                      ) : LinearGradient(
-                        gradient: Gradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.5)]),
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                      )
-                      .frame(width: 36,height: 36)
-              }
-            .popoverTip(voiceToRxTip, arrowEdge: .bottom)
-            .disabled(!viewModel.v2rxEnabled)
-            .sheet(isPresented: $showVoiceToRxPopUp) {
-                VoiceToRxPopUpView(
-                    viewModel: viewModel,
-                    session: session,
-                    voiceToRxViewModel: voiceToRxViewModel,
-                    messages: messages,
-                    startVoicetoRx: $showVoiceToRxPopUp
-                )
-                .presentationDetents([.height(400)])
+            if viewModel.streamStarted {
+              stopButton
+            } else {
+              disabledSendIcon
             }
           }
         }
@@ -209,66 +125,162 @@ struct MessageInputView: View {
     .focused($isTextFieldFocused)
     .padding(16)
     .background(Color(.white))
-    .customCornerBorder(20, corners: [.topLeft, .topRight], color: Color.gray, lineWidth: 0.5)
+    .onAppear {
+      guard let type = viewModel.openType else { return }
+      if type == "EkaScribe" {
+        startVoiceToRx()
+      } else if type == "MedicalRecords" {
+        showMedicalRecords()
+      } else if type == "chat" {
+        isTextFieldFocused = true
+      } else if type == "voiceToText" {
+        startVoiceToText()
+      }
+      
+      viewModel.openType = nil 
+    }
+  }
+  
+  var sendButton: some View {
+    Button {
+      inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
+      Task {
+        await viewModel.sendMessage(
+          newMessage: inputString,
+          imageUrls: selectedImages,
+          vaultFiles: selectedDocumentId,
+          sessionId: session,
+          lastMesssageId: messages.last?.msgId
+        )
+        inputString = ""
+        selectedImages = []
+        selectedDocumentId = []
+        DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+        isTextFieldFocused.toggle()
+      }
+    } label: {
+      Image(systemName: "arrow.up.circle.fill")
+        .resizable()
+        .scaledToFit()
+        .frame(width: 30, height: 30)
+        .foregroundStyle(
+          (inputString.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.5) : Color.primaryprimary
+        )
+        .frame(width: 36, height: 36)
+    }
+    .disabled(inputString.isEmpty || viewModel.streamStarted)
+  }
+  
+  var stopButton: some View {
+    Button {
+      viewModel.stopStreaming()
+    } label: {
+      Image(systemName: "stop.circle")
+        .resizable()
+        .scaledToFit()
+        .frame(width: 24, height: 24)
+        .foregroundColor(Color(red: 0.84, green: 0.29, blue: 0.26))
+        .padding(4)
+    }
+  }
+  
+  var disabledSendIcon: some View {
+    Image(systemName: "arrow.up.circle.fill")
+      .resizable()
+      .scaledToFit()
+      .frame(width: 30, height: 30)
+      .foregroundStyle(Color.gray.opacity(0.5))
+      .frame(width: 36, height: 36)
+  }
+  
+  private func showMedicalRecords() {
+      showRecordsView = true
+      DocAssistEventManager.shared.trackEvent(
+          event: .docAssistLandingPgClick,
+          properties: ["type": "records"]
+      )
+      if patientName != "General Chat" {
+          InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
+      } else {
+          InitConfiguration.shared.recordsTitle = "My documents"
+      }
+  }
+  
+  private func startVoiceToRx() {
+    AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+      showVoiceToRxPopUp = true
+      Task {
+        await VoiceToRxTip.voiceToRxVisited.donate()
+      }
+      voiceToRxTip.invalidate(reason: .actionPerformed)
+    }
+  }
+  
+  private func startVoiceToText() {
+    AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
+      viewModel.messageInput = false
+      viewModel.startRecording()
+    }
+    DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "voicetx"])
   }
 }
 
 struct VoiceInputView: View {
-    var viewModel: ChatViewModel
-    
-    var body: some View {
-        HStack(alignment: .center, spacing: 10) {
-            Button {
-                viewModel.dontRecord()
-            } label: {
-                Image(systemName: "xmark")
-                    .frame(width: 24, height: 24)
-                    .padding(6)
-            }
-            .frame(width: 36, height: 36)
-            .background(Color.white)
-            .cornerRadius(18)
-            
-            if viewModel.isRecording {
-                AudioWaveformView()
-                    .frame(height: 36)
-                    .layoutPriority(1)
-            } else {
-                Spacer()
-                    .frame(height: 36)
-            }
-            
-            TimerView(isTimerRunning: !viewModel.voiceProcessing)
-                .frame(width: 60)
-            
-            if viewModel.voiceProcessing {
-                ProgressView()
-                    .frame(width: 36, height: 36)
-            }
-            
-            if !viewModel.voiceProcessing {
-                Button {
-                    viewModel.stopRecording()
-                } label: {
-                    Image(systemName: "checkmark")
-                        .frame(width: 24, height: 24)
-                        .padding(6)
-                }
-                .frame(width: 36, height: 36)
-                .background(Color.white)
-                .cornerRadius(18)
-            }
+  var viewModel: ChatViewModel
+  
+  var body: some View {
+    HStack(alignment: .center, spacing: 10) {
+      Button {
+        viewModel.dontRecord()
+      } label: {
+        Image(systemName: "xmark")
+          .frame(width: 24, height: 24)
+          .padding(6)
+      }
+      .frame(width: 36, height: 36)
+      .background(Color.white)
+      .cornerRadius(18)
+      
+      if viewModel.isRecording {
+        AudioWaveformView()
+          .frame(height: 36)
+          .layoutPriority(1)
+      } else {
+        Text("Converting to text...")
+      }
+      
+      TimerView(isTimerRunning: !viewModel.voiceProcessing)
+        .frame(width: 60)
+      
+      if viewModel.voiceProcessing {
+        ProgressView()
+          .frame(width: 36, height: 36)
+      }
+      
+      if !viewModel.voiceProcessing {
+        Button {
+          viewModel.stopRecording()
+        } label: {
+          Image(systemName: "checkmark")
+            .frame(width: 24, height: 24)
+            .padding(6)
         }
-        .frame(maxWidth: .infinity, minHeight: 44)
-        .padding(.horizontal, 8)
+        .frame(width: 36, height: 36)
         .background(Color.white)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .inset(by: -0.5)
-                .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
-        )
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .cornerRadius(18)
+      }
     }
+    .frame(maxWidth: .infinity, minHeight: 44)
+    .padding(.horizontal, 8)
+    .background(Color.white)
+    .cornerRadius(16)
+    .overlay(
+      RoundedRectangle(cornerRadius: 16)
+        .inset(by: -0.5)
+        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+    )
+    .padding(.horizontal, 16)
+    .padding(.vertical, 8)
+  }
 }

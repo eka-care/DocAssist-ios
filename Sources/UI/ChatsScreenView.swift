@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import EkaVoiceToRx
 
 enum ChatSegment: String, CaseIterable {
     case patients = "Patients"
@@ -37,13 +36,12 @@ struct ChatsScreenView: View {
   @Binding var selectedScreen: SelectedScreen?
   @State var selectedPatientThread: SessionDataModel?
   @State private var messageMatches: [String: Bool] = [:]
-
+  @State var newViewChat: Bool = false
   
   var patientDelegate: NavigateToPatientDirectory?
   var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
-  var liveActivityDelegate: LiveActivityDelegate?
   var delegate: ConvertVoiceToText?
   var suggestionsDelegate: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
@@ -94,7 +92,6 @@ struct ChatsScreenView: View {
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-       liveActivityDelegate: LiveActivityDelegate? = nil,
        patientName: String? = nil,
        suggestionsDelegate: GetMoreSuggestions? = nil,
        getPatientDetailsDelegate: GetPatientDetails? = nil
@@ -105,7 +102,6 @@ struct ChatsScreenView: View {
       context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBid,
       userDocId: userDocId,
       patientName: patientName ?? "General Chat",
@@ -119,14 +115,13 @@ struct ChatsScreenView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
-    self.liveActivityDelegate = liveActivityDelegate
     self.patientName = patientName
   }
   
   var body: some View {
     
     switch currentDevice {
-    case .pad:
+    case .pad, .mac:
       chatView
       
     default:
@@ -140,6 +135,20 @@ struct ChatsScreenView: View {
               patientName: selectedPatientThread?.subTitle ?? "General Chat",
               calledFromPatientContext: false,
               title: selectedPatientThread?.title,
+              userDocId: userDocId,
+              userBId: userBId,
+              authToken: authToken,
+              authRefreshToken: authRefreshToken
+            )
+            .modelContext( DatabaseConfig.shared.modelContext)
+          }
+          .navigationDestination(item: $newSessionId) { sessionId in
+            ActiveChatView(
+              session: sessionId,
+              viewModel: viewModel,
+              backgroundColor: .white,
+              patientName: "General Chat",
+              calledFromPatientContext: false,
               userDocId: userDocId,
               userBId: userBId,
               authToken: authToken,
@@ -175,6 +184,7 @@ struct ChatsScreenView: View {
         }
       }
     }
+    .scrollDismissesKeyboard(.immediately)
     .navigationBarHidden(true)
     .onAppear {
       DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
@@ -183,6 +193,44 @@ struct ChatsScreenView: View {
   
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
+      
+ //     if SetUIComponents.shared.isPatientApp ?? false {
+      if #available(iOS 26.0, *) {
+        Button(action: {
+          dismiss()
+        }) {
+          Image(systemName: "chevron.left")
+            .renderingMode(.template)
+            .foregroundColor(Color(.blackNeutrals))
+            .font(.system(size: 24, weight: .regular))
+            .padding(12)
+        }
+       // .glassEffect(.clear.interactive(), in: .circle)
+        .padding(.leading, 10)
+        .padding(.top, 4)
+      } else {
+        HStack {
+          Button(action: {
+            dismiss()
+          }) {
+            HStack(spacing: 6) {
+              Image(systemName: "chevron.left")
+                .font(.system(size: 21, weight: .medium))
+                .foregroundColor(.blue)
+              Text("Back")
+                .font(Font.custom("Lato-Regular", size: 16))
+                .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
+              Spacer()
+            }
+          }
+          .contentShape(Rectangle())
+          Spacer()
+        }
+        .padding(.leading, 10)
+        .padding(.top, 9)
+      }
+    //  }
+      
       HStack {
         Text(SetUIComponents.shared.chatHistoryTitle ?? "Chat History")
           .foregroundColor(.titleColor)
@@ -208,7 +256,6 @@ struct ChatsScreenView: View {
           DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryTopNav, properties: properties)
         }
       }
-      
       SearchBar(text: $searchText)
     }
   }
@@ -244,7 +291,7 @@ struct ChatsScreenView: View {
     return VStack {
       Divider()
       ScrollView {
-        VStack {
+        LazyVStack {
           ForEach(sortedKeys, id: \.self) { key in
             if let sessions = groupedThreads[key],
                let firstSession = sessions.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) {
@@ -271,8 +318,7 @@ struct ChatsScreenView: View {
                   docId: firstSession.userDocId,
                   date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
                   authToken: authToken,
-                  authRefreshToken: authRefreshToken,
-                  liveActivityDelegate: liveActivityDelegate
+                  authRefreshToken: authRefreshToken
                 )
               }
             }
@@ -293,7 +339,6 @@ struct ChatsScreenView: View {
     var date: String
     var authToken: String
     var authRefreshToken: String
-    var liveActivityDelegate: LiveActivityDelegate?
     
     var body: some View {
       switch currentDevice {
@@ -308,7 +353,7 @@ struct ChatsScreenView: View {
     
     private var messageSubViewIPhone: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken, liveActivityDelegate: liveActivityDelegate)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
           .modelContext( DatabaseConfig.shared.modelContext)
       } label: {
         messageSubView
@@ -334,7 +379,7 @@ struct ChatsScreenView: View {
     VStack {
       Divider()
       ScrollView {
-        VStack {
+        LazyVStack {
           ForEach(filteredSessions, id: \.sessionId) { thread in
             Button {
               handleThreadSelection(thread)
@@ -366,12 +411,11 @@ struct ChatsScreenView: View {
     )
     .background(Color.clear)
     .background(
-      UIDevice.current.userInterfaceIdiom == .pad ?
-      RoundedRectangle(cornerRadius: 10)
+      UIDevice.current.userInterfaceIdiom == .phone ? nil :
+        RoundedRectangle(cornerRadius: 10)
         .fill(
           (newSessionId == thread.sessionId) ||
           (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.primaryprimary : Color.clear)
-      : nil
     )
     .foregroundColor(
       (newSessionId == thread.sessionId) ||
@@ -395,8 +439,21 @@ struct ChatsScreenView: View {
           if allSessions.isEmpty {
             DatabaseConfig.shared.deleteAllValues()
           }
-          patientDelegate?.navigateToPatientDirectory()
-         // searchForPatient()
+          newViewChat = true
+          if let patientDelegate {
+                  patientDelegate.navigateToPatientDirectory()
+                } else {
+                  Task {
+                    let sessionId = await viewModel.createSession(
+                      subTitle: "",
+                      userDocId: userDocId,
+                      userBId: userBId
+                    )
+                    await MainActor.run {
+                      self.newSessionId = sessionId
+                    }
+                  }
+                }
         }) {
           Image(.newChatButton)
           if let newChatButtonText = SetUIComponents.shared.newChatButtonText {
@@ -418,50 +475,6 @@ struct ChatsScreenView: View {
         .shadow(color: Color.black.opacity(0.2), radius: 18, x: 0, y: 8)
       }
       .padding(.bottom, 20)
-    }
-  }
-  
-  struct MessageSubViewComponent: View {
-    let title: String
-    let date: String
-    let subTitle: String?
-    let foregroundColor: Bool
-    let allChat: Bool
-    
-    var body: some View {
-      VStack {
-        HStack {
-          nameInitialsView(initials: getInitials(name: title ?? "GeneralChat") ?? "GC")
-          VStack(spacing: 6) {
-            HStack {
-              Text(title)
-                .font(.custom("Lato-Regular", size: 16))
-                .foregroundColor(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .primary) : .primary)
-                .multilineTextAlignment(.leading)
-                .lineLimit(2)
-              Spacer()
-            }
-            HStack {
-              Text(subTitle ?? "General Chat")
-                .font(.custom("Lato-Regular", size: 14))
-                .fontWeight(.regular)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-                .lineLimit(1)
-              Spacer()
-              Text(date)
-                .font(.caption)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-              Image(systemName: "chevron.right")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 6)
-                .foregroundStyle(UIDevice.current.userInterfaceIdiom == .pad ? (foregroundColor ? .white : .gray) : Color.gray)
-            }
-            Divider()
-          }
-        }
-      }
-      .padding(UIDevice.current.userInterfaceIdiom == .pad ? 3 : 0)
     }
   }
 }
