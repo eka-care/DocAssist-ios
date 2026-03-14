@@ -8,7 +8,6 @@
 import SwiftUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
-import EkaVoiceToRx
 
 struct MessageInputView: View {
   @Binding var inputString: String
@@ -20,9 +19,7 @@ struct MessageInputView: View {
   let viewModel: ChatViewModel
   let session: String
   let messages: [ChatMessageModel]
-  @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
-  var liveActivityDelegate: LiveActivityDelegate?
   @State var showVoiceToRxPopUp: Bool = false
   @Binding var voiceToRxTip: VoiceToRxTip
   

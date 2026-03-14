@@ -41,54 +41,75 @@ struct WebSocketModel: Codable {
     case text
     case audio
     case file
-    case pill
-    case multi
-    case inline_text
-    case doctorCard
+    case tool
     case tips
-    case mobileVerification
+    case audioTranscript
+    case toolStart
+    case toolEnd
     
     enum codingKeys: String, CodingKey {
-      case text, audio, file, pill, multi, tips
-      case inlineText = "inline_text"
-      case doctorCard = "doctor_card"
-      case mobileVerification = "mobile_verification"
+      case text, audio, file, tips, tool
+      case audioTranscript = "audio_transcript"
+      case toolStart = "tool_start"
+      case toolEnd = "tool_end"
     }
   }
 }
 
 struct WebSocketData: Codable {
-    let audio: String?
-    let text: String?
-    let format: String?
-    let toolUseId: String?
-    let choices: [String]?
-    let additionalOption: String?
-    let fileExtension: String?
+  let audio: String?
+  let text: String?
+  let format: String?
+  let toolType, toolID, toolName: String?
+  let details: Details?
+  let urls: [URLElement]?
+  let additionalOption: String?
+  let fileExtension: String?
+  
+  enum CodingKeys: String, CodingKey {
+    case audio
+    case text
+    case format
+    case additionalOption = "additional_option"
+    case fileExtension = "extension"
+    case toolType = "tool_type"
+    case toolID = "tool_id"
+    case toolName = "tool_name"
+    case details, urls
+  }
+  
+  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [URLElement]? = nil, additionalOption: String? = nil, fileExtension: String? = nil) {
+    self.audio = audio
+    self.text = text
+    self.format = format
+    self.toolType = toolType
+    self.toolID = toolID
+    self.toolName = toolName
+    self.details = details
+    self.urls = urls
+    self.additionalOption = additionalOption
+    self.fileExtension = fileExtension
+  }
+}
 
-    enum CodingKeys: String, CodingKey {
-        case audio
-        case text
-        case format
-        case toolUseId = "tool_use_id"
-        case choices
-        case additionalOption = "additional_option"
-        case fileExtension = "extension"
-    }
+// MARK: - Details
+struct Details: Codable {
+  let component: String
+  let input: Input
+}
 
-    init(audio: String? = nil,
-         text: String? = nil,
-         format: String? = nil,
-         toolUseId: String? = nil,
-         choices: [String]? = nil,
-         additionalOption: String? = nil,
-         fileExtension: String? = nil) {
-        self.audio = audio
-        self.text = text
-        self.format = format
-        self.toolUseId = toolUseId
-        self.choices = choices
-        self.additionalOption = additionalOption
-        self.fileExtension = fileExtension
-    }
+// MARK: - Input
+struct Input: Codable {
+  let text: String
+  let options: [Option]
+}
+
+// MARK: - Option
+struct Option: Codable {
+  let label, value: String
+}
+
+// MARK: - URLElement
+struct URLElement: Codable {
+  let id, url: String
 }
