@@ -1,5 +1,5 @@
 {
-  "originHash" : "6f5526bda47d039c531db709a73a7bfc37ca0eb6ef2990ddcde176386baebe0a",
+  "originHash" : "ac5fbdc9b84d051a888fd4192b197f2258b03a4b7ab8f9d95c2baae098b4bdef",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -80,6 +80,8 @@
       "state" : {
         "branch" : "patient-app-pointing-sdk",
         "revision" : "008203b5d29554dc0963059e31353a035ac4165b"
+        "branch" : "main",
+        "revision" : "a65650a3b6c51e4d65d5865eed32158c36369fbd"
       }
     },
     {
