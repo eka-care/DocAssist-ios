@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import EkaVoiceToRx
 import EkaPDFMaker
 
 enum SuggestionsState {
@@ -22,7 +21,6 @@ struct MessageBubble: View {
   let viewModel: ChatViewModel
   @State var suggestionViewModel = SuggestionsViewModel()
   @State private var pdfURL: URL?
-  @ObservedObject var v2rxViewModel: VoiceToRxViewModel
   
   @State private var thumsUpClicked: Bool = false
   @State private var thumsDownClicked: Bool = false
@@ -58,8 +56,7 @@ struct MessageBubble: View {
             url: url,
             message: message,
             viewModel: viewModel,
-            createdAt: message.createdAtDate ?? .now,
-            v2rxViewModel: v2rxViewModel
+            createdAt: message.createdAtDate ?? .now
           )
           .alignmentGuide(.top) { d in d[.top] }
         }
@@ -163,7 +160,7 @@ struct MessageBubble: View {
               let fileURL = PDFRenderer().renderSinglePage(
                 headerView: AnyView(DTPDFHeaderView(
                   data: DTPDFHeaderViewData.formDeepthoughtHeaderViewData(
-                    doctorName: "DR.\(SetUIComponents.shared.docName ?? "" )",
+                    doctorName: "DR.\(AuthAndUserDetailsSetter.shared.docName ?? "" )",
                     clinicName: "",
                     address: ""
                   )

@@ -7,7 +7,6 @@
 
 import SwiftUI
 import SwiftData
-import EkaVoiceToRx
 
 enum ChatSegment: String, CaseIterable {
     case patients = "Patients"
@@ -43,7 +42,6 @@ struct ChatsScreenView: View {
   var searchForPatient: (() -> Void)?
   var authToken: String
   var authRefreshToken: String
-  var liveActivityDelegate: LiveActivityDelegate?
   var delegate: ConvertVoiceToText?
   var suggestionsDelegate: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
@@ -94,7 +92,6 @@ struct ChatsScreenView: View {
        authRefreshToken: String,
        selectedScreen: Binding<SelectedScreen?>,
        deepThoughtNavigationDelegate: DeepThoughtsViewDelegate?,
-       liveActivityDelegate: LiveActivityDelegate? = nil,
        patientName: String? = nil,
        suggestionsDelegate: GetMoreSuggestions? = nil,
        getPatientDetailsDelegate: GetPatientDetails? = nil
@@ -105,7 +102,6 @@ struct ChatsScreenView: View {
       context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
-      liveActivityDelegate: liveActivityDelegate,
       userBid: userBid,
       userDocId: userDocId,
       patientName: patientName ?? "General Chat",
@@ -119,7 +115,6 @@ struct ChatsScreenView: View {
     self.authToken = authToken
     self.authRefreshToken = authRefreshToken
     _selectedScreen = selectedScreen
-    self.liveActivityDelegate = liveActivityDelegate
     self.patientName = patientName
   }
   
@@ -323,8 +318,7 @@ struct ChatsScreenView: View {
                   docId: firstSession.userDocId,
                   date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
                   authToken: authToken,
-                  authRefreshToken: authRefreshToken,
-                  liveActivityDelegate: liveActivityDelegate
+                  authRefreshToken: authRefreshToken
                 )
               }
             }
@@ -345,7 +339,6 @@ struct ChatsScreenView: View {
     var date: String
     var authToken: String
     var authRefreshToken: String
-    var liveActivityDelegate: LiveActivityDelegate?
     
     var body: some View {
       switch currentDevice {
@@ -360,7 +353,7 @@ struct ChatsScreenView: View {
     
     private var messageSubViewIPhone: some View {
       NavigationLink {
-        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken, liveActivityDelegate: liveActivityDelegate)
+        ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken)
           .modelContext( DatabaseConfig.shared.modelContext)
       } label: {
         messageSubView

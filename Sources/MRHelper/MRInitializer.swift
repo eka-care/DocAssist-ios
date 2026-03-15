@@ -17,7 +17,7 @@ class MRInitializer {
     var ownerId: String = oid
     
     if oid == "" {
-      ownerId = SetUIComponents.shared.docOId ?? ""
+      ownerId = AuthAndUserDetailsSetter.shared.docOId ?? ""
     }
     registerAuthToken(authToken: authToken, refreshToken: refreshToken, oid: ownerId, bid: bid, userMergedOids: userMergedOids)
   }

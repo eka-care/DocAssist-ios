@@ -20,11 +20,9 @@ let package = Package(
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.0.0")),
     // Medical Record
-    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  branch: "1.4.0"),
+    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  branch: "1.4.7"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
-    // VoiceToRx
-    .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", branch: "patient-app-pointing-sdk"),
     // EkaPDFMaker
     .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
   ],
@@ -42,8 +40,6 @@ let package = Package(
         .product(name: "EkaMedicalRecordsUI", package: "EkaMedicalRecordsUI"),
         // Mixpanel
         .product(name: "Mixpanel", package: "mixpanel-swift"),
-        // VoiceToRx
-        .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx"),
         // PdfRender
         .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
       ],
