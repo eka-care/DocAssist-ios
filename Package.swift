@@ -20,11 +20,13 @@ let package = Package(
     // FireBase package dependency
     .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.0.0")),
     // Medical Record
-    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  branch: "1.4.7"),
+    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  from: "1.4.8"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // EkaPDFMaker
-    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
+    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", from: "1.0.3"),
+    // SwiftProtobuf
+    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.0.0")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -41,7 +43,9 @@ let package = Package(
         // Mixpanel
         .product(name: "Mixpanel", package: "mixpanel-swift"),
         // PdfRender
-        .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
+        .product(name: "EkaPDFMaker", package: "EkaPDFMaker"),
+        // SwiftProtobuf
+        .product(name: "SwiftProtobuf", package: "swift-protobuf")
       ],
       resources: [
         .process("Resources")
