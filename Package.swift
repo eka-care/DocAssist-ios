@@ -10,7 +10,7 @@ let package = Package(
   ],
   products: [
     // Products define the executables and libraries a package produces, making them visible to other packages.
-    .library(
+    .library( 
       name: "ChatBotAiPackage",
       targets: ["ChatBotAiPackage"]),
   ],
@@ -18,15 +18,15 @@ let package = Package(
     // MarkdownUI package dependency
     .package(url: "https://github.com/gonzalezreal/swift-markdown-ui", from: "2.4.1"),
     // FireBase package dependency
-    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.0.0")),
+    .package(url: "https://github.com/firebase/firebase-ios-sdk.git", .upToNextMajor(from: "12.9.0")),
     // Medical Record
-    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  from: "1.4.4"),
+    .package(url: "git@github.com:eka-care/EkaMedicalRecordsUI.git",  from: "1.4.8"),
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
     .package(url: "https://github.com/eka-care/EkaVoiceToRx.git", branch: "patient-app-pointing-sdk"),
     // EkaPDFMaker
-    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "main")
+    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", branch: "1.0.3")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.

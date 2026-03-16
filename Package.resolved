@@ -1,5 +1,5 @@
 {
-  "originHash" : "5ddaf98d6140a3157389130250385966bdd02bc25d556ee265ca807d87ee8a35",
+  "originHash" : "cec38a8e6a2a4c0bba23536c3d4c3074766f73e0beedeed2d574ff52f7f39776",
   "pins" : [
     {
       "identity" : "abseil-cpp-binary",
@@ -42,8 +42,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:eka-care/EkaMedicalRecordsCore.git",
       "state" : {
-        "revision" : "940d0a68f7330283735d6692be70b8f989a33776",
-        "version" : "1.3.3"
+        "revision" : "01a38d98df523171c1562d5a6a5d4108f8bb55f4",
+        "version" : "1.3.5"
       }
     },
     {
@@ -51,8 +51,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:eka-care/EkaMedicalRecordsUI.git",
       "state" : {
-        "revision" : "9b426eab34a916a324ec6dd3c4663c1200236b4b",
-        "version" : "1.4.4"
+        "revision" : "7a3a35a6e8a8f163a446e0a1ae044ffadf6ef7f3",
+        "version" : "1.4.8"
       }
     },
     {
@@ -60,8 +60,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:eka-care/EkaPDFMaker.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "06d20473db838ea245d63597d6c3a560bd933c29"
+        "branch" : "1.0.3",
+        "revision" : "e534a6511a6341a4281eb50a6f547a749ef85643"
       }
     },
     {
@@ -69,8 +69,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:eka-care/EkaUI.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "bcc1ec0899e9e573669543343994f35bad7426a0"
+        "revision" : "1dcf67f7cbb85a2366f38e0571ab5ef836fc80cc",
+        "version" : "1.0.5"
       }
     },
     {
@@ -79,7 +79,7 @@
       "location" : "https://github.com/eka-care/EkaVoiceToRx.git",
       "state" : {
         "branch" : "patient-app-pointing-sdk",
-        "revision" : "008203b5d29554dc0963059e31353a035ac4165b"
+        "revision" : "adf551000351896a2a44195a8f7ddd1f82ad9e68"
       }
     },
     {
@@ -96,8 +96,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/firebase/firebase-ios-sdk.git",
       "state" : {
-        "revision" : "674d9a7ee9858207181a3dd0b42c77298c6fb71b",
-        "version" : "12.8.0"
+        "revision" : "85560b48b0ff099ad83fe53d67df3c67fbc2b7a6",
+        "version" : "12.10.0"
       }
     },
     {
@@ -105,8 +105,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/googleads/google-ads-on-device-conversion-ios-sdk",
       "state" : {
-        "revision" : "35b601a60fbbea2de3ea461f604deaaa4d8bbd0c",
-        "version" : "3.2.0"
+        "revision" : "a5cd95c80e8efdd02155c6cea1cecf743bb683a5",
+        "version" : "3.3.0"
       }
     },
     {
@@ -114,8 +114,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/google/GoogleAppMeasurement.git",
       "state" : {
-        "revision" : "2ffd220823f3716904733162e9ae685545c276d1",
-        "version" : "12.8.0"
+        "revision" : "68ba955e540dcff5e0805970ef4b1fd0150be100",
+        "version" : "12.10.0"
       }
     },
     {
@@ -168,8 +168,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/JonasGessner/JGProgressHUD",
       "state" : {
-        "branch" : "master",
-        "revision" : "6336c426fb147ee19c15252eaf363f29720c3eb5"
+        "revision" : "78d7cd35f1d90ff74fd82e486f2cbe4b24be8cf9",
+        "version" : "2.2.0"
       }
     },
     {
@@ -231,8 +231,8 @@
       "kind" : "remoteSourceControl",
       "location" : "git@github.com:eka-care/PatientUtility.git",
       "state" : {
-        "branch" : "main",
-        "revision" : "1d46e3c5e75a368076092d1a70f7818b4d61449d"
+        "revision" : "eaa7295aff65aaa149a9cf157f55fb124a8356ac",
+        "version" : "1.2.0"
       }
     },
     {
