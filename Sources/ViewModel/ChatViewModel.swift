@@ -444,7 +444,19 @@ extension ChatViewModel {
   func handleWebSocketModel(_ model: WebSocketModel) async {
     switch model.eventType {
     case .stream:
-      if let text = model.data?.text {
+      if model.contentType == .tool,
+         let toolName = model.data?.toolName,
+         toolName == "elicit_selection",
+         let details = model.data?.details {
+        let optionValues = details.input.options.map { $0.value }
+        let questionText = details.input.text
+        let isMulti = details.component == "multi"
+        DispatchQueue.main.async { [weak self] in
+          self?.messageText = questionText
+          self?.suggestions = optionValues
+          self?.multiSelect = isMulti
+        }
+      } else if let text = model.data?.text {
         messageText += text
       } else if let progress = model.data?.text ?? model.data?.audio {
         DispatchQueue.main.async {
@@ -458,25 +470,6 @@ extension ChatViewModel {
       
     case .chat:
       print("#BB this is chat component")
-//      if let choice = model.contentType {
-//        if choice == .pill {
-//          if let choices = model.data?.choices {
-//            suggestions = choices
-//            multiSelect = false
-//          }
-//        } else if choice == .multi {
-//          if let choices = model.data?.choices {
-//            suggestions = choices
-//            multiSelect = true
-//          }
-//        } else if choice == .inline_text {
-//          if let textData = model.data?.text {
-//            voiceProcessing = false
-//            messageInput = true
-//            inputString = textData
-//          }
-//        }
-//      }
       
     case .eos:
       Task {
@@ -484,6 +477,7 @@ extension ChatViewModel {
         DispatchQueue.main.async { [weak self] in
           self?.messageText = ""
           self?.streamStarted = false
+          self?.suggestions = nil
           self?.multiSelect = nil
         }
       }

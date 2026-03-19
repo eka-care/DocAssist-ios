@@ -24,120 +24,43 @@ struct MessageInputView: View {
   @Binding var voiceToRxTip: VoiceToRxTip
   
   var body: some View {
-    VStack(spacing: 15) {
-      if !selectedImages.isEmpty {
-        ScrollView(.horizontal, showsIndicators: false) {
-          HStack(spacing: 8) {
-            ForEach(selectedImages.indices, id: \.self) { index in
-              ImagePreviewCell(imageUrl: selectedImages[index], imageId: index) { id in
-                selectedImages.remove(at: id)
-              }
-            }
-          }
-        }
-        .frame(height: 20)
-        .padding()
-      }
-      
+    HStack(alignment: .bottom, spacing: 8) {
       TextField("Start typing...", text: $inputString, axis: .vertical)
-        .frame(minHeight: 25)
-      
-      HStack(spacing: 12) {
-//        Button {
-//          showMedicalRecords()
-//        } label: {
-//          Image(.paperClip)
-//            .resizable()
-//            .scaledToFit()
-//            .frame(width: 16)
-//            .foregroundStyle(Color.neutrals600)
-//        }
-//        .fullScreenCover(isPresented: $showRecordsView) {
-//          NavigationStack {
-//            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
-//              let images = data.compactMap { record in
-//                record.image
-//              }
-//              let docIds = data.compactMap { record in
-//                record.documentID
-//              }
-//              selectedImages = Array(images.prefix(3))
-//              selectedDocumentId = Array(docIds.prefix(3))
-//              showRecordsView = false
-//            })
-//          }
-//        }
-        
-        if let patientName = patientName, !patientName.isEmpty, patientName != "General Chat" {
-          HStack(alignment: .center, spacing: 4) {
-            VStack(alignment: .center, spacing: 10) {
-              Image(systemName: "person.fill")
-            }
-            .padding(4)
-            .frame(width: 16, height: 16, alignment: .center)
-            
-            Text(patientName)
-              .font(Font.custom("Lato-Bold", size: 12))
-              .foregroundColor(Color(red: 0.28, green: 0.28, blue: 0.28))
-          }
-          .padding(.horizontal, 8)
-          .padding(.vertical, 6)
-          .background(Color(red: 0.91, green: 0.91, blue: 0.91))
-          .cornerRadius(123)
-        }
-        
-        Spacer()
-        
-        Button {
-          startVoiceToText()
-        } label: {
-          Image(.mic)
-            .resizable()
-            .scaledToFit()
-            .frame(width: 16)
-            .foregroundStyle(Color.neutrals600)
-        }
-        .disabled(!viewModel.v2rxEnabled)
-        .alert(isPresented: viewModel.showPermissionAlertBinding) {
-          Alert(
-            title: Text(viewModel.alertTitle),
-            message: Text(viewModel.alertMessage),
-            primaryButton: .default(Text("Go to Settings")) {
-              viewModel.openAppSettings()
-            },
-            secondaryButton: .cancel(Text("Cancel"))
-          )
-        }
-        
-        Group {
-          if !inputString.isEmpty {
-            sendButton
+        .font(Font.custom("Lato-Regular", size: 16))
+        .focused($isTextFieldFocused)
+        .padding(.leading, 4)
+
+      Group {
+        if !inputString.isEmpty {
+          sendButton
+        } else {
+          if viewModel.streamStarted {
+            stopButton
           } else {
-            if viewModel.streamStarted {
-              stopButton
-            } else {
-              disabledSendIcon
-            }
+            disabledSendIcon
           }
         }
       }
     }
-    .focused($isTextFieldFocused)
-    .padding(16)
+    .padding(.horizontal, 14)
+    .padding(.vertical, 10)
+    .background(Color(.white))
+    .clipShape(RoundedRectangle(cornerRadius: 24))
+    .overlay(
+      RoundedRectangle(cornerRadius: 24)
+        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+    )
+    .padding(.horizontal, 16)
+    .padding(.vertical, 10)
     .background(Color(.white))
     .onAppear {
       guard let type = viewModel.openType else { return }
-      if type == "EkaScribe" {
-        startVoiceToRx()
-      } else if type == "MedicalRecords" {
-        showMedicalRecords()
-      } else if type == "chat" {
+      if type == "chat" {
         isTextFieldFocused = true
       } else if type == "voiceToText" {
         startVoiceToText()
       }
-      
-      viewModel.openType = nil 
+      viewModel.openType = nil
     }
   }
   
