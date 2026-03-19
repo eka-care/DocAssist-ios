@@ -163,7 +163,7 @@ public struct ActiveChatView: View {
   
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-        Text("Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
+        Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
           .font(Font.custom("Lato-Regular", size: 16))
           .foregroundStyle(Color.neutrals600)
           .padding(.bottom, 4)
@@ -178,10 +178,13 @@ public struct ActiveChatView: View {
             viewModel: viewModel, isMultiSelect: false
           )
         } else {
-          SuggestionsComponentView(
-            suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
-            viewModel: viewModel, isMultiSelect: false
-          )
+          if let apiSuggestions = viewModel.initialMessageSuggestions {
+            SuggestionsComponentView(
+              suggestionText: apiSuggestions,
+              viewModel: viewModel, isMultiSelect: false
+            )
+            .padding(.leading, 16)
+          }
         }
       }
       .padding(.leading, 16)

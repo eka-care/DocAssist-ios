@@ -54,6 +54,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var suggestions: [String]? = nil
   var multiSelect: Bool? = nil
   var webSocketConnectionTitle: String = "Idle"
+  var initialMessageText: String? = nil
+  var initialMessageSuggestions: [String]? = nil
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -498,6 +500,12 @@ extension ChatViewModel {
     userBId: String
   ) async -> String {
     
+    // Reset initial message state for each new session creation attempt
+    await MainActor.run {
+      initialMessageText = nil
+      initialMessageSuggestions = nil
+    }
+    
     if let existing = try? await DatabaseConfig.shared
       .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
       .last {
@@ -543,6 +551,15 @@ extension ChatViewModel {
               )
               
               self.switchToSession(sessionResponse.sessionID)
+              
+              if let initialMessage = sessionResponse.initialMessage {
+                let text = initialMessage.text
+                let suggestions = initialMessage.suggestions
+                await MainActor.run {
+                  self.initialMessageText = text
+                  self.initialMessageSuggestions = suggestions
+                }
+              }
               
               await self.webSocketAuthentication(
                 sessionId: sessionResponse.sessionID,
