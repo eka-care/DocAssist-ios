@@ -82,15 +82,23 @@ public struct ActiveChatView: View {
                   messageBubbleView(message: message)
                     .padding(.horizontal)
                     .id(message.id)
-                  
-                  
-                  if viewModel.streamStarted && messages.last?.id == message.id {
-                   // if viewModel.messageText.isEmpty {
-                      LoadingView()
-                   // }
+                }
+
+                // Live streaming bubble — shown while bot is responding
+                if viewModel.streamStarted {
+                  if viewModel.messageText.isEmpty {
+                    LoadingView()
+                      .padding(.horizontal)
+                  } else {
+                    HStack(alignment: .top) {
+                      BotAvatarImage()
+                      StreamingTextView(text: viewModel.messageText)
+                      Spacer()
+                    }
+                    .padding(.horizontal)
                   }
                 }
-                
+
                 Color.clear.frame(height: 1)
                   .id(bottomScrollIdentifier)
               }
@@ -102,6 +110,9 @@ public struct ActiveChatView: View {
                 withAnimation {
                   proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
                 }
+              }
+              .onChange(of: viewModel.messageText) { _, _ in
+                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
               }
               .onAppear {
                 DispatchQueue.main.async {
@@ -258,7 +269,7 @@ public struct ActiveChatView: View {
   }
   
   private func messageBubbleView(message: ChatMessageModel) -> some View {
-    MessageBubble(
+    return MessageBubble(
       message: message,
       m: message.messageText,
       url: message.imageUrls,
