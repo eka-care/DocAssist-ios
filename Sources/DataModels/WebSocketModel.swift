@@ -46,12 +46,46 @@ struct WebSocketModel: Codable {
     case audioTranscript
     case toolStart
     case toolEnd
-    
-    enum codingKeys: String, CodingKey {
+    case inlineText
+
+    enum CodingKeys: String, CodingKey {
       case text, audio, file, tips, tool
       case audioTranscript = "audio_transcript"
       case toolStart = "tool_start"
       case toolEnd = "tool_end"
+      case inlineText = "inline_text"
+    }
+
+    init(from decoder: Decoder) throws {
+      let container = try decoder.singleValueContainer()
+      let rawValue = try container.decode(String.self)
+      switch rawValue {
+      case "text": self = .text
+      case "audio": self = .audio
+      case "file": self = .file
+      case "tool": self = .tool
+      case "tips": self = .tips
+      case "audio_transcript": self = .audioTranscript
+      case "tool_start": self = .toolStart
+      case "tool_end": self = .toolEnd
+      case "inline_text": self = .inlineText
+      default: self = .text
+      }
+    }
+
+    func encode(to encoder: Encoder) throws {
+      var container = encoder.singleValueContainer()
+      switch self {
+      case .text: try container.encode("text")
+      case .audio: try container.encode("audio")
+      case .file: try container.encode("file")
+      case .tool: try container.encode("tool")
+      case .tips: try container.encode("tips")
+      case .audioTranscript: try container.encode("audio_transcript")
+      case .toolStart: try container.encode("tool_start")
+      case .toolEnd: try container.encode("tool_end")
+      case .inlineText: try container.encode("inline_text")
+      }
     }
   }
 }

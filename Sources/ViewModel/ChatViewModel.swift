@@ -251,7 +251,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
     let id = String(timestamp)
     
     let payload: [String: Any] = [
-      "ev": "stream",
+      "ev": "chat",
       "ct": "audio",
       "ts": timestamp,
       "_id": id,
@@ -469,7 +469,16 @@ extension ChatViewModel {
       print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
       
     case .chat:
-      print("#BB this is chat component")
+      // Handle transcription result from audio_transcript or inline_text content type
+      if (model.contentType == .audioTranscript || model.contentType == .inlineText),
+         let transcribedText = model.data?.text {
+        DispatchQueue.main.async { [weak self] in
+          guard let self else { return }
+          self.inputString = transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
+          self.voiceProcessing = false
+          self.messageInput = true
+        }
+      }
       
     case .eos:
       Task {
