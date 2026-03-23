@@ -318,7 +318,12 @@ extension Data {
 extension ChatViewModel {
   
   func checkandValidateWebSocketConnection() async {
-    
+    // Skip if socket already connected (createSession already set it up)
+    guard webSocketClient == nil else {
+      print("ℹ️ WebSocket already connected, skipping re-authentication")
+      return
+    }
+
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     if let webSocketSessionId {
       await checkIfSessionIsActive(for: webSocketSessionId)
@@ -328,6 +333,19 @@ extension ChatViewModel {
     }
   }
   
+  private func fetchFreshSessionToken(requestModel: AuthSessionRequestModel) async -> String? {
+    return await withCheckedContinuation { continuation in
+      MatrixApiService.shared.createSession(requestModel: requestModel) { result, _ in
+        switch result {
+        case .success(let response):
+          continuation.resume(returning: response.sessionToken)
+        case .failure:
+          continuation.resume(returning: nil)
+        }
+      }
+    }
+  }
+
   func checkIfSessionIsActive(for sessionId: String) async -> Bool {
     return await withCheckedContinuation { continuation in
       MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
@@ -366,48 +384,48 @@ extension ChatViewModel {
       webSocketConnectionTitle = "Not connected"
       return
     }
-    
-    webSocketClient = WebSocketNetworkRequest(url: url)
-    webSocketClient?.onMessageDecoded = { [weak self] model in
+
+    // Disconnect any existing socket
+    webSocketClient?.disconnect()
+    webSocketClient = nil
+
+    let client = WebSocketNetworkRequest(url: url)
+    client.onMessageDecoded = { [weak self] model in
       guard let self else { return }
       serialTaskQueue.enqueue { [weak self] in
         guard let self else { return }
         await handleWebSocketModel(model)
       }
     }
-    webSocketClient?.connect { [weak self] connected in
-      guard connected else {
-        print("❌ WebSocket connection failed")
-        self?.webSocketConnectionTitle = "Not connected"
-        return
+    webSocketClient = client
+
+    // Await TCP+TLS+WebSocket handshake
+    let connected = await client.connect()
+    guard connected else {
+      print("❌ WebSocket connection failed")
+      webSocketConnectionTitle = "Not connected"
+      webSocketClient = nil
+      return
+    }
+
+    // Server expects auth message with the session_token from createSession response
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let authPayload: [String: Any] = [
+      "ev": "auth",
+      "_id": String(timestamp),
+      "ts": timestamp,
+      "data": ["token": sessionToken]
+    ]
+
+    do {
+      let jsonData = try JSONSerialization.data(withJSONObject: authPayload)
+      if let jsonString = String(data: jsonData, encoding: .utf8) {
+        print("📤 Sending auth message: \(jsonString)")
+        client.send(message: jsonString)
+        webSocketConnectionTitle = "Connected"
       }
-      
-      self?.webSocketConnectionTitle = "Connected"
-      
-      // Generate unique ID & timestamp
-      let timestamp = Int(Date().timeIntervalSince1970 * 1000)
-      let authId = String(timestamp)
-      
-      // Construct auth payload
-      let authPayload: [String: Any] = [
-        "ev": "auth",
-        "_id": authId,
-        "ts": timestamp,
-        "data": [
-          "token": sessionToken
-        ]
-      ]
-      
-      // Convert to JSON string
-      do {
-        let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
-          print("📤 Sending auth message: \(jsonString)")
-          self?.webSocketClient?.send(message: jsonString)
-        }
-      } catch {
-        print("❌ Failed to encode auth payload: \(error)")
-      }
+    } catch {
+      print("❌ Failed to encode auth payload: \(error)")
     }
   }
   
@@ -514,20 +532,21 @@ extension ChatViewModel {
       .last {
       
       let existingSessionId = existing.sessionId
-      let existingToken = existing.sessionToken
       
       if await checkIfSessionIsActive(for: existingSessionId) {
-        print("🔄 Reusing existing session: \(existingSessionId)")
-        
-        switchToSession(existingSessionId)
-        Task {
+        print("🔄 Reusing existing session: \(existingSessionId), refreshing token")
+
+        // session_token from DB may be expired — call createSession again to get a fresh token
+        // The server will return a new session_token for auth; chat history stays in local DB
+        let requestModel = AuthSessionRequestModel(uerId: userDocId)
+        if let freshToken = await fetchFreshSessionToken(requestModel: requestModel) {
+          switchToSession(existingSessionId)
           await webSocketAuthentication(
             sessionId: existingSessionId,
-            sessionToken: existingToken ?? ""
+            sessionToken: freshToken
           )
+          return existingSessionId
         }
-        
-        return existingSessionId
       }
     }
     
@@ -569,6 +588,8 @@ extension ChatViewModel {
                 sessionToken: sessionResponse.sessionToken
               )
               
+              // Resume only after auth is fully set up so onAppear's
+              // checkandValidateWebSocketConnection sees webSocketClient != nil
               continuation.resume(returning: sessionResponse.sessionID)
             }
             
