@@ -22,41 +22,57 @@ struct MessageInputView: View {
   let recordsRepo: RecordsRepo
   @State var showVoiceToRxPopUp: Bool = false
   @Binding var voiceToRxTip: VoiceToRxTip
-  
+
   var body: some View {
-    HStack(alignment: .bottom, spacing: 8) {
-      TextField("Start typing...", text: $inputString, axis: .vertical)
+    VStack(spacing: 0) {
+      TextField("Message...", text: $inputString, axis: .vertical)
         .font(Font.custom("Lato-Regular", size: 16))
         .focused($isTextFieldFocused)
-        .padding(.leading, 4)
+        .lineLimit(1...6)
+        .padding(.horizontal, 14)
+        .padding(.top, 16)
+        .padding(.bottom, 16)
 
-      if inputString.isEmpty && !viewModel.streamStarted {
-        microphoneButton
-      }
-
-      Group {
-        if !inputString.isEmpty {
-          sendButton
-        } else {
-          if viewModel.streamStarted {
-            stopButton
-          } else {
-            disabledSendIcon
+      HStack(spacing: 4) {
+        Button {
+          showMedicalRecords()
+        } label: {
+          Image(systemName: "paperclip")
+            .font(.system(size: 20, weight: .medium))
+            .foregroundStyle(Color.primaryprimary)
+            .frame(width: 32, height: 32)
+        }
+        .fullScreenCover(isPresented: $showRecordsView) {
+          NavigationStack {
+            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
+              let images = data.compactMap { record in
+                record.image
+              }
+              let docIds = data.compactMap { record in
+                record.documentID
+              }
+              selectedImages = Array(images.prefix(3))
+              selectedDocumentId = Array(docIds.prefix(3))
+              showRecordsView = false
+            })
           }
         }
+        
+        Spacer()
+        microphoneButton
+        sendOrStopButton
       }
+      .padding(.horizontal, 8)
+      .padding(.bottom, 6)
     }
-    .padding(.horizontal, 14)
-    .padding(.vertical, 10)
-    .background(Color(.white))
+    .background(Color.clear)
     .clipShape(RoundedRectangle(cornerRadius: 24))
     .overlay(
       RoundedRectangle(cornerRadius: 24)
         .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
     )
     .padding(.horizontal, 16)
-    .padding(.vertical, 10)
-    .background(Color(.white))
+    .padding(.vertical, 6)
     .onAppear {
       guard let type = viewModel.openType else { return }
       if type == "chat" {
@@ -67,15 +83,24 @@ struct MessageInputView: View {
       viewModel.openType = nil
     }
   }
-  
+
+  // MARK: - Buttons
+
+  @ViewBuilder
+  private var sendOrStopButton: some View {
+    if viewModel.streamStarted {
+      stopButton
+    } else {
+      sendButton
+    }
+  }
+
   var microphoneButton: some View {
     Button {
       startVoiceToText()
     } label: {
       Image(systemName: "mic.fill")
-        .resizable()
-        .scaledToFit()
-        .frame(width: 18, height: 18)
+        .font(.system(size: 18, weight: .medium))
         .foregroundStyle(Color.primaryprimary)
         .frame(width: 36, height: 36)
     }
@@ -105,13 +130,15 @@ struct MessageInputView: View {
         .scaledToFit()
         .frame(width: 30, height: 30)
         .foregroundStyle(
-          (inputString.isEmpty || viewModel.streamStarted) ? Color.gray.opacity(0.5) : Color.primaryprimary
+          (inputString.isEmpty && selectedImages.isEmpty) || viewModel.streamStarted
+            ? Color.gray.opacity(0.5)
+            : Color.primaryprimary
         )
         .frame(width: 36, height: 36)
     }
-    .disabled(inputString.isEmpty || viewModel.streamStarted)
+    .disabled((inputString.isEmpty && selectedImages.isEmpty) || viewModel.streamStarted)
   }
-  
+
   var stopButton: some View {
     Button {
       viewModel.stopStreaming()
@@ -124,36 +151,19 @@ struct MessageInputView: View {
         .padding(4)
     }
   }
-  
-  var disabledSendIcon: some View {
-    Image(systemName: "arrow.up.circle.fill")
-      .resizable()
-      .scaledToFit()
-      .frame(width: 30, height: 30)
-      .foregroundStyle(Color.gray.opacity(0.5))
-      .frame(width: 36, height: 36)
-  }
-  
+
+  // MARK: - Helpers
+
   private func showMedicalRecords() {
-      showRecordsView = true
-      DocAssistEventManager.shared.trackEvent(
-          event: .docAssistLandingPgClick,
-          properties: ["type": "records"]
-      )
-      if patientName != "General Chat" {
-          InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
-      } else {
-          InitConfiguration.shared.recordsTitle = "My documents"
-      }
-  }
-  
-  private func startVoiceToRx() {
-    AudioPermissionManager.shared.checkAndRequestMicrophonePermission {
-      showVoiceToRxPopUp = true
-      Task {
-        await VoiceToRxTip.voiceToRxVisited.donate()
-      }
-      voiceToRxTip.invalidate(reason: .actionPerformed)
+    showRecordsView = true
+    DocAssistEventManager.shared.trackEvent(
+      event: .docAssistLandingPgClick,
+      properties: ["type": "records"]
+    )
+    if patientName != "General Chat" {
+      InitConfiguration.shared.recordsTitle = "\(patientName ?? "")'s Records"
+    } else {
+      InitConfiguration.shared.recordsTitle = "My documents"
     }
   }
   
