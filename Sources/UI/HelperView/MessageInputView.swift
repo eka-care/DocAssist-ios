@@ -30,6 +30,10 @@ struct MessageInputView: View {
         .focused($isTextFieldFocused)
         .padding(.leading, 4)
 
+      if inputString.isEmpty && !viewModel.streamStarted {
+        microphoneButton
+      }
+
       Group {
         if !inputString.isEmpty {
           sendButton
@@ -64,6 +68,19 @@ struct MessageInputView: View {
     }
   }
   
+  var microphoneButton: some View {
+    Button {
+      startVoiceToText()
+    } label: {
+      Image(systemName: "mic.fill")
+        .resizable()
+        .scaledToFit()
+        .frame(width: 18, height: 18)
+        .foregroundStyle(Color.primaryprimary)
+        .frame(width: 36, height: 36)
+    }
+  }
+
   var sendButton: some View {
     Button {
       inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
