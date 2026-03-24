@@ -321,10 +321,15 @@ extension ChatViewModel {
     
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     if let webSocketSessionId {
-      await checkIfSessionIsActive(for: webSocketSessionId)
-      await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
+      let activeSession = await checkIfSessionIsActive(for: webSocketSessionId)
+      if activeSession {
+        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
+      } else {
+        print("#BB Session as expired")
+      }
     } else {
-      // await createSession()
+      //await createSession()
+      await refreshSession(for: webSocketSessionId ?? "")
     }
   }
   
@@ -333,7 +338,7 @@ extension ChatViewModel {
       MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
         switch result {
         case .success(let sessionResponse):
-          print("#BB Data: Session is valid - \(sessionResponse.sessionId)")
+          print("#BB Data: Session is valid - \(sessionResponse.sessionID)")
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
@@ -351,7 +356,7 @@ extension ChatViewModel {
       MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
         switch result {
         case .success(let sessionResponse):
-          print("#BB refreshSession success: \(sessionResponse.sessionId)")
+          print("#BB refreshSession success: \(sessionResponse.sessionID)")
         case .failure(let error):
           print("#BB failure error:", error.localizedDescription)
         }
@@ -557,10 +562,10 @@ extension ChatViewModel {
               
               if let initialMessage = sessionResponse.initialMessage {
                 let text = initialMessage.text
-                let suggestions = initialMessage.suggestions
+               // let suggestions = initialMessage.suggestions
                 await MainActor.run {
                   self.initialMessageText = text
-                  self.initialMessageSuggestions = suggestions
+               //   self.initialMessageSuggestions = suggestions
                 }
               }
               
