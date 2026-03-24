@@ -25,6 +25,20 @@ struct MessageInputView: View {
 
   var body: some View {
     VStack(spacing: 0) {
+      if !selectedImages.isEmpty {
+        ScrollView(.horizontal, showsIndicators: false) {
+          HStack(spacing: 8) {
+            ForEach(selectedImages.indices, id: \.self) { index in
+              ImagePreviewCell(imageUrl: selectedImages[index], imageId: index) { id in
+                selectedImages.remove(at: id)
+              }
+            }
+          }
+        }
+        .frame(height: 20)
+        .padding()
+      }
+            
       TextField("Message...", text: $inputString, axis: .vertical)
         .font(Font.custom("Lato-Regular", size: 16))
         .focused($isTextFieldFocused)
@@ -44,7 +58,7 @@ struct MessageInputView: View {
         }
         .fullScreenCover(isPresented: $showRecordsView) {
           NavigationStack {
-            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
+            RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 1), didSelectPickerDataObjects: { data in
               let images = data.compactMap { record in
                 record.image
               }

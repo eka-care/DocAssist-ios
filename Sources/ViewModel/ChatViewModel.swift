@@ -104,6 +104,15 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.openType = openType
   }
   
+  /// Tracks pending file uploads: maps the request `_id` to the local image data
+  private var pendingFileUploads: [String: Data] = [:]
+  /// Tracks pending file MIME types: maps the request `_id` to its MIME type
+  private var pendingFileUploadMimeTypes: [String: String] = [:]
+  /// Tracks how many files are still pending upload before we send the text message
+  private var pendingFileUploadCount: Int = 0
+  /// Stores the text message to send after all file uploads complete
+  private var pendingTextMessage: String?
+
   func sendMessage(
     newMessage: String,
     imageUrls: [String]?,
@@ -112,14 +121,25 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     lastMesssageId: Int?
   ) async {
     /// Create user message
-    userMessage =  await addUserMessage(
+    userMessage = await addUserMessage(
       newMessage,
       imageUrls,
       sessionId,
       lastMesssageId
     )
-    
-    sendWebSocketMessage(message: newMessage)
+
+    let localImages = imageUrls ?? []
+    if localImages.isEmpty {
+      sendWebSocketMessage(message: newMessage)
+    } else {
+      // Send files first, then the text message after all uploads complete
+      streamStarted = true
+      pendingTextMessage = newMessage
+      pendingFileUploadCount = localImages.count
+      for (index, imagePath) in localImages.enumerated() {
+        sendFileUploadRequest(imagePath: imagePath, offset: index)
+      }
+    }
   }
   
   private func addUserMessage(
@@ -415,6 +435,163 @@ extension ChatViewModel {
     }
   }
   
+  // MARK: - File Upload via WebSocket (3-step flow)
+
+  /// Step 1: Send a file upload request to get presigned upload URLs
+  func sendFileUploadRequest(imagePath: String, offset: Int = 0) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+
+    let fileURL = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(imagePath)
+    guard let imageData = try? Data(contentsOf: fileURL) else {
+      print("❌ Failed to read image data from: \(fileURL)")
+      pendingFileUploadCount -= 1
+      return
+    }
+
+    let ext = fileURL.pathExtension.lowercased()
+    let mimeType: String
+    switch ext {
+    case "jpg", "jpeg": mimeType = "sjpeg"
+    case "pdf": mimeType = "application/pdf"
+    default: mimeType = "image/png"
+    }
+
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000) + offset
+    let id = String(timestamp)
+
+    // Store the image data keyed by request ID along with its MIME type
+    pendingFileUploads[id] = imageData
+    pendingFileUploadMimeTypes[id] = mimeType
+
+    let payload: [String: Any] = [
+      "ev": "chat",
+      "ct": "file",
+      "ts": timestamp,
+      "_id": id,
+      "data": [
+        "extension": mimeType
+      ]
+    ]
+
+    do {
+      let json = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: json, encoding: .utf8) {
+        print("📤 Sending file upload request: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ File upload request encoding error: \(error)")
+    }
+  }
+
+  /// Step 2: Handle the server response containing presigned upload URLs,
+  /// upload the file to S3, then send the confirmation (Step 3).
+  func handleFileUploadResponse(urls: [String], requestId: String?) {
+    // Find the image data for this response
+    // Try matching by requestId first, otherwise use the first pending upload
+    let matchedId: String?
+    if let requestId, pendingFileUploads[requestId] != nil {
+      matchedId = requestId
+    } else {
+      matchedId = pendingFileUploads.keys.first
+    }
+
+    guard let id = matchedId, let imageData = pendingFileUploads.removeValue(forKey: id) else {
+      print("❌ No pending file upload data found")
+      return
+    }
+    let mimeType = pendingFileUploadMimeTypes.removeValue(forKey: id) ?? "image/png"
+
+    guard let s3Url = urls.first else {
+      print("❌ No upload URL received from server")
+      return
+    }
+
+    // Upload to S3 then send confirmation
+    Task {
+      let success = await uploadFileToPresignedURL(imageData: imageData, uploadURL: s3Url, mimeType: mimeType)
+      if success {
+        sendFileConfirmation(url: s3Url)
+      } else {
+        print("❌ File upload to S3 failed")
+      }
+
+      await MainActor.run {
+        pendingFileUploadCount -= 1
+        if pendingFileUploadCount <= 0 {
+          // All files uploaded, now send the text message
+          if let text = pendingTextMessage, !text.isEmpty {
+            sendWebSocketMessage(message: text)
+          }
+          pendingTextMessage = nil
+          pendingFileUploadCount = 0
+        }
+      }
+    }
+  }
+
+  /// Upload image data to a presigned URL via HTTP PUT
+  private func uploadFileToPresignedURL(imageData: Data, uploadURL: String, mimeType: String) async -> Bool {
+    guard let url = URL(string: uploadURL) else {
+      print("❌ Invalid upload URL: \(uploadURL)")
+      return false
+    }
+
+    var request = URLRequest(url: url)
+    request.httpMethod = "PUT"
+    request.httpBody = imageData
+    request.setValue(mimeType, forHTTPHeaderField: "Content-Type")
+
+    do {
+      let (_, response) = try await URLSession.shared.data(for: request)
+      if let httpResponse = response as? HTTPURLResponse,
+         (200...299).contains(httpResponse.statusCode) {
+        print("✅ File uploaded successfully to presigned URL")
+        return true
+      } else {
+        print("❌ Upload failed with response: \(response)")
+        return false
+      }
+    } catch {
+      print("❌ Upload error: \(error)")
+      return false
+    }
+  }
+
+  /// Step 3: Send confirmation back to the server that the file was uploaded
+  func sendFileConfirmation(url: String) {
+    guard let webSocketClient else {
+      print("❌ WebSocket not connected")
+      return
+    }
+
+    let timestamp = Int(Date().timeIntervalSince1970 * 1000)
+    let id = String(timestamp)
+
+    let payload: [String: Any] = [
+      "ev": "chat",
+      "ct": "file",
+      "ts": timestamp,
+      "_id": id,
+      "data": [
+        "url": url
+      ]
+    ]
+
+    do {
+      let json = try JSONSerialization.data(withJSONObject: payload)
+      if let jsonString = String(data: json, encoding: .utf8) {
+        print("📤 Sending file confirmation: \(jsonString)")
+        webSocketClient.send(message: jsonString)
+      }
+    } catch {
+      print("❌ File confirmation encoding error: \(error)")
+    }
+  }
+
   func sendWebSocketMessage(message: String) {
     guard let webSocketClient else {
       print("❌ WebSocket not connected")
@@ -473,8 +650,13 @@ extension ChatViewModel {
       print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
       
     case .chat:
+      // Handle file upload URL response from server
+      if model.contentType == .file,
+         let urls = model.data?.urls, !urls.isEmpty {
+        handleFileUploadResponse(urls: urls, requestId: model.id)
+      }
       // Handle transcription result from audio_transcript or inline_text content type
-      if (model.contentType == .audioTranscript || model.contentType == .inlineText),
+      else if (model.contentType == .audioTranscript || model.contentType == .inlineText),
          let transcribedText = model.data?.text {
         DispatchQueue.main.async { [weak self] in
           guard let self else { return }

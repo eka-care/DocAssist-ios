@@ -96,10 +96,11 @@ struct WebSocketData: Codable {
   let format: String?
   let toolType, toolID, toolName: String?
   let details: Details?
-  let urls: [URLElement]?
+  let urls: [String]?
+  let url: String?
   let additionalOption: String?
   let fileExtension: String?
-  
+
   enum CodingKeys: String, CodingKey {
     case audio
     case text
@@ -109,10 +110,10 @@ struct WebSocketData: Codable {
     case toolType = "tool_type"
     case toolID = "tool_id"
     case toolName = "tool_name"
-    case details, urls
+    case details, urls, url
   }
-  
-  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [URLElement]? = nil, additionalOption: String? = nil, fileExtension: String? = nil) {
+
+  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [String]? = nil, url: String? = nil, additionalOption: String? = nil, fileExtension: String? = nil) {
     self.audio = audio
     self.text = text
     self.format = format
@@ -121,6 +122,7 @@ struct WebSocketData: Codable {
     self.toolName = toolName
     self.details = details
     self.urls = urls
+    self.url = url
     self.additionalOption = additionalOption
     self.fileExtension = fileExtension
   }
@@ -143,7 +145,3 @@ struct Option: Codable {
   let label, value: String
 }
 
-// MARK: - URLElement
-struct URLElement: Codable {
-  let id, url: String
-}
