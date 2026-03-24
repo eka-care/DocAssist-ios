@@ -454,7 +454,7 @@ extension ChatViewModel {
     let ext = fileURL.pathExtension.lowercased()
     let mimeType: String
     switch ext {
-    case "jpg", "jpeg": mimeType = "sjpeg"
+    case "jpg", "jpeg": mimeType = "image/jpeg"
     case "pdf": mimeType = "application/pdf"
     default: mimeType = "image/png"
     }

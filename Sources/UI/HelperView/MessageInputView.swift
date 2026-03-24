@@ -123,7 +123,7 @@ struct MessageInputView: View {
   var sendButton: some View {
     Button {
       inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard !inputString.isEmpty || !selectedImages.isEmpty else { return }
+      guard !inputString.isEmpty else { return }
       Task {
         await viewModel.sendMessage(
           newMessage: inputString,
@@ -144,13 +144,13 @@ struct MessageInputView: View {
         .scaledToFit()
         .frame(width: 30, height: 30)
         .foregroundStyle(
-          (inputString.isEmpty && selectedImages.isEmpty) || viewModel.streamStarted
+          inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.streamStarted
             ? Color.gray.opacity(0.5)
             : Color.primaryprimary
         )
         .frame(width: 36, height: 36)
     }
-    .disabled((inputString.isEmpty && selectedImages.isEmpty) || viewModel.streamStarted)
+    .disabled(inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.streamStarted)
   }
 
   var stopButton: some View {
