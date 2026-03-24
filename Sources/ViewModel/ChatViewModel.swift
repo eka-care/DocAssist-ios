@@ -512,10 +512,13 @@ extension ChatViewModel {
 
     // Upload to S3 then send confirmation
     Task {
+      WebSocketLogger.shared.logInfo("Uploading file to S3: \(s3Url.prefix(80))...")
       let success = await uploadFileToPresignedURL(imageData: imageData, uploadURL: s3Url, mimeType: mimeType)
       if success {
+        WebSocketLogger.shared.logInfo("S3 upload succeeded, sending confirmation")
         sendFileConfirmation(url: s3Url)
       } else {
+        WebSocketLogger.shared.logInfo("S3 upload FAILED for: \(s3Url.prefix(80))...")
         print("❌ File upload to S3 failed")
       }
 

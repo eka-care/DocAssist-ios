@@ -43,6 +43,7 @@ public struct ActiveChatView: View {
   private let bottomScrollIdentifier = "bottomID"
   @State private var animatedText: String = ""
   @State private var lastAnimatedText: String = ""
+  @State private var showWSLogs: Bool = false
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -150,6 +151,9 @@ public struct ActiveChatView: View {
         dismissButton: .default(Text("OK"))
       )
     }
+    .sheet(isPresented: $showWSLogs) {
+      WebSocketLogView()
+    }
     .onAppear {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
@@ -219,6 +223,12 @@ public struct ActiveChatView: View {
               .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
             
             Spacer()
+            
+            Button {
+              showWSLogs = true
+            } label: {
+              Text("Logs")
+            }
             
           }
         }
