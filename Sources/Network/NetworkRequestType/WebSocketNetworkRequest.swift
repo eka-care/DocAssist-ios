@@ -5,11 +5,13 @@
 //  Created by Brunda  B on 10/11/25.
 //
 import Foundation
+import UIKit
 
 final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     private var webSocketTask: URLSessionWebSocketTask?
     private var session: URLSession?
     private var isConnected = false
+    private var connectCompletion: ((Bool) -> Void)?
     var onMessageDecoded: ((WebSocketModel) -> Void)?
   
   var operationQueue: OperationQueue = {
@@ -20,23 +22,27 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
    }()
 
     let url: URL
+    private let headers: [String: String]
 
-    init(url: URL) {
+    init(url: URL, headers: [String: String] = [:]) {
         self.url = url
+        self.headers = headers
         super.init()
     }
 
     // 1️⃣ Establish the connection
     func connect(completion: @escaping (Bool) -> Void) {
+        self.connectCompletion = completion
         session = URLSession(configuration: .default, delegate: self, delegateQueue: operationQueue)
-        webSocketTask = session?.webSocketTask(with: url)
-        webSocketTask?.resume()
-        isConnected = true
-        print("✅ WebSocket connected to \(url)")
-        completion(true)
 
-        // start listening as soon as connected
-        listenForMessages()
+        var request = URLRequest(url: url)
+        for (key, value) in headers {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
+
+        webSocketTask = session?.webSocketTask(with: request)
+        webSocketTask?.resume()
+        print("⏳ WebSocket connecting to \(url)")
     }
 
     // 2️⃣ Send messages
@@ -98,9 +104,28 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
         print("🔌 WebSocket disconnected.")
     }
 
-    // 5️⃣ Optional: delegate callbacks for debugging
+    // 5️⃣ Delegate: connection opened
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        print("✅ WebSocket connected to \(url)")
+        isConnected = true
+        listenForMessages()
+        connectCompletion?(true)
+        connectCompletion = nil
+    }
+
+    // 6️⃣ Delegate: connection closed
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         print("WebSocket closed with code: \(closeCode)")
         isConnected = false
+    }
+
+    // 7️⃣ Delegate: connection failed at transport level
+    func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
+        if let error = error {
+            print("❌ WebSocket connection error: \(error.localizedDescription)")
+            isConnected = false
+            connectCompletion?(false)
+            connectCompletion = nil
+        }
     }
 }

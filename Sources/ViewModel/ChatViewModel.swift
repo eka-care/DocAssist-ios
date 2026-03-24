@@ -328,8 +328,7 @@ extension ChatViewModel {
         print("#BB Session as expired")
       }
     } else {
-      //await createSession()
-      await refreshSession(for: webSocketSessionId ?? "")
+      //create session
     }
   }
   
@@ -371,7 +370,7 @@ extension ChatViewModel {
       webSocketConnectionTitle = "Not connected"
       return
     }
-    
+
     webSocketClient = WebSocketNetworkRequest(url: url)
     webSocketClient?.onMessageDecoded = { [weak self] model in
       guard let self else { return }
