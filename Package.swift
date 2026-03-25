@@ -24,7 +24,7 @@ let package = Package(
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // VoiceToRx
-    .package(url: "git@github.com:eka-care/EkaVoiceToRx.git", from: "1.3.8"),
+    .package(url: "git@github.com:eka-care/EkaVoiceToRx.git", revision: "ac161184f1ec13fd9c32ff572114c4fc57881e5a"),
     // EkaPDFMaker
     .package(url: "git@github.com:eka-care/EkaPDFMaker.git", from: "1.0.3")
   ],
