@@ -112,6 +112,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   private var pendingFileUploadCount: Int = 0
   /// Stores the text message to send after all file uploads complete
   private var pendingTextMessage: String?
+  /// Collects the file IDs of successfully uploaded files
+  private var uploadedFileIds: [String] = []
 
   func sendMessage(
     newMessage: String,
@@ -136,6 +138,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       streamStarted = true
       pendingTextMessage = newMessage
       pendingFileUploadCount = localImages.count
+      uploadedFileIds = []
       for (index, imagePath) in localImages.enumerated() {
         sendFileUploadRequest(imagePath: imagePath, offset: index)
       }
@@ -472,7 +475,7 @@ extension ChatViewModel {
       "ts": timestamp,
       "_id": id,
       "data": [
-        "extension": mimeType
+        "extensions": [mimeType]
       ]
     ]
 
@@ -489,7 +492,7 @@ extension ChatViewModel {
 
   /// Step 2: Handle the server response containing presigned upload URLs,
   /// upload the file to S3, then send the confirmation (Step 3).
-  func handleFileUploadResponse(urls: [String], requestId: String?) {
+  func handleFileUploadResponse(urls: [FileUploadURL], requestId: String?) {
     // Find the image data for this response
     // Try matching by requestId first, otherwise use the first pending upload
     let matchedId: String?
@@ -505,32 +508,37 @@ extension ChatViewModel {
     }
     let mimeType = pendingFileUploadMimeTypes.removeValue(forKey: id) ?? "image/png"
 
-    guard let s3Url = urls.first else {
+    guard let firstFile = urls.first else {
       print("❌ No upload URL received from server")
       return
     }
 
-    // Upload to S3 then send confirmation
+    let fileId = firstFile.id
+    let uploadUrl = firstFile.url
+
     Task {
-      WebSocketLogger.shared.logInfo("Uploading file to S3: \(s3Url.prefix(80))...")
-      let success = await uploadFileToPresignedURL(imageData: imageData, uploadURL: s3Url, mimeType: mimeType)
+      WebSocketLogger.shared.logInfo("Uploading file: \(uploadUrl.prefix(80))...")
+      let success = await uploadFileToPresignedURL(imageData: imageData, uploadURL: uploadUrl, mimeType: mimeType)
       if success {
-        WebSocketLogger.shared.logInfo("S3 upload succeeded, sending confirmation")
-        sendFileConfirmation(url: s3Url)
+        WebSocketLogger.shared.logInfo("Upload succeeded for file id: \(fileId)")
       } else {
-        WebSocketLogger.shared.logInfo("S3 upload FAILED for: \(s3Url.prefix(80))...")
-        print("❌ File upload to S3 failed")
+        WebSocketLogger.shared.logInfo("Upload FAILED for: \(uploadUrl.prefix(80))...")
+        print("❌ File upload failed")
       }
 
       await MainActor.run {
+        if success {
+          uploadedFileIds.append(fileId)
+        }
         pendingFileUploadCount -= 1
         if pendingFileUploadCount <= 0 {
-          // All files uploaded, now send the text message
-          if let text = pendingTextMessage, !text.isEmpty {
-            sendWebSocketMessage(message: text)
+          // All files uploaded, send confirmation with file IDs and text
+          if !uploadedFileIds.isEmpty {
+            sendFileConfirmation(fileIds: uploadedFileIds, text: pendingTextMessage ?? "")
           }
           pendingTextMessage = nil
           pendingFileUploadCount = 0
+          uploadedFileIds = []
         }
       }
     }
@@ -564,8 +572,8 @@ extension ChatViewModel {
     }
   }
 
-  /// Step 3: Send confirmation back to the server that the file was uploaded
-  func sendFileConfirmation(url: String) {
+  /// Step 3: Send confirmation with uploaded file IDs and the user's text message
+  func sendFileConfirmation(fileIds: [String], text: String) {
     guard let webSocketClient else {
       print("❌ WebSocket not connected")
       return
@@ -580,7 +588,8 @@ extension ChatViewModel {
       "ts": timestamp,
       "_id": id,
       "data": [
-        "url": url
+        "urls": fileIds,
+        "text": text
       ]
     ]
 
@@ -658,7 +667,7 @@ extension ChatViewModel {
          let urls = model.data?.urls, !urls.isEmpty {
         handleFileUploadResponse(urls: urls, requestId: model.id)
       }
-      // Handle transcription result from audio_transcript or inline_text content type
+      // Handle transcription result — send directly as user message
       else if (model.contentType == .audioTranscript || model.contentType == .inlineText),
          let transcribedText = model.data?.text {
         DispatchQueue.main.async { [weak self] in
