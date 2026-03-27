@@ -90,13 +90,18 @@ struct WebSocketModel: Codable {
   }
 }
 
+struct FileUploadURL: Codable {
+  let id: String
+  let url: String
+}
+
 struct WebSocketData: Codable {
   let audio: String?
   let text: String?
   let format: String?
   let toolType, toolID, toolName: String?
   let details: Details?
-  let urls: [String]?
+  let urls: [FileUploadURL]?
   let url: String?
   let additionalOption: String?
   let fileExtension: String?
@@ -113,7 +118,7 @@ struct WebSocketData: Codable {
     case details, urls, url
   }
 
-  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [String]? = nil, url: String? = nil, additionalOption: String? = nil, fileExtension: String? = nil) {
+  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [FileUploadURL]? = nil, url: String? = nil, additionalOption: String? = nil, fileExtension: String? = nil) {
     self.audio = audio
     self.text = text
     self.format = format

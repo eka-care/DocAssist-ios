@@ -79,10 +79,9 @@ struct MessageInputView: View {
       .padding(.horizontal, 8)
       .padding(.bottom, 6)
     }
-    .background(Color.clear)
-    .clipShape(RoundedRectangle(cornerRadius: 24))
-    .overlay(
+    .background(
       RoundedRectangle(cornerRadius: 24)
+        .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
         .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
     )
     .padding(.horizontal, 16)
@@ -237,11 +236,9 @@ struct VoiceInputView: View {
     }
     .frame(maxWidth: .infinity, minHeight: 44)
     .padding(.horizontal, 8)
-    .background(Color.white)
-    .cornerRadius(16)
-    .overlay(
+    .background(
       RoundedRectangle(cornerRadius: 16)
-        .inset(by: -0.5)
+        .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
         .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
     )
     .padding(.horizontal, 16)

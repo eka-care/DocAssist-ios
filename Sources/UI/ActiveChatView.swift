@@ -43,6 +43,8 @@ public struct ActiveChatView: View {
   private let bottomScrollIdentifier = "bottomID"
   @State private var animatedText: String = ""
   @State private var lastAnimatedText: String = ""
+  @State private var showWSLogs: Bool = false
+  @State private var inputHeight: CGFloat = 0
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -71,62 +73,76 @@ public struct ActiveChatView: View {
           headerView
         }
         
-        ScrollViewReader { proxy in
-          ScrollView {
-            if messages.isEmpty {
-              emptyChatView
-            }
-            else {
-              VStack {
-                ForEach(messages) { message in
-                  messageBubbleView(message: message)
-                    .padding(.horizontal)
-                    .id(message.id)
-                }
-
-                // Live streaming bubble — shown while bot is responding
-                if viewModel.streamStarted {
-                  if viewModel.messageText.isEmpty {
-                    LoadingView()
+        ZStack(alignment: .bottom) {
+          // Gray background for the entire area
+          Color(red: 0.96, green: 0.96, blue: 0.96)
+            .ignoresSafeArea()
+          
+          ScrollViewReader { proxy in
+            ScrollView {
+              if messages.isEmpty {
+                emptyChatView
+              }
+              else {
+                VStack {
+                  ForEach(messages) { message in
+                    messageBubbleView(message: message)
                       .padding(.horizontal)
-                  } else {
-                    HStack(alignment: .top) {
-                      BotAvatarImage()
-                      StreamingTextView(text: viewModel.messageText)
-                      Spacer()
+                      .id(message.id)
+                  }
+
+                  // Live streaming bubble — shown while bot is responding
+                  if viewModel.streamStarted {
+                    if viewModel.messageText.isEmpty {
+                      LoadingView()
+                        .padding(.horizontal)
+                    } else {
+                      HStack(alignment: .top) {
+                        BotAvatarImage()
+                        StreamingTextView(text: viewModel.messageText)
+                        Spacer()
+                      }
+                      .padding(.horizontal)
                     }
-                    .padding(.horizontal)
+                  }
+
+                  Color.clear.frame(height: 1)
+                    .id(bottomScrollIdentifier)
+                }
+                .padding(.top, 10)
+                .padding(.bottom, inputHeight)
+                .onChange(of: isTextFieldFocused, { _, _ in
+                  proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
+                })
+                .onChange(of: messages) { oldValue , newValue in
+                  withAnimation {
+                    proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
                   }
                 }
-
-                Color.clear.frame(height: 1)
-                  .id(bottomScrollIdentifier)
-              }
-              .padding(.top, 10)
-              .onChange(of: isTextFieldFocused, { _, _ in
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
-              })
-              .onChange(of: messages) { oldValue , newValue in
-                withAnimation {
+                .onChange(of: viewModel.messageText) { _, _ in
                   proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
                 }
-              }
-              .onChange(of: viewModel.messageText) { _, _ in
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
-              }
-              .onAppear {
-                DispatchQueue.main.async {
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                .onAppear {
+                  DispatchQueue.main.async {
+                    proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                  }
                 }
               }
             }
+            .scrollDismissesKeyboard(.immediately)
           }
-          .scrollDismissesKeyboard(.immediately)
-          .background(Color(red: 0.96, green: 0.96, blue: 0.96))
+
+          VStack(spacing: 0) {
+            chatInputView
+          }
+          .onGeometryChange(for: CGFloat.self) { geo in
+            geo.size.height
+          } action: { newHeight in
+            inputHeight = newHeight
+          }
         }
-        
-        chatInputView
       }
+      .background(Color(red: 0.96, green: 0.96, blue: 0.96))
       .toolbarBackground(
         LinearGradient(
           gradient: Gradient(colors: [
@@ -149,6 +165,9 @@ public struct ActiveChatView: View {
         message: Text(viewModel.alertMessage),
         dismissButton: .default(Text("OK"))
       )
+    }
+    .sheet(isPresented: $showWSLogs) {
+      WebSocketLogView()
     }
     .onAppear {
       viewModel.switchToSession(session)
@@ -219,6 +238,12 @@ public struct ActiveChatView: View {
               .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
             
             Spacer()
+            
+            Button {
+              showWSLogs = true
+            } label: {
+              Text("Logs")
+            }
             
           }
         }
@@ -352,3 +377,4 @@ struct CustomCornerShape: Shape {
     return Path(path.cgPath)
   }
 }
+
