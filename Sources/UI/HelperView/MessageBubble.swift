@@ -30,6 +30,11 @@ struct MessageBubble: View {
   var onClickOfCopy: () -> Void
   var messages: [ChatMessageModel]
   
+  /// Only the latest message in the thread may use tappable bot suggestions (earlier turns stay disabled).
+  private var isLatestMessageInThread: Bool {
+    message.id == messages.last?.id
+  }
+  
   // MARK: - Only show UI when bot message actually has visible text
   private var hasVisibleBotMessage: Bool {
     guard let text = m else { return false }
@@ -188,7 +193,8 @@ struct MessageBubble: View {
             SuggestionView(
               suggestionText: suggestions,
               viewModel: viewModel,
-              isMultiSelect: message.multiselect ?? false
+              isMultiSelect: message.multiselect ?? false,
+              isInteractive: isLatestMessageInThread
             )
           }
           .padding(.vertical, 16)

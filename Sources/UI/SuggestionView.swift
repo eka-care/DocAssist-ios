@@ -13,17 +13,20 @@ struct SuggestionView: View {
   var suggestionText: [String]
   var viewModel: ChatViewModel
   var isMultiSelect: Bool? = nil
+  var isInteractive: Bool = true
   
   private var constantSuggestionString = "Suggested questions you can ask me:"
   
   init(
     suggestionText: [String],
     viewModel: ChatViewModel,
-    isMultiSelect: Bool
+    isMultiSelect: Bool,
+    isInteractive: Bool = true
   ) {
     self.suggestionText = suggestionText
     self.viewModel = viewModel
     self.isMultiSelect = isMultiSelect
+    self.isInteractive = isInteractive
   }
   
   var body: some View {
@@ -37,7 +40,8 @@ struct SuggestionView: View {
         SuggestionsComponentView(
           suggestionText: suggestionText,
           viewModel: viewModel,
-          isMultiSelect: isMultiSelect ?? false
+          isMultiSelect: isMultiSelect ?? false,
+          isInteractive: isInteractive
         )
       }
     }

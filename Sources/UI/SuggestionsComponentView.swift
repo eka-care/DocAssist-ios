@@ -11,8 +11,14 @@ struct SuggestionsComponentView: View {
   var suggestionText: [String]
   var viewModel: ChatViewModel
   var isMultiSelect: Bool = false
+  /// When false, chips are non-tappable and styled as disabled (e.g. suggestions from earlier bot turns).
+  var isInteractive: Bool = true
   
   @State private var selectedSuggestions: Set<String> = []
+  
+  private var suggestionsEnabled: Bool {
+    isInteractive && !viewModel.streamStarted
+  }
   
   var body: some View {
     VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
@@ -37,7 +43,7 @@ struct SuggestionsComponentView: View {
             
             Text(suggestion)
               .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(viewModel.streamStarted ? Color.neutrals400 : Color.primaryprimary)
+              .foregroundColor(suggestionsEnabled ? Color.primaryprimary : Color.neutrals400)
               .multilineTextAlignment(.leading)
               .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -52,7 +58,7 @@ struct SuggestionsComponentView: View {
           //              .stroke(isMultiSelect && selectedSuggestions.contains(suggestion) ? Color.primaryprimary : Color.clear, lineWidth: 2)
           //          )
         }
-        .disabled(viewModel.streamStarted)
+        .disabled(!suggestionsEnabled)
       }
       
       if isMultiSelect && !selectedSuggestions.isEmpty {
@@ -70,7 +76,7 @@ struct SuggestionsComponentView: View {
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .padding(.top, EkaSpacing.spacingXs)
-        .disabled(viewModel.streamStarted)
+        .disabled(!suggestionsEnabled)
       }
     }
   }
