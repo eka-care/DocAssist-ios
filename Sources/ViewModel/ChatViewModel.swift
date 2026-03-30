@@ -64,6 +64,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var initialMessageSuggestions: [String]? = nil
   var chatErrorState: ChatErrorState = .none
   var webSocketErrorMessage: String? = nil
+  var isWebSocketSetupDone: Bool = false
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -792,6 +793,7 @@ extension ChatViewModel {
         print("🔄 Reusing existing session: \(existingSessionId)")
         
         switchToSession(existingSessionId)
+        isWebSocketSetupDone = true
         Task {
           await webSocketAuthentication(
             sessionId: existingSessionId,
@@ -826,6 +828,7 @@ extension ChatViewModel {
               )
               
               self.switchToSession(sessionResponse.sessionID)
+              self.isWebSocketSetupDone = true
               
               if let initialMessage = sessionResponse.initialMessage {
                 let text = initialMessage.text

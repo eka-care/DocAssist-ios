@@ -20,7 +20,7 @@ public struct ActiveChatView: View {
   @State var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
-  @State private var scrollToBottom = false
+
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
@@ -40,7 +40,7 @@ public struct ActiveChatView: View {
   private let authToken: String
   private let authRefreshToken: String
   @State var voiceToRxTip = VoiceToRxTip()
-  private let bottomScrollIdentifier = "bottomID"
+
   @State private var animatedText: String = ""
   @State private var lastAnimatedText: String = ""
   @State private var showWSLogs: Bool = false
@@ -80,7 +80,6 @@ public struct ActiveChatView: View {
         }
         
         ZStack(alignment: .bottom) {
-          // Gray background for the entire area
           Color(red: 0.96, green: 0.96, blue: 0.96)
             .ignoresSafeArea()
           
@@ -97,11 +96,11 @@ public struct ActiveChatView: View {
                       .id(message.id)
                   }
 
-                  // Live streaming bubble — shown while bot is responding
                   if viewModel.streamStarted {
                     if viewModel.messageText.isEmpty {
                       LoadingView()
                         .padding(.horizontal)
+                        .id("streamingID")
                     } else {
                       HStack(alignment: .top) {
                         BotAvatarImage()
@@ -109,28 +108,37 @@ public struct ActiveChatView: View {
                         Spacer()
                       }
                       .padding(.horizontal)
+                      .id("streamingID")
                     }
                   }
 
                   Color.clear.frame(height: 1)
-                    .id(bottomScrollIdentifier)
+                    .id("bottomID")
                 }
                 .padding(.top, 10)
                 .padding(.bottom, inputHeight)
-                .onChange(of: isTextFieldFocused, { _, _ in
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
-                })
-                .onChange(of: messages) { oldValue , newValue in
+                .onChange(of: isTextFieldFocused) { _, _ in
                   withAnimation {
-                    proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                    proxy.scrollTo("bottomID", anchor: .bottom)
+                  }
+                }
+                .onChange(of: messages.count) { _, _ in
+                  if let lastMessage = messages.last {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                      proxy.scrollTo(lastMessage.id, anchor: .top)
+                    }
                   }
                 }
                 .onChange(of: viewModel.messageText) { _, _ in
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                  if viewModel.streamStarted {
+                    proxy.scrollTo("streamingID", anchor: .top)
+                  }
                 }
                 .onAppear {
                   DispatchQueue.main.async {
-                    proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                    if let lastMessage = messages.last {
+                      proxy.scrollTo(lastMessage.id, anchor: .top)
+                    }
                   }
                 }
               }
@@ -214,11 +222,13 @@ public struct ActiveChatView: View {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
       Task {
-        fetchedOid =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
-          if fetchedOid != "" {
-            setupView(with: fetchedOid ?? "")
-          }
-        await viewModel.checkandValidateWebSocketConnection()
+        fetchedOid = try await DatabaseConfig.shared.isOidPresent(sessionId: session)
+        if fetchedOid != "" {
+          setupView(with: fetchedOid ?? "")
+        }
+        if !viewModel.isWebSocketSetupDone {
+          await viewModel.checkandValidateWebSocketConnection()
+        }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
@@ -281,12 +291,12 @@ public struct ActiveChatView: View {
 
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-        Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
-          .font(Font.custom("Lato-Regular", size: 16))
-          .foregroundStyle(Color.neutrals600)
-          .padding(.bottom, 4)
-          .padding(.top, 20)
-          .padding(.leading, 16)
+      Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
+        .font(Font.custom("Lato-Regular", size: 16))
+        .foregroundStyle(Color.neutrals600)
+        .padding(.bottom, 4)
+        .padding(.top, 20)
+        .padding(.leading, 16)
       Group {
         if SetUIComponents.shared.isPatientApp == nil {
           SuggestionsComponentView(
@@ -332,7 +342,6 @@ public struct ActiveChatView: View {
             } label: {
               Text("Logs")
             }
-            
           }
         }
         .contentShape(Rectangle())
@@ -358,7 +367,7 @@ public struct ActiveChatView: View {
     .padding(.bottom, 5)
   }
   
-  var chatInputView : some View {
+  var chatInputView: some View {
     if viewModel.messageInput {
       AnyView(
         MessageInputView(
@@ -415,25 +424,23 @@ public struct ActiveChatView: View {
   }
   
   private func animateText(_ newValue: String) {
+    if newValue.count <= lastAnimatedText.count {
+      animatedText = newValue
+      lastAnimatedText = newValue
+      return
+    }
 
-      if newValue.count <= lastAnimatedText.count {
-          animatedText = newValue
-          lastAnimatedText = newValue
-          return
+    let full = newValue
+    let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
+    let newChunk = full[startIndex...]
+
+    Task {
+      for char in newChunk {
+        try? await Task.sleep(nanoseconds: 30_000_000)
+        animatedText.append(char)
+        lastAnimatedText.append(char)
       }
-
-      let full = newValue
-      let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
-      let newChunk = full[startIndex...]
-
-      Task {
-          for char in newChunk {
-              try? await Task.sleep(nanoseconds: 30_000_000)   // 0.03 sec per char (smooth)
-              
-              animatedText.append(char)
-              lastAnimatedText.append(char)
-          }
-      }
+    }
   }
 }
 
@@ -465,4 +472,3 @@ struct CustomCornerShape: Shape {
     return Path(path.cgPath)
   }
 }
-
