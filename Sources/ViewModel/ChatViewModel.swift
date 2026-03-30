@@ -56,6 +56,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var webSocketConnectionTitle: String = "Idle"
   var initialMessageText: String? = nil
   var initialMessageSuggestions: [String]? = nil
+  var sessionExpired: Bool = false
+  var webSocketErrorMessage: String? = nil
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -348,7 +350,10 @@ extension ChatViewModel {
       if activeSession {
         await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: UserDefaults.standard.string(forKey: "SessionToken")!)
       } else {
-        print("#BB Session as expired")
+        print("#BB Session has expired")
+        await MainActor.run {
+          sessionExpired = true
+        }
       }
     } else {
       //create session
@@ -658,8 +663,11 @@ extension ChatViewModel {
       }
       
     case .err:
-      webSocketConnectionTitle = "\(model.msg)"
-      print("⚠️ WebSocket error event: \(model.msg ?? "Unknown error")")
+      let errorMsg = model.msg ?? "Something went wrong. Please try again."
+      webSocketConnectionTitle = errorMsg
+      webSocketErrorMessage = errorMsg
+      sessionExpired = true
+      print("⚠️ WebSocket error event: \(errorMsg)")
       
     case .chat:
       // Handle file upload URL response from server

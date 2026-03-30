@@ -72,6 +72,10 @@ public struct ActiveChatView: View {
         if calledFromPatientContext {
           headerView
         }
+
+        if viewModel.sessionExpired {
+          sessionExpiredBanner
+        }
         
         ZStack(alignment: .bottom) {
           // Gray background for the entire area
@@ -135,6 +139,7 @@ public struct ActiveChatView: View {
           VStack(spacing: 0) {
             chatInputView
           }
+          .disabled(viewModel.sessionExpired)
           .onGeometryChange(for: CGFloat.self) { geo in
             geo.size.height
           } action: { newHeight in
@@ -191,6 +196,39 @@ public struct ActiveChatView: View {
     }
   }
   
+  private var sessionExpiredBanner: some View {
+    HStack(spacing: 8) {
+      Image(systemName: "exclamationmark.circle.fill")
+        .foregroundStyle(.white)
+      Text(viewModel.webSocketErrorMessage ?? "Session expired.")
+        .font(Font.custom("Lato-Regular", size: 14))
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      Button {
+        Task {
+          viewModel.sessionExpired = false
+          viewModel.webSocketErrorMessage = nil
+          let _ = await viewModel.createSession(
+            subTitle: patientName,
+            userDocId: userDocId,
+            userBId: userBId
+          )
+        }
+      } label: {
+        Text("Start New")
+          .font(Font.custom("Lato-Bold", size: 13))
+          .foregroundStyle(.white)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
+          .background(Color.white.opacity(0.25))
+          .clipShape(Capsule())
+      }
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
+    .background(Color.red.opacity(0.85))
+  }
+
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
         Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
