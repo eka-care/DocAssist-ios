@@ -45,6 +45,8 @@ public struct ActiveChatView: View {
   @State private var lastAnimatedText: String = ""
   @State private var showWSLogs: Bool = false
   @State private var inputHeight: CGFloat = 0
+  @State private var glowAngle: Double = 0.0
+  @State private var glowOpacity: Double = 0.0
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -133,11 +135,45 @@ public struct ActiveChatView: View {
                 }
               }
             }
-            .scrollDismissesKeyboard(.immediately)
+            .scrollDismissesKeyboard(.interactively)
           }
 
           VStack(spacing: 0) {
             chatInputView
+          }
+          .background(
+            RoundedRectangle(cornerRadius: 24)
+              .stroke(
+                AngularGradient(
+                  stops: [
+                    .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 0.0),
+                    .init(color: Color(red: 0.25, green: 0.5, blue: 1.0),  location: 0.35),
+                    .init(color: Color(red: 0.55, green: 0.25, blue: 1.0), location: 0.65),
+                    .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 1.0),
+                  ],
+                  center: .center,
+                  angle: .degrees(glowAngle)
+                ),
+                lineWidth: 6
+              )
+              .blur(radius: 8)
+              .opacity(glowOpacity)
+              .padding(.horizontal, 16)
+              .padding(.vertical, 6)
+              .allowsHitTesting(false)
+          )
+          .onAppear {
+            withAnimation(.easeIn(duration: 0.3)) {
+              glowOpacity = 1.0
+            }
+            withAnimation(.linear(duration: 1.5)) {
+              glowAngle = 360.0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+              withAnimation(.easeOut(duration: 0.5)) {
+                glowOpacity = 0.0
+              }
+            }
           }
           .disabled(viewModel.chatErrorState != .none)
           .onGeometryChange(for: CGFloat.self) { geo in
