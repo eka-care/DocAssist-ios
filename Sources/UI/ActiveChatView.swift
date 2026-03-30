@@ -73,7 +73,7 @@ public struct ActiveChatView: View {
           headerView
         }
 
-        if viewModel.sessionExpired {
+        if viewModel.chatErrorState != .none {
           sessionExpiredBanner
         }
         
@@ -139,7 +139,7 @@ public struct ActiveChatView: View {
           VStack(spacing: 0) {
             chatInputView
           }
-          .disabled(viewModel.sessionExpired)
+          .disabled(viewModel.chatErrorState != .none)
           .onGeometryChange(for: CGFloat.self) { geo in
             geo.size.height
           } action: { newHeight in
@@ -206,16 +206,30 @@ public struct ActiveChatView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
       Button {
         Task {
-          viewModel.sessionExpired = false
-          viewModel.webSocketErrorMessage = nil
-          let _ = await viewModel.createSession(
-            subTitle: patientName,
-            userDocId: userDocId,
-            userBId: userBId
-          )
+          if viewModel.chatErrorState == .connectionError {
+            let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? viewModel.vmssid
+            let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+            let refreshed = await viewModel.refreshSession(for: sessionId)
+            if refreshed {
+              await viewModel.webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+              viewModel.webSocketErrorMessage = nil
+              viewModel.chatErrorState = .none
+            } else {
+              viewModel.webSocketErrorMessage = "Session not found. Please start a new session."
+              viewModel.chatErrorState = .sessionExpired
+            }
+          } else {
+            viewModel.chatErrorState = .none
+            viewModel.webSocketErrorMessage = nil
+            let _ = await viewModel.createSession(
+              subTitle: patientName,
+              userDocId: userDocId,
+              userBId: userBId
+            )
+          }
         }
       } label: {
-        Text("Start New")
+        Text(viewModel.chatErrorState == .connectionError ? "Retry" : "Start New")
           .font(Font.custom("Lato-Bold", size: 13))
           .foregroundStyle(.white)
           .padding(.horizontal, 12)

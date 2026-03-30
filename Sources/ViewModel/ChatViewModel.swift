@@ -11,6 +11,12 @@ import AVFAudio
 import AVFoundation
 import FirebaseFirestore
 
+enum ChatErrorState {
+  case none
+  case sessionExpired
+  case connectionError
+}
+
 @Observable
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
@@ -56,7 +62,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var webSocketConnectionTitle: String = "Idle"
   var initialMessageText: String? = nil
   var initialMessageSuggestions: [String]? = nil
-  var sessionExpired: Bool = false
+  var chatErrorState: ChatErrorState = .none
   var webSocketErrorMessage: String? = nil
   
   var showPermissionAlertBinding: Binding<Bool> {
@@ -352,7 +358,8 @@ extension ChatViewModel {
       } else {
         print("#BB Session has expired")
         await MainActor.run {
-          sessionExpired = true
+          webSocketErrorMessage = "Session not found. Please start a new session."
+          chatErrorState = .sessionExpired
         }
       }
     } else {
@@ -378,16 +385,18 @@ extension ChatViewModel {
     }
   }
   
-  func refreshSession(for sessionId: String) async {
-    await withCheckedContinuation { continuation in
+
+  func refreshSession(for sessionId: String) async -> Bool {
+    return await withCheckedContinuation { continuation in
       MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
         switch result {
         case .success(let sessionResponse):
           print("#BB refreshSession success: \(sessionResponse.sessionID)")
+          continuation.resume(returning: true)
         case .failure(let error):
-          print("#BB failure error:", error.localizedDescription)
+          print("#BB refreshSession failure:", error.localizedDescription)
+          continuation.resume(returning: false)
         }
-        continuation.resume()
       }
     }
   }
@@ -405,6 +414,15 @@ extension ChatViewModel {
       serialTaskQueue.enqueue { [weak self] in
         guard let self else { return }
         await handleWebSocketModel(model)
+      }
+    }
+    webSocketClient?.onConnectionError = { [weak self] error in
+      guard let self else { return }
+      Task { @MainActor in
+        self.webSocketConnectionTitle = "Something went wrong"
+        self.webSocketErrorMessage = "Something went wrong. Please try again."
+        self.chatErrorState = .connectionError
+        print("❌ WebSocket connection dropped: \(error.localizedDescription)")
       }
     }
     webSocketClient?.connect { [weak self] connected in
@@ -624,7 +642,6 @@ extension ChatViewModel {
       ts: timestamp,
       id: String(timestamp),
       contentType: .text,
-      msg: nil,
       data: data
     )
     streamStarted = true
@@ -663,19 +680,68 @@ extension ChatViewModel {
       }
       
     case .err:
-      let errorMsg = model.msg ?? "Something went wrong. Please try again."
-      webSocketConnectionTitle = errorMsg
-      webSocketErrorMessage = errorMsg
-      sessionExpired = true
-      print("⚠️ WebSocket error event: \(errorMsg)")
+      let errorCode = model.data?.code.flatMap { WebSocketErrorCode(rawValue: $0) }
+      
+      switch errorCode {
+        
+      case .sessionInactive, .sessionTokenMismatch:
+        await MainActor.run {
+          webSocketConnectionTitle = "Session not found"
+          webSocketErrorMessage = "Session not found. Please start a new session."
+          chatErrorState = .sessionExpired
+        }
+        
+      case .invalidEvent, .invalidContentType:
+        print("⚠️ Ignorable WebSocket error (\(model.data?.code ?? ""))")
+        
+      case .parsingError:
+        let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? vmssid
+        let refreshed = await refreshSession(for: sessionId)
+        if refreshed {
+          let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+          await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+        } else {
+          await MainActor.run {
+            webSocketConnectionTitle = "Error parsing request"
+            webSocketErrorMessage = "Error parsing request. Please try again."
+            chatErrorState = .connectionError
+          }
+        }
+        
+      case .timeout:
+        let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? vmssid
+        let refreshed = await refreshSession(for: sessionId)
+        if refreshed {
+          let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+          await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+        } else {
+          await MainActor.run {
+            webSocketConnectionTitle = "Request timed out"
+            webSocketErrorMessage = "Request timed out. Please try again."
+            chatErrorState = .connectionError
+          }
+        }
+        
+      case .promptFetchError, .invalidFileRequest, .serverError, .none:
+        let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? vmssid
+        let refreshed = await refreshSession(for: sessionId)
+        if refreshed {
+          let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+          await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+        } else {
+          await MainActor.run {
+            webSocketConnectionTitle = "Something went wrong"
+            webSocketErrorMessage = "Something went wrong. Please try again."
+            chatErrorState = .connectionError
+          }
+        }
+      }
       
     case .chat:
-      // Handle file upload URL response from server
       if model.contentType == .file,
          let urls = model.data?.urls, !urls.isEmpty {
         handleFileUploadResponse(urls: urls, requestId: model.id)
       }
-      // Handle transcription result — send directly as user message
       else if (model.contentType == .audioTranscript || model.contentType == .inlineText),
          let transcribedText = model.data?.text {
         DispatchQueue.main.async { [weak self] in

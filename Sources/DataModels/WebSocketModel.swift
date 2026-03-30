@@ -13,7 +13,7 @@ struct WebSocketModel: Codable {
   let ts: Int
   let id: String?
   let contentType: ContentType?
-  let msg: String?
+  let msg: String? = nil
   let data: WebSocketData?
   
   enum CodingKeys: String, CodingKey {
@@ -90,6 +90,19 @@ struct WebSocketModel: Codable {
   }
 }
 
+// MARK: - WebSocket Error Codes
+enum WebSocketErrorCode: String {
+  case sessionInactive      = "session_inactive"
+  case sessionTokenMismatch = "session_token_mismatch"
+  case invalidEvent         = "invalid_event"
+  case invalidContentType   = "invalid_content_type"
+  case parsingError         = "parsing_error"
+  case timeout              = "timeout"
+  case promptFetchError     = "prompt_fetch_error"
+  case invalidFileRequest   = "invalid_file_request"
+  case serverError          = "server_error"
+}
+
 struct FileUploadURL: Codable {
   let id: String
   let url: String
@@ -105,6 +118,8 @@ struct WebSocketData: Codable {
   let url: String?
   let additionalOption: String?
   let fileExtension: String?
+  let msg: String?
+  let code: String?
 
   enum CodingKeys: String, CodingKey {
     case audio
@@ -115,10 +130,10 @@ struct WebSocketData: Codable {
     case toolType = "tool_type"
     case toolID = "tool_id"
     case toolName = "tool_name"
-    case details, urls, url
+    case details, urls, url, msg, code
   }
 
-  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [FileUploadURL]? = nil, url: String? = nil, additionalOption: String? = nil, fileExtension: String? = nil) {
+  init(audio: String? = nil, text: String? = nil, format: String? = nil, toolType: String? = nil, toolID: String? = nil, toolName: String? = nil, details: Details? = nil, urls: [FileUploadURL]? = nil, url: String? = nil, additionalOption: String? = nil, fileExtension: String? = nil, msg: String? = nil, code: String? = nil) {
     self.audio = audio
     self.text = text
     self.format = format
@@ -130,6 +145,8 @@ struct WebSocketData: Codable {
     self.url = url
     self.additionalOption = additionalOption
     self.fileExtension = fileExtension
+    self.msg = msg
+    self.code = code
   }
 }
 

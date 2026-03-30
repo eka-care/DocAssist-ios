@@ -13,6 +13,8 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     private var isConnected = false
     private var connectCompletion: ((Bool) -> Void)?
     var onMessageDecoded: ((WebSocketModel) -> Void)?
+    /// Called when the connection drops unexpectedly (transport abort, receive failure mid-session)
+    var onConnectionError: ((Error) -> Void)?
   
   var operationQueue: OperationQueue = {
     let queue = OperationQueue()
@@ -74,6 +76,8 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
       case .failure(let error):
         print("❌ WebSocket receive error: \(error.localizedDescription)")
         self.isConnected = false
+        WebSocketLogger.shared.logInfo("Receive error: \(error.localizedDescription)")
+        self.onConnectionError?(error)
         
       case .success(let message):
         switch message {
@@ -128,10 +132,16 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             print("❌ WebSocket connection error: \(error.localizedDescription)")
-            isConnected = false
             WebSocketLogger.shared.logInfo("Connection error: \(error.localizedDescription)")
-            connectCompletion?(false)
-            connectCompletion = nil
+            if isConnected {
+                // Mid-session drop — notify the view model
+                isConnected = false
+                onConnectionError?(error)
+            } else {
+                // Initial connection failure — handled via connectCompletion
+                connectCompletion?(false)
+                connectCompletion = nil
+            }
         }
     }
 }
