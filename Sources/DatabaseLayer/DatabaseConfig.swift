@@ -36,6 +36,17 @@ public final actor DatabaseConfig {
     saveData()
   }
   
+  func updateSessionToken(sessionId: String, sessionToken: String) {
+    var fetchDescriptor = FetchDescriptor<SessionDataModel>(
+      predicate: #Predicate { $0.sessionId == sessionId }
+    )
+    fetchDescriptor.fetchLimit = 1
+    let session = try? modelContext.fetch(fetchDescriptor)
+    session?.first?.sessionToken = sessionToken
+    session?.first?.lastUpdatedAt = Date()
+    saveData()
+  }
+  
   func saveData() {
     do {
       try modelContext.save()
@@ -192,11 +203,16 @@ extension DatabaseConfig {
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
       
-     
       if messageToUpdate.messageText == nil {
           messageToUpdate.messageText = responseMessage
       } else {
           messageToUpdate.messageText! += responseMessage
+      }
+      if let suggestions, !suggestions.isEmpty {
+        messageToUpdate.suggestions = suggestions
+      }
+      if let multiSelect {
+        messageToUpdate.multiselect = multiSelect
       }
       saveData()
   

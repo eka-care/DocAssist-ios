@@ -11,6 +11,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     private var webSocketTask: URLSessionWebSocketTask?
     private var session: URLSession?
     private var isConnected = false
+    private var isBackgrounded = false
     private var connectCompletion: ((Bool) -> Void)?
     var onMessageDecoded: ((WebSocketModel) -> Void)?
     /// Called when the connection drops unexpectedly (transport abort, receive failure mid-session)
@@ -30,11 +31,24 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
         self.url = url
         self.headers = headers
         super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(appDidEnterBackground), name: UIApplication.didEnterBackgroundNotification, object: nil)
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func appDidEnterBackground() {
+        guard isConnected else { return }
+        isBackgrounded = true
+        disconnect()
+        WebSocketLogger.shared.logInfo("Disconnected gracefully on app background")
     }
 
     // 1️⃣ Establish the connection
     func connect(completion: @escaping (Bool) -> Void) {
         self.connectCompletion = completion
+        isBackgrounded = false
         session = URLSession(configuration: .default, delegate: self, delegateQueue: operationQueue)
 
         var request = URLRequest(url: url)
@@ -77,7 +91,9 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
         print("❌ WebSocket receive error: \(error.localizedDescription)")
         self.isConnected = false
         WebSocketLogger.shared.logInfo("Receive error: \(error.localizedDescription)")
-        self.onConnectionError?(error)
+        if !self.isBackgrounded {
+            self.onConnectionError?(error)
+        }
         
       case .success(let message):
         switch message {
@@ -136,7 +152,9 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
             if isConnected {
                 // Mid-session drop — notify the view model
                 isConnected = false
-                onConnectionError?(error)
+                if !isBackgrounded {
+                    onConnectionError?(error)
+                }
             } else {
                 // Initial connection failure — handled via connectCompletion
                 connectCompletion?(false)
