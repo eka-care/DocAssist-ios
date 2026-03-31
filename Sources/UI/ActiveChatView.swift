@@ -232,6 +232,13 @@ public struct ActiveChatView: View {
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
+    .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+      WebSocketLogger.shared.logInfo("willEnterForeground received — isWebSocketSetupDone: \(viewModel.isWebSocketSetupDone)")
+      guard viewModel.isWebSocketSetupDone else { return }
+      Task {
+        await viewModel.checkandValidateWebSocketConnection()
+      }
+    }
     .onDisappear {
       viewModel.inputString = ""
       if messages.isEmpty {
@@ -254,10 +261,8 @@ public struct ActiveChatView: View {
         Task {
           if viewModel.chatErrorState == .connectionError {
             let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? viewModel.vmssid
-            let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
-            let refreshed = await viewModel.refreshSession(for: sessionId)
-            if refreshed {
-              await viewModel.webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+            if let newToken = await viewModel.refreshSession(for: sessionId) {
+              await viewModel.webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
               viewModel.webSocketErrorMessage = nil
               viewModel.chatErrorState = .none
             } else {

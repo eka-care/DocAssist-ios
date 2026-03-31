@@ -24,9 +24,7 @@ let package = Package(
     // Mixpanel
     .package(url: "https://github.com/mixpanel/mixpanel-swift", from: "3.2.5"),
     // EkaPDFMaker
-    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", from: "1.0.3"),
-    // SwiftProtobuf
-    .package(url: "https://github.com/apple/swift-protobuf.git", from: "1.0.0")
+    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", from: "1.0.3")
   ],
   targets: [
     // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -43,9 +41,7 @@ let package = Package(
         // Mixpanel
         .product(name: "Mixpanel", package: "mixpanel-swift"),
         // PdfRender
-        .product(name: "EkaPDFMaker", package: "EkaPDFMaker"),
-        // SwiftProtobuf
-        .product(name: "SwiftProtobuf", package: "swift-protobuf")
+        .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
       ],
       resources: [
         .process("Resources")
