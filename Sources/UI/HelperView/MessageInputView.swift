@@ -35,8 +35,9 @@ struct MessageInputView: View {
             }
           }
         }
-        .frame(height: 20)
-        .padding()
+        .frame(height: 80)
+        .padding(.horizontal)
+        .padding(.top, 8)
       }
             
       TextField("Message...", text: $inputString, axis: .vertical)

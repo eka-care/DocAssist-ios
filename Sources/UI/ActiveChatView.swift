@@ -20,7 +20,7 @@ public struct ActiveChatView: View {
   @State var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
-  @State private var scrollToBottom = false
+
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
@@ -40,11 +40,13 @@ public struct ActiveChatView: View {
   private let authToken: String
   private let authRefreshToken: String
   @State var voiceToRxTip = VoiceToRxTip()
-  private let bottomScrollIdentifier = "bottomID"
+
   @State private var animatedText: String = ""
   @State private var lastAnimatedText: String = ""
   @State private var showWSLogs: Bool = false
   @State private var inputHeight: CGFloat = 0
+  @State private var glowAngle: Double = 0.0
+  @State private var glowOpacity: Double = 0.0
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
@@ -72,9 +74,12 @@ public struct ActiveChatView: View {
         if calledFromPatientContext {
           headerView
         }
+
+        if viewModel.chatErrorState != .none {
+          sessionExpiredBanner
+        }
         
         ZStack(alignment: .bottom) {
-          // Gray background for the entire area
           Color(red: 0.96, green: 0.96, blue: 0.96)
             .ignoresSafeArea()
           
@@ -91,11 +96,11 @@ public struct ActiveChatView: View {
                       .id(message.id)
                   }
 
-                  // Live streaming bubble — shown while bot is responding
                   if viewModel.streamStarted {
                     if viewModel.messageText.isEmpty {
                       LoadingView()
                         .padding(.horizontal)
+                        .id("streamingID")
                     } else {
                       HStack(alignment: .top) {
                         BotAvatarImage()
@@ -103,38 +108,82 @@ public struct ActiveChatView: View {
                         Spacer()
                       }
                       .padding(.horizontal)
+                      .id("streamingID")
                     }
                   }
 
                   Color.clear.frame(height: 1)
-                    .id(bottomScrollIdentifier)
+                    .id("bottomID")
                 }
                 .padding(.top, 10)
                 .padding(.bottom, inputHeight)
-                .onChange(of: isTextFieldFocused, { _, _ in
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
-                })
-                .onChange(of: messages) { oldValue , newValue in
+                .onChange(of: isTextFieldFocused) { _, _ in
                   withAnimation {
-                    proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                    proxy.scrollTo("bottomID", anchor: .bottom)
+                  }
+                }
+                .onChange(of: messages.count) { _, _ in
+                  if let lastMessage = messages.last {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                      proxy.scrollTo(lastMessage.id, anchor: .top)
+                    }
                   }
                 }
                 .onChange(of: viewModel.messageText) { _, _ in
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                  if viewModel.streamStarted {
+                    proxy.scrollTo("streamingID", anchor: .top)
+                  }
                 }
                 .onAppear {
                   DispatchQueue.main.async {
-                    proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+                    if let lastMessage = messages.last {
+                      proxy.scrollTo(lastMessage.id, anchor: .top)
+                    }
                   }
                 }
               }
             }
-            .scrollDismissesKeyboard(.immediately)
+            .scrollDismissesKeyboard(.interactively)
           }
 
           VStack(spacing: 0) {
             chatInputView
           }
+          .background(
+            RoundedRectangle(cornerRadius: 24)
+              .stroke(
+                AngularGradient(
+                  stops: [
+                    .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 0.0),
+                    .init(color: Color(red: 0.25, green: 0.5, blue: 1.0),  location: 0.35),
+                    .init(color: Color(red: 0.55, green: 0.25, blue: 1.0), location: 0.65),
+                    .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 1.0),
+                  ],
+                  center: .center,
+                  angle: .degrees(glowAngle)
+                ),
+                lineWidth: 6
+              )
+              .blur(radius: 8)
+              .opacity(glowOpacity)
+              .padding(.horizontal, 16)
+              .padding(.vertical, 6)
+              .allowsHitTesting(false)
+          )
+          .onAppear {
+            withAnimation(.easeIn(duration: 0.3)) {
+              glowOpacity = 1.0
+            }
+            withAnimation(.linear(duration: 1.5)) {
+              glowAngle = 360.0
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+              withAnimation(.easeOut(duration: 0.5)) {
+                glowOpacity = 0.0
+              }
+            }
+          }
+          .disabled(viewModel.chatErrorState != .none)
           .onGeometryChange(for: CGFloat.self) { geo in
             geo.size.height
           } action: { newHeight in
@@ -173,11 +222,13 @@ public struct ActiveChatView: View {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
       Task {
-        fetchedOid =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
-          if fetchedOid != "" {
-            setupView(with: fetchedOid ?? "")
-          }
-        await viewModel.checkandValidateWebSocketConnection()
+        fetchedOid = try await DatabaseConfig.shared.isOidPresent(sessionId: session)
+        if fetchedOid != "" {
+          setupView(with: fetchedOid ?? "")
+        }
+        if !viewModel.isWebSocketSetupDone {
+          await viewModel.checkandValidateWebSocketConnection()
+        }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
@@ -191,14 +242,61 @@ public struct ActiveChatView: View {
     }
   }
   
+  private var sessionExpiredBanner: some View {
+    HStack(spacing: 8) {
+      Image(systemName: "exclamationmark.circle.fill")
+        .foregroundStyle(.white)
+      Text(viewModel.webSocketErrorMessage ?? "Session expired.")
+        .font(Font.custom("Lato-Regular", size: 14))
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      Button {
+        Task {
+          if viewModel.chatErrorState == .connectionError {
+            let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? viewModel.vmssid
+            let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+            let refreshed = await viewModel.refreshSession(for: sessionId)
+            if refreshed {
+              await viewModel.webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+              viewModel.webSocketErrorMessage = nil
+              viewModel.chatErrorState = .none
+            } else {
+              viewModel.webSocketErrorMessage = "Session not found. Please start a new session."
+              viewModel.chatErrorState = .sessionExpired
+            }
+          } else {
+            viewModel.chatErrorState = .none
+            viewModel.webSocketErrorMessage = nil
+            let _ = await viewModel.createSession(
+              subTitle: patientName,
+              userDocId: userDocId,
+              userBId: userBId
+            )
+          }
+        }
+      } label: {
+        Text(viewModel.chatErrorState == .connectionError ? "Retry" : "Start New")
+          .font(Font.custom("Lato-Bold", size: 13))
+          .foregroundStyle(.white)
+          .padding(.horizontal, 12)
+          .padding(.vertical, 6)
+          .background(Color.white.opacity(0.25))
+          .clipShape(Capsule())
+      }
+    }
+    .padding(.horizontal, 16)
+    .padding(.vertical, 12)
+    .background(Color.red.opacity(0.85))
+  }
+
   var emptyChatView: some View {
     VStack(alignment: .leading, spacing: 8) {
-        Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
-          .font(Font.custom("Lato-Regular", size: 16))
-          .foregroundStyle(Color.neutrals600)
-          .padding(.bottom, 4)
-          .padding(.top, 20)
-          .padding(.leading, 16)
+      Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
+        .font(Font.custom("Lato-Regular", size: 16))
+        .foregroundStyle(Color.neutrals600)
+        .padding(.bottom, 4)
+        .padding(.top, 20)
+        .padding(.leading, 16)
       Group {
         if SetUIComponents.shared.isPatientApp == nil {
           SuggestionsComponentView(
@@ -244,7 +342,6 @@ public struct ActiveChatView: View {
             } label: {
               Text("Logs")
             }
-            
           }
         }
         .contentShape(Rectangle())
@@ -270,7 +367,7 @@ public struct ActiveChatView: View {
     .padding(.bottom, 5)
   }
   
-  var chatInputView : some View {
+  var chatInputView: some View {
     if viewModel.messageInput {
       AnyView(
         MessageInputView(
@@ -327,25 +424,23 @@ public struct ActiveChatView: View {
   }
   
   private func animateText(_ newValue: String) {
+    if newValue.count <= lastAnimatedText.count {
+      animatedText = newValue
+      lastAnimatedText = newValue
+      return
+    }
 
-      if newValue.count <= lastAnimatedText.count {
-          animatedText = newValue
-          lastAnimatedText = newValue
-          return
+    let full = newValue
+    let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
+    let newChunk = full[startIndex...]
+
+    Task {
+      for char in newChunk {
+        try? await Task.sleep(nanoseconds: 30_000_000)
+        animatedText.append(char)
+        lastAnimatedText.append(char)
       }
-
-      let full = newValue
-      let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
-      let newChunk = full[startIndex...]
-
-      Task {
-          for char in newChunk {
-              try? await Task.sleep(nanoseconds: 30_000_000)   // 0.03 sec per char (smooth)
-              
-              animatedText.append(char)
-              lastAnimatedText.append(char)
-          }
-      }
+    }
   }
 }
 
@@ -377,4 +472,3 @@ struct CustomCornerShape: Shape {
     return Path(path.cgPath)
   }
 }
-
