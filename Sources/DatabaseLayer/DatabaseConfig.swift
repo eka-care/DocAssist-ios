@@ -258,6 +258,20 @@ extension DatabaseConfig {
         return try modelContext.fetch(descriptor).first?.msgId ?? 0
     }
   
+  func hasMessages(forSessionId sessionId: String) async -> Bool {
+    lock.lock()
+    defer { lock.unlock() }
+    
+    var descriptor = FetchDescriptor<ChatMessageModel>(
+      predicate: #Predicate<ChatMessageModel> { message in
+        message.sessionId == sessionId
+      }
+    )
+    descriptor.fetchLimit = 1
+    
+    return (try? modelContext.fetchCount(descriptor)) ?? 0 > 0
+  }
+  
   public func createSession(
     subTitle: String?,
     oid: String = "",

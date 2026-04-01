@@ -794,6 +794,8 @@ extension ChatViewModel {
     }
   }
   
+  // MARK: - Session Management
+  
   public func createSession(
     subTitle: String?,
     oid: String = "",
@@ -801,45 +803,47 @@ extension ChatViewModel {
     userBId: String
   ) async -> String {
     
-    // Reset initial message state for each new session creation attempt
     await MainActor.run {
       initialMessageText = nil
       initialMessageSuggestions = nil
     }
     
-    if let existing = try? await DatabaseConfig.shared
-      .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
-      .last {
-      
-      let existingSessionId = existing.sessionId
-      let existingToken = existing.sessionToken
-      
-      if await checkIfSessionIsActive(for: existingSessionId) {
-        print("🔄 Reusing existing session: \(existingSessionId)")
-        
-        UserDefaults.standard.set(existingSessionId, forKey: "SessionId")
-        UserDefaults.standard.set(existingToken ?? "", forKey: "SessionToken")
-        
-        switchToSession(existingSessionId)
-        isWebSocketSetupDone = true
-        Task {
-          await webSocketAuthentication(
-            sessionId: existingSessionId,
-            sessionToken: existingToken ?? ""
-          )
-        }
-        
-        return existingSessionId
-      }
+    if let sessionId = await fetchExistingActiveSession(userDocId: userDocId, userBId: userBId) {
+      return sessionId
     }
     
-    print("🆕 Creating new session")
+    return await createNewSession(subTitle: subTitle, oid: oid, userDocId: userDocId, userBId: userBId)
+  }
   
+  private func fetchExistingActiveSession(userDocId: String, userBId: String) async -> String? {
+    guard let existing = try? await DatabaseConfig.shared
+      .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
+      .last else { return nil }
+    
+    let sessionId = existing.sessionId
+    let token = existing.sessionToken ?? ""
+    
+    guard await checkIfSessionIsActive(for: sessionId) else { return nil }
+    
+    print("🔄 Reusing existing session: \(sessionId)")
+    activateSession(id: sessionId, token: token)
+    Task {
+      await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+    }
+    
+    return sessionId
+  }
+  
+  public func createNewSession(
+    subTitle: String?,
+    oid: String = "",
+    userDocId: String,
+    userBId: String
+  ) async -> String {
     let requestModel = AuthSessionRequestModel(uerId: userDocId)
     
     do {
-     return try await withCheckedThrowingContinuation { continuation in
-        
+      return try await withCheckedThrowingContinuation { continuation in
         MatrixApiService.shared.createSession(requestModel: requestModel) { [weak self] result, _ in
           guard let self else { return }
           
@@ -855,18 +859,12 @@ extension ChatViewModel {
                 sessionToken: sessionResponse.sessionToken
               )
               
-              UserDefaults.standard.set(sessionResponse.sessionID, forKey: "SessionId")
-              UserDefaults.standard.set(sessionResponse.sessionToken, forKey: "SessionToken")
-              
-              self.switchToSession(sessionResponse.sessionID)
-              self.isWebSocketSetupDone = true
+              self.activateSession(id: sessionResponse.sessionID, token: sessionResponse.sessionToken)
               
               if let initialMessage = sessionResponse.initialMessage {
                 let text = initialMessage.text
-               // let suggestions = initialMessage.suggestions
                 await MainActor.run {
                   self.initialMessageText = text
-                 // self.initialMessageSuggestions = suggestions as? [String]
                 }
               }
               
@@ -887,6 +885,13 @@ extension ChatViewModel {
       print("Error creating session: \(error)")
       return ""
     }
+  }
+  
+  private func activateSession(id: String, token: String) {
+    UserDefaults.standard.set(id, forKey: "SessionId")
+    UserDefaults.standard.set(token, forKey: "SessionToken")
+    switchToSession(id)
+    isWebSocketSetupDone = true
   }
 }
 

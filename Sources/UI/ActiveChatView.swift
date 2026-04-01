@@ -14,9 +14,8 @@ import AVFAudio
 
 @MainActor
 public struct ActiveChatView: View {
-  private let session: String
+  @State private var session: String
   @Environment(\.modelContext) var modelContext
-  @Query private var messages: [ChatMessageModel] = []
   @State var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
@@ -49,14 +48,7 @@ public struct ActiveChatView: View {
   @State private var glowOpacity: Double = 0.0
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
-    self.session = session
-    _messages = Query(
-      filter: #Predicate<ChatMessageModel> { message in
-        message.sessionId == session
-      },
-      sort: \.msgId,
-      order: .forward
-    )
+    self._session = State(initialValue: session)
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
     self.patientName = patientName
@@ -79,117 +71,23 @@ public struct ActiveChatView: View {
           sessionExpiredBanner
         }
         
-        ZStack(alignment: .bottom) {
-          Color(red: 0.96, green: 0.96, blue: 0.96)
-            .ignoresSafeArea()
-          
-          ScrollViewReader { proxy in
-            ScrollView {
-              if messages.isEmpty {
-                emptyChatView
-              }
-              else {
-                VStack {
-                  ForEach(messages) { message in
-                    messageBubbleView(message: message)
-                      .padding(.horizontal)
-                      .id(message.id)
-                  }
-
-                  if viewModel.streamStarted {
-                    if viewModel.messageText.isEmpty {
-                      LoadingView()
-                        .padding(.horizontal)
-                        .id("streamingID")
-                    } else {
-                      HStack(alignment: .top) {
-                        BotAvatarImage()
-                        StreamingTextView(text: viewModel.messageText)
-                        Spacer()
-                      }
-                      .padding(.horizontal)
-                      .id("streamingID")
-                    }
-                  }
-
-                  Color.clear.frame(height: 1)
-                    .id("bottomID")
-                }
-                .padding(.top, 10)
-                .padding(.bottom, inputHeight)
-                .onChange(of: isTextFieldFocused) { _, _ in
-                  withAnimation {
-                    proxy.scrollTo("bottomID", anchor: .bottom)
-                  }
-                }
-                .onChange(of: messages.count) { _, _ in
-                  if let lastMessage = messages.last {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                      proxy.scrollTo(lastMessage.id, anchor: .top)
-                    }
-                  }
-                }
-                .onChange(of: viewModel.messageText) { _, _ in
-                  if viewModel.streamStarted {
-                    proxy.scrollTo("streamingID", anchor: .top)
-                  }
-                }
-                .onAppear {
-                  DispatchQueue.main.async {
-                    if let lastMessage = messages.last {
-                      proxy.scrollTo(lastMessage.id, anchor: .top)
-                    }
-                  }
-                }
-              }
-            }
-            .scrollDismissesKeyboard(.interactively)
-          }
-
-          VStack(spacing: 0) {
-            chatInputView
-          }
-          .background(
-            RoundedRectangle(cornerRadius: 24)
-              .stroke(
-                AngularGradient(
-                  stops: [
-                    .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 0.0),
-                    .init(color: Color(red: 0.25, green: 0.5, blue: 1.0),  location: 0.35),
-                    .init(color: Color(red: 0.55, green: 0.25, blue: 1.0), location: 0.65),
-                    .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 1.0),
-                  ],
-                  center: .center,
-                  angle: .degrees(glowAngle)
-                ),
-                lineWidth: 6
-              )
-              .blur(radius: 8)
-              .opacity(glowOpacity)
-              .padding(.horizontal, 16)
-              .padding(.vertical, 6)
-              .allowsHitTesting(false)
-          )
-          .onAppear {
-            withAnimation(.easeIn(duration: 0.3)) {
-              glowOpacity = 1.0
-            }
-            withAnimation(.linear(duration: 1.5)) {
-              glowAngle = 360.0
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-              withAnimation(.easeOut(duration: 0.5)) {
-                glowOpacity = 0.0
-              }
-            }
-          }
-          .disabled(viewModel.chatErrorState != .none)
-          .onGeometryChange(for: CGFloat.self) { geo in
-            geo.size.height
-          } action: { newHeight in
-            inputHeight = newHeight
-          }
-        }
+        SessionChatContentView(
+          session: session,
+          viewModel: viewModel,
+          patientName: patientName,
+          patientNameConstant: patientNameConstant,
+          selectedImages: $selectedImages,
+          selectedDocumentId: $selectedDocumentId,
+          showRecordsView: $showRecordsView,
+          showFeedback: $showFeedback,
+          feedbackText: $feedbackText,
+          recordsRepo: recordsRepo,
+          voiceToRxTip: $voiceToRxTip,
+          glowAngle: $glowAngle,
+          glowOpacity: $glowOpacity,
+          inputHeight: $inputHeight
+        )
+        .id(session)
       }
       .background(Color(red: 0.96, green: 0.96, blue: 0.96))
       .toolbarBackground(
@@ -241,9 +139,11 @@ public struct ActiveChatView: View {
     }
     .onDisappear {
       viewModel.inputString = ""
-      if messages.isEmpty {
-        Task {
-          await DatabaseConfig.shared.deleteSession(sessionId: session)
+      let sessionToCheck = session
+      Task {
+        let hasMessages = await DatabaseConfig.shared.hasMessages(forSessionId: sessionToCheck)
+        if !hasMessages {
+          await DatabaseConfig.shared.deleteSession(sessionId: sessionToCheck)
         }
       }
     }
@@ -272,11 +172,14 @@ public struct ActiveChatView: View {
           } else {
             viewModel.chatErrorState = .none
             viewModel.webSocketErrorMessage = nil
-            let _ = await viewModel.createSession(
+            let newSessionId = await viewModel.createNewSession(
               subTitle: patientName,
               userDocId: userDocId,
               userBId: userBId
             )
+            if !newSessionId.isEmpty {
+              session = newSessionId
+            }
           }
         }
       } label: {
@@ -294,38 +197,6 @@ public struct ActiveChatView: View {
     .background(Color.red.opacity(0.85))
   }
 
-  var emptyChatView: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
-        .font(Font.custom("Lato-Regular", size: 16))
-        .foregroundStyle(Color.neutrals600)
-        .padding(.bottom, 4)
-        .padding(.top, 20)
-        .padding(.leading, 16)
-      Group {
-        if SetUIComponents.shared.isPatientApp == nil {
-          SuggestionsComponentView(
-            suggestionText: (patientName == patientNameConstant) ?
-            (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
-              (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
-            viewModel: viewModel, isMultiSelect: false
-          )
-        } else {
-          if let apiSuggestions = viewModel.initialMessageSuggestions {
-            SuggestionsComponentView(
-              suggestionText: apiSuggestions,
-              viewModel: viewModel, isMultiSelect: false
-            )
-            .padding(.leading, 16)
-          }
-        }
-      }
-      .padding(.leading, 16)
-      
-      Spacer()
-    }
-  }
-  
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack {
@@ -372,53 +243,6 @@ public struct ActiveChatView: View {
     .padding(.bottom, 5)
   }
   
-  var chatInputView: some View {
-    if viewModel.messageInput {
-      AnyView(
-        MessageInputView(
-          inputString: viewModel.inputStringBinding,
-          selectedImages: $selectedImages,
-          selectedDocumentId: $selectedDocumentId,
-          showRecordsView: $showRecordsView,
-          patientName: patientName,
-          viewModel: viewModel,
-          session: session,
-          messages: messages,
-          recordsRepo: recordsRepo,
-          voiceToRxTip: $voiceToRxTip
-        )
-      )
-    } else {
-      AnyView(
-        VoiceInputView(viewModel: viewModel)
-      )
-    }
-  }
-  
-  private func messageBubbleView(message: ChatMessageModel) -> some View {
-    return MessageBubble(
-      message: message,
-      m: message.messageText,
-      url: message.imageUrls,
-      viewModel: viewModel,
-      onClickOfFeedback: {
-        showFeedback = true
-        feedbackText = "Thank you for your feedback!"
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-          showFeedback = false
-        }
-      },
-      onClickOfCopy: {
-        showFeedback = true
-        feedbackText = "Text copied to clipboard!"
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-          showFeedback = false
-        }
-      },
-      messages: messages
-    )
-  }
-  
   private func setupView(with oid: String) {
     Task {
       viewModel.updateQueryParamsIfNeeded(oid)
@@ -448,6 +272,264 @@ public struct ActiveChatView: View {
     }
   }
 }
+
+// MARK: - SessionChatContentView
+/// Inner view that owns the @Query for messages filtered by session.
+/// When ActiveChatView changes the session ID and uses `.id(session)`,
+/// this view is re-created with a fresh @Query for the new session.
+@MainActor
+struct SessionChatContentView: View {
+  let session: String
+  let viewModel: ChatViewModel
+  let patientName: String?
+  let patientNameConstant: String
+  @Binding var selectedImages: [String]
+  @Binding var selectedDocumentId: [String]
+  @Binding var showRecordsView: Bool
+  @Binding var showFeedback: Bool
+  @Binding var feedbackText: String
+  let recordsRepo: RecordsRepo
+  @Binding var voiceToRxTip: VoiceToRxTip
+  @Binding var glowAngle: Double
+  @Binding var glowOpacity: Double
+  @Binding var inputHeight: CGFloat
+  
+  @Query private var messages: [ChatMessageModel] = []
+  @FocusState private var isTextFieldFocused: Bool
+  
+  init(
+    session: String,
+    viewModel: ChatViewModel,
+    patientName: String?,
+    patientNameConstant: String,
+    selectedImages: Binding<[String]>,
+    selectedDocumentId: Binding<[String]>,
+    showRecordsView: Binding<Bool>,
+    showFeedback: Binding<Bool>,
+    feedbackText: Binding<String>,
+    recordsRepo: RecordsRepo,
+    voiceToRxTip: Binding<VoiceToRxTip>,
+    glowAngle: Binding<Double>,
+    glowOpacity: Binding<Double>,
+    inputHeight: Binding<CGFloat>
+  ) {
+    self.session = session
+    self.viewModel = viewModel
+    self.patientName = patientName
+    self.patientNameConstant = patientNameConstant
+    self._selectedImages = selectedImages
+    self._selectedDocumentId = selectedDocumentId
+    self._showRecordsView = showRecordsView
+    self._showFeedback = showFeedback
+    self._feedbackText = feedbackText
+    self.recordsRepo = recordsRepo
+    self._voiceToRxTip = voiceToRxTip
+    self._glowAngle = glowAngle
+    self._glowOpacity = glowOpacity
+    self._inputHeight = inputHeight
+    _messages = Query(
+      filter: #Predicate<ChatMessageModel> { message in
+        message.sessionId == session
+      },
+      sort: \.msgId,
+      order: .forward
+    )
+  }
+  
+  var body: some View {
+    ZStack(alignment: .bottom) {
+      Color(red: 0.96, green: 0.96, blue: 0.96)
+        .ignoresSafeArea()
+      
+      ScrollViewReader { proxy in
+        ScrollView {
+          if messages.isEmpty {
+            emptyChatView
+          } else {
+            VStack {
+              ForEach(messages) { message in
+                messageBubbleView(message: message)
+                  .padding(.horizontal)
+                  .id(message.id)
+              }
+              
+              if viewModel.streamStarted {
+                if viewModel.messageText.isEmpty {
+                  LoadingView()
+                    .padding(.horizontal)
+                    .id("streamingID")
+                } else {
+                  HStack(alignment: .top) {
+                    BotAvatarImage()
+                    StreamingTextView(text: viewModel.messageText)
+                    Spacer()
+                  }
+                  .padding(.horizontal)
+                  .id("streamingID")
+                }
+              }
+              
+              Color.clear.frame(height: 1)
+                .id("bottomID")
+            }
+            .padding(.top, 10)
+            .padding(.bottom, inputHeight)
+            .onChange(of: isTextFieldFocused) { _, _ in
+              withAnimation {
+                proxy.scrollTo("bottomID", anchor: .bottom)
+              }
+            }
+            .onChange(of: messages.count) { _, _ in
+              if let lastMessage = messages.last {
+                withAnimation(.easeOut(duration: 0.3)) {
+                  proxy.scrollTo(lastMessage.id, anchor: .top)
+                }
+              }
+            }
+            .onChange(of: viewModel.messageText) { _, _ in
+              if viewModel.streamStarted {
+                proxy.scrollTo("streamingID", anchor: .top)
+              }
+            }
+            .onAppear {
+              DispatchQueue.main.async {
+                if let lastMessage = messages.last {
+                  proxy.scrollTo(lastMessage.id, anchor: .top)
+                }
+              }
+            }
+          }
+        }
+        .scrollDismissesKeyboard(.interactively)
+      }
+      
+      VStack(spacing: 0) {
+        chatInputView
+      }
+      .background(
+        RoundedRectangle(cornerRadius: 24)
+          .stroke(
+            AngularGradient(
+              stops: [
+                .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 0.0),
+                .init(color: Color(red: 0.25, green: 0.5, blue: 1.0),  location: 0.35),
+                .init(color: Color(red: 0.55, green: 0.25, blue: 1.0), location: 0.65),
+                .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 1.0),
+              ],
+              center: .center,
+              angle: .degrees(glowAngle)
+            ),
+            lineWidth: 6
+          )
+          .blur(radius: 8)
+          .opacity(glowOpacity)
+          .padding(.horizontal, 16)
+          .padding(.vertical, 6)
+          .allowsHitTesting(false)
+      )
+      .onAppear {
+        withAnimation(.easeIn(duration: 0.3)) {
+          glowOpacity = 1.0
+        }
+        withAnimation(.linear(duration: 1.5)) {
+          glowAngle = 360.0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+          withAnimation(.easeOut(duration: 0.5)) {
+            glowOpacity = 0.0
+          }
+        }
+      }
+      .disabled(viewModel.chatErrorState != .none)
+      .onGeometryChange(for: CGFloat.self) { geo in
+        geo.size.height
+      } action: { newHeight in
+        inputHeight = newHeight
+      }
+    }
+  }
+  
+  private var emptyChatView: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text(viewModel.initialMessageText ?? "Hello \(AuthAndUserDetailsSetter.shared.docName ?? ""), how can I help you today?")
+        .font(Font.custom("Lato-Regular", size: 16))
+        .foregroundStyle(Color.neutrals600)
+        .padding(.bottom, 4)
+        .padding(.top, 20)
+        .padding(.leading, 16)
+      Group {
+        if SetUIComponents.shared.isPatientApp == nil {
+          SuggestionsComponentView(
+            suggestionText: (patientName == patientNameConstant) ?
+            (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
+              (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
+            viewModel: viewModel, isMultiSelect: false
+          )
+        } else {
+          if let apiSuggestions = viewModel.initialMessageSuggestions {
+            SuggestionsComponentView(
+              suggestionText: apiSuggestions,
+              viewModel: viewModel, isMultiSelect: false
+            )
+            .padding(.leading, 16)
+          }
+        }
+      }
+      .padding(.leading, 16)
+      
+      Spacer()
+    }
+  }
+  
+  private var chatInputView: some View {
+    if viewModel.messageInput {
+      AnyView(
+        MessageInputView(
+          inputString: viewModel.inputStringBinding,
+          selectedImages: $selectedImages,
+          selectedDocumentId: $selectedDocumentId,
+          showRecordsView: $showRecordsView,
+          patientName: patientName,
+          viewModel: viewModel,
+          session: session,
+          messages: messages,
+          recordsRepo: recordsRepo,
+          voiceToRxTip: $voiceToRxTip
+        )
+      )
+    } else {
+      AnyView(
+        VoiceInputView(viewModel: viewModel)
+      )
+    }
+  }
+  
+  private func messageBubbleView(message: ChatMessageModel) -> some View {
+    MessageBubble(
+      message: message,
+      m: message.messageText,
+      url: message.imageUrls,
+      viewModel: viewModel,
+      onClickOfFeedback: {
+        showFeedback = true
+        feedbackText = "Thank you for your feedback!"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+          showFeedback = false
+        }
+      },
+      onClickOfCopy: {
+        showFeedback = true
+        feedbackText = "Text copied to clipboard!"
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+          showFeedback = false
+        }
+      },
+      messages: messages
+    )
+  }
+}
+
+// MARK: - View Extensions
 
 extension View {
   func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
