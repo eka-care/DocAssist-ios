@@ -354,14 +354,10 @@ extension ChatViewModel {
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     WebSocketLogger.shared.logInfo("checkandValidateWebSocketConnection called — sessionId: \(webSocketSessionId ?? "nil")")
     if let webSocketSessionId {
-      let activeSession = await checkIfSessionIsActive(for: webSocketSessionId)
-      WebSocketLogger.shared.logInfo("Session active check result: \(activeSession)")
-      if activeSession,
-         let token = UserDefaults.standard.string(forKey: "SessionToken"),
-         !token.isEmpty {
-        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
-      } else if activeSession {
-        WebSocketLogger.shared.logInfo("Session active but SessionToken missing — skipping WebSocket auth")
+      if let serverToken = await checkIfSessionIsActive(for: webSocketSessionId),
+         !serverToken.isEmpty {
+        WebSocketLogger.shared.logInfo("Session active — using server token for WebSocket auth")
+        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: serverToken)
       } else {
         print("#BB Session has expired — showing refresh banner")
         WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
@@ -375,19 +371,26 @@ extension ChatViewModel {
     }
   }
   
-  func checkIfSessionIsActive(for sessionId: String) async -> Bool {
+  /// Returns the current session token from the server if the session is active, or `nil` if expired/invalid.
+  func checkIfSessionIsActive(for sessionId: String) async -> String? {
     return await withCheckedContinuation { continuation in
       MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
         switch result {
         case .success(let sessionResponse):
           print("#BB Data: Session is valid - \(sessionResponse.sessionID)")
+          let serverToken = sessionResponse.sessionData.sessionToken
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          continuation.resume(returning: true)   // Session is valid
+          // Persist the server's authoritative token locally
+          UserDefaults.standard.set(serverToken, forKey: "SessionToken")
+          Task {
+            await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: serverToken)
+          }
+          continuation.resume(returning: serverToken)
           
         case .failure(_):
-          continuation.resume(returning: false)  // Not active or expired
+          continuation.resume(returning: nil)  // Not active or expired
         }
       }
     }
@@ -396,8 +399,9 @@ extension ChatViewModel {
 
   /// Returns the new session token from the server after a successful refresh, or `nil` on failure.
   func refreshSession(for sessionId: String) async -> String? {
-    await withCheckedContinuation { continuation in
-      MatrixApiService.shared.refreshSession(sessionId: sessionId) { result, _ in
+    let currentToken = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+    return await withCheckedContinuation { continuation in
+      MatrixApiService.shared.refreshSession(sessionId: sessionId, sessionToken: currentToken) { result, _ in
         switch result {
         case .success(let sessionResponse):
           let newToken = sessionResponse.sessionData.sessionToken

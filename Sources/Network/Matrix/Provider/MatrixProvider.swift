@@ -23,6 +23,7 @@ protocol MatrixProvider {
   
   func refreshSession(
     sessionId: String,
+    sessionToken: String,
     _ completion: @escaping (Result<SessionValidResponseModel, Error>, Int?) -> Void
   )
 }
@@ -44,8 +45,9 @@ extension MatrixProvider {
   
   func refreshSession(
     sessionId: String,
+    sessionToken: String,
     _ completion: @escaping (Result<SessionValidResponseModel, Error>, Int?) -> Void
   ) {
-    networkService.execute(MatrixEndpoint.refreshSession(sessionId: sessionId), completion: completion)
+    networkService.execute(MatrixEndpoint.refreshSession(sessionId: sessionId, sessionToken: sessionToken), completion: completion)
   }
 }
