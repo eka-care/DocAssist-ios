@@ -363,11 +363,11 @@ extension ChatViewModel {
       } else if activeSession {
         WebSocketLogger.shared.logInfo("Session active but SessionToken missing — skipping WebSocket auth")
       } else {
-        print("#BB Session has expired")
-        WebSocketLogger.shared.logInfo("Error state: sessionExpired — Session \(webSocketSessionId) is no longer active")
+        print("#BB Session has expired — showing refresh banner")
+        WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
         await MainActor.run {
-          webSocketErrorMessage = "Session not found. Please start a new session."
-          chatErrorState = .sessionExpired
+          webSocketErrorMessage = "Session expired. Tap to refresh."
+          chatErrorState = .connectionError
         }
       }
     } else {
@@ -819,17 +819,29 @@ extension ChatViewModel {
       .last else { return nil }
     
     let sessionId = existing.sessionId
-    let token = existing.sessionToken ?? ""
+    var token = existing.sessionToken ?? ""
     
-    guard await checkIfSessionIsActive(for: sessionId) else { return nil }
-    
-    print("🔄 Reusing existing session: \(sessionId)")
-    activateSession(id: sessionId, token: token)
-    Task {
-      await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+    if await checkIfSessionIsActive(for: sessionId) {
+      print("🔄 Reusing existing session: \(sessionId)")
+      activateSession(id: sessionId, token: token)
+      Task {
+        await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+      }
+      return sessionId
     }
     
-    return sessionId
+    WebSocketLogger.shared.logInfo("Session \(sessionId) expired — attempting refresh before creating new session")
+    if let newToken = await refreshSession(for: sessionId) {
+      print("🔄 Refreshed expired session: \(sessionId)")
+      token = newToken
+      activateSession(id: sessionId, token: token)
+      Task {
+        await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+      }
+      return sessionId
+    }
+    
+    return nil
   }
   
   public func createNewSession(
