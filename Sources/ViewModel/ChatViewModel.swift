@@ -687,10 +687,10 @@ extension ChatViewModel {
         let optionValues = details.input.options.map { $0.value }
         let questionText = details.input.text
         let isMulti = details.component == "multi"
-        DispatchQueue.main.async { [weak self] in
-          self?.messageText = questionText
-          self?.suggestions = optionValues
-          self?.multiSelect = isMulti
+        await MainActor.run {
+          messageText = questionText
+          suggestions = optionValues
+          multiSelect = isMulti
         }
       } else if let text = model.data?.text {
         await MainActor.run {
@@ -779,14 +779,12 @@ extension ChatViewModel {
       }
       
     case .eos:
-      Task {
-        await DatabaseConfig.shared.upsertMessageV2(responseMessage: messageText, userChat: userMessage, suggestions: suggestions, multiSelect: multiSelect)
-        DispatchQueue.main.async { [weak self] in
-          self?.messageText = ""
-          self?.streamStarted = false
-          self?.suggestions = nil
-          self?.multiSelect = nil
-        }
+      await DatabaseConfig.shared.upsertMessageV2(responseMessage: messageText, userChat: userMessage, suggestions: suggestions, multiSelect: multiSelect)
+      await MainActor.run {
+        messageText = ""
+        streamStarted = false
+        suggestions = nil
+        multiSelect = nil
       }
       
     default:
