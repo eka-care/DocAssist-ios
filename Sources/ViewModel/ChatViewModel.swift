@@ -350,14 +350,17 @@ extension Data {
 extension ChatViewModel {
   
   func checkandValidateWebSocketConnection() async {
-    
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     WebSocketLogger.shared.logInfo("checkandValidateWebSocketConnection called — sessionId: \(webSocketSessionId ?? "nil")")
     if let webSocketSessionId {
-      if let serverToken = await checkIfSessionIsActive(for: webSocketSessionId),
-         !serverToken.isEmpty {
-        WebSocketLogger.shared.logInfo("Session active — using server token for WebSocket auth")
-        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: serverToken)
+      let activeSession = await checkIfSessionIsActive(for: webSocketSessionId)
+      WebSocketLogger.shared.logInfo("Session active check result: \(activeSession)")
+      if activeSession,
+         let token = UserDefaults.standard.string(forKey: "SessionToken"),
+         !token.isEmpty {
+        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
+      } else if activeSession {
+        WebSocketLogger.shared.logInfo("Session active but SessionToken missing — skipping WebSocket auth")
       } else {
         print("#BB Session has expired — showing refresh banner")
         WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
@@ -371,8 +374,7 @@ extension ChatViewModel {
     }
   }
   
-  /// Returns the current session token from the server if the session is active, or `nil` if expired/invalid.
-  func checkIfSessionIsActive(for sessionId: String) async -> String? {
+  func checkIfSessionIsActive(for sessionId: String) async -> Bool {
     return await withCheckedContinuation { continuation in
       MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
         switch result {
@@ -387,10 +389,10 @@ extension ChatViewModel {
           Task {
             await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: serverToken)
           }
-          continuation.resume(returning: serverToken)
+          continuation.resume(returning: true)
           
         case .failure(_):
-          continuation.resume(returning: nil)  // Not active or expired
+          continuation.resume(returning: false)  // Not active or expired
         }
       }
     }
