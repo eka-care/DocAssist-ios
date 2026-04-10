@@ -352,47 +352,86 @@ extension ChatViewModel {
   func checkandValidateWebSocketConnection() async {
     let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
     WebSocketLogger.shared.logInfo("checkandValidateWebSocketConnection called — sessionId: \(webSocketSessionId ?? "nil")")
-    if let webSocketSessionId {
-      let activeSession = await checkIfSessionIsActive(for: webSocketSessionId)
-      WebSocketLogger.shared.logInfo("Session active check result: \(activeSession)")
-      if activeSession,
-         let token = UserDefaults.standard.string(forKey: "SessionToken"),
-         !token.isEmpty {
-        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
-      } else if activeSession {
-        WebSocketLogger.shared.logInfo("Session active but SessionToken missing — skipping WebSocket auth")
-      } else {
-        print("#BB Session has expired — showing refresh banner")
-        WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
-        await MainActor.run {
-          webSocketErrorMessage = "Session expired. Tap to refresh."
-          chatErrorState = .connectionError
-        }
-      }
-    } else {
+    guard let webSocketSessionId else {
       WebSocketLogger.shared.logInfo("No SessionId in UserDefaults — skipping reconnection")
+      return
+    }
+
+    let statusResult = await checkSessionStatus(for: webSocketSessionId)
+    WebSocketLogger.shared.logInfo("Session check result: \(statusResult)")
+
+    switch statusResult {
+    case .active:
+      let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+      if !token.isEmpty {
+        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
+      } else {
+        WebSocketLogger.shared.logInfo("Session active but SessionToken missing — skipping WebSocket auth")
+      }
+    case .networkError:
+      // Transient failure (auth token decode error, no network, interceptor retry failed).
+      // Attempt to reconnect with the token we have rather than showing an error banner.
+      WebSocketLogger.shared.logInfo("Session check had transient error — attempting reconnect with stored token")
+      let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+      if !token.isEmpty {
+        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
+      }
+    case .expired:
+      print("#BB Session has expired — showing refresh banner")
+      WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
+      await MainActor.run {
+        webSocketErrorMessage = "Session expired. Tap to refresh."
+        chatErrorState = .connectionError
+      }
     }
   }
   
+  enum SessionCheckResult {
+    case active       // Server confirmed session is valid
+    case expired      // Server returned a 4xx — session is genuinely gone
+    case networkError // Call failed for a reason unrelated to session validity (auth token issue, decode error, no network)
+  }
+
   func checkIfSessionIsActive(for sessionId: String) async -> Bool {
+    let result = await checkSessionStatus(for: sessionId)
+    switch result {
+    case .active: return true
+    case .expired: return false
+    case .networkError:
+      // Can't confirm either way — assume still valid to avoid unnecessary new session creation
+      print("#BB checkIfSessionIsActive — network/decode error, assuming session still valid: \(sessionId)")
+      return true
+    }
+  }
+
+  private func checkSessionStatus(for sessionId: String) async -> SessionCheckResult {
     return await withCheckedContinuation { continuation in
-      MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, _ in
+      MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, statusCode in
         switch result {
         case .success(let sessionResponse):
-          print("#BB Data: Session is valid - \(sessionResponse.sessionID)")
+          print("#BB Session is valid - \(sessionResponse.sessionID)")
           let serverToken = sessionResponse.sessionData.sessionToken
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          // Persist the server's authoritative token locally
           UserDefaults.standard.set(serverToken, forKey: "SessionToken")
           Task {
             await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: serverToken)
           }
-          continuation.resume(returning: true)
-          
-        case .failure(_):
-          continuation.resume(returning: false)  // Not active or expired
+          continuation.resume(returning: .active)
+
+        case .failure(let error):
+          let code = statusCode ?? 0
+          let errorMessage = error.localizedDescription
+          print("#BB checkSessionStatus failed — statusCode: \(code), error: \(errorMessage)")
+          // Only treat explicit 4xx as a real expiry; everything else (network, decode, interceptor) is a transient error
+          if code >= 400 && code < 500 {
+            print("#BB Session \(sessionId) is expired (4xx from server)")
+            continuation.resume(returning: .expired)
+          } else {
+            print("#BB Session check failed due to transient error — not treating as expired")
+            continuation.resume(returning: .networkError)
+          }
         }
       }
     }
@@ -820,34 +859,45 @@ extension ChatViewModel {
   }
   
   private func fetchExistingActiveSession(userDocId: String, userBId: String) async -> String? {
-    guard let existing = try? await DatabaseConfig.shared
+    // Prefer UserDefaults SessionId — it survives DB cleanup of empty sessions.
+    // Trust it without a server round-trip here; WebSocket connection will validate it.
+    // Only fall back to the DB if UserDefaults has nothing.
+    let sessionId: String
+    let token: String
+
+    if let udId = UserDefaults.standard.string(forKey: "SessionId"), !udId.isEmpty {
+      sessionId = udId
+      token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+      print("#BB fetchExistingActiveSession — reusing UserDefaults session: \(sessionId)")
+    } else if let dbSession = try? await DatabaseConfig.shared
       .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
-      .last else { return nil }
-    
-    let sessionId = existing.sessionId
-    var token = existing.sessionToken ?? ""
-    
-    if await checkIfSessionIsActive(for: sessionId) {
-      print("🔄 Reusing existing session: \(sessionId)")
-      activateSession(id: sessionId, token: token)
-      Task {
-        await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
-      }
-      return sessionId
+      .last {
+      sessionId = dbSession.sessionId
+      token = dbSession.sessionToken ?? ""
+      print("#BB fetchExistingActiveSession — reusing DB session: \(sessionId)")
+    } else {
+      print("#BB fetchExistingActiveSession — no existing session found, will create new")
+      return nil
     }
-    
-    WebSocketLogger.shared.logInfo("Session \(sessionId) expired — attempting refresh before creating new session")
-    if let newToken = await refreshSession(for: sessionId) {
-      print("🔄 Refreshed expired session: \(sessionId)")
-      token = newToken
-      activateSession(id: sessionId, token: token)
-      Task {
-        await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
-      }
-      return sessionId
+
+    // Re-insert into DB if it was cleaned up (empty-session deletion on disappear)
+    if (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId)) == nil {
+      let _ = await DatabaseConfig.shared.createSession(
+        subTitle: nil,
+        oid: "",
+        userDocId: userDocId,
+        userBId: userBId,
+        sessionId: sessionId,
+        sessionToken: token
+      )
+      print("#BB re-inserted session \(sessionId) into DB after cleanup")
     }
-    
-    return nil
+
+    activateSession(id: sessionId, token: token)
+    Task {
+      await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+    }
+    return sessionId
   }
   
   public func createNewSession(
