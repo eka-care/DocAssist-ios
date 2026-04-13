@@ -160,7 +160,7 @@ public struct ActiveChatView: View {
       Button {
         Task {
           if viewModel.chatErrorState == .connectionError {
-            let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? viewModel.vmssid
+            let sessionId = viewModel.vmssid
             if let newToken = await viewModel.refreshSession(for: sessionId) {
               await viewModel.webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
               viewModel.webSocketErrorMessage = nil

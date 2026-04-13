@@ -350,19 +350,23 @@ extension Data {
 extension ChatViewModel {
   
   func checkandValidateWebSocketConnection() async {
-    let webSocketSessionId = UserDefaults.standard.string(forKey: "SessionId")
-    WebSocketLogger.shared.logInfo("checkandValidateWebSocketConnection called — sessionId: \(webSocketSessionId ?? "nil")")
-    guard let webSocketSessionId else {
-      WebSocketLogger.shared.logInfo("No SessionId in UserDefaults — skipping reconnection")
+    // Always fetch session from DB scoped to this user — never from UserDefaults.
+    guard let dbSession = try? await DatabaseConfig.shared
+      .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBid)
+      .last else {
+      WebSocketLogger.shared.logInfo("checkandValidateWebSocketConnection — no session in DB for user, skipping reconnection")
       return
     }
+
+    let webSocketSessionId = dbSession.sessionId
+    let token = dbSession.sessionToken ?? ""
+    WebSocketLogger.shared.logInfo("checkandValidateWebSocketConnection called — sessionId: \(webSocketSessionId)")
 
     let statusResult = await checkSessionStatus(for: webSocketSessionId)
     WebSocketLogger.shared.logInfo("Session check result: \(statusResult)")
 
     switch statusResult {
     case .active:
-      let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
       if !token.isEmpty {
         await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
       } else {
@@ -372,7 +376,6 @@ extension ChatViewModel {
       // Transient failure (auth token decode error, no network, interceptor retry failed).
       // Attempt to reconnect with the token we have rather than showing an error banner.
       WebSocketLogger.shared.logInfo("Session check had transient error — attempting reconnect with stored token")
-      let token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
       if !token.isEmpty {
         await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
       }
@@ -414,7 +417,6 @@ extension ChatViewModel {
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          UserDefaults.standard.set(serverToken, forKey: "SessionToken")
           Task {
             await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: serverToken)
           }
@@ -440,7 +442,8 @@ extension ChatViewModel {
 
   /// Returns the new session token from the server after a successful refresh, or `nil` on failure.
   func refreshSession(for sessionId: String) async -> String? {
-    let currentToken = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
+    // Fetch current token from DB — never from UserDefaults to avoid cross-profile contamination.
+    let currentToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId))?.sessionToken ?? ""
     return await withCheckedContinuation { continuation in
       MatrixApiService.shared.refreshSession(sessionId: sessionId, sessionToken: currentToken) { result, _ in
         switch result {
@@ -452,7 +455,6 @@ extension ChatViewModel {
             continuation.resume(returning: nil)
             return
           }
-          UserDefaults.standard.set(newToken, forKey: "SessionToken")
           Task {
             await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: newToken)
             continuation.resume(returning: newToken)
@@ -754,11 +756,19 @@ extension ChatViewModel {
       switch errorCode {
         
       case .sessionInactive, .sessionTokenMismatch:
-        WebSocketLogger.shared.logInfo("Error state: sessionExpired — code: \(rawCode), msg: \(rawMsg)")
-        await MainActor.run {
-          webSocketConnectionTitle = "Session not found"
-          webSocketErrorMessage = "Session not found. Please start a new session."
-          chatErrorState = .sessionExpired
+        // Architecture: try refresh + re-authenticate before forcing a new session.
+        WebSocketLogger.shared.logInfo("Error: \(rawCode) — attempting refresh before forcing new session. msg: \(rawMsg)")
+        if let newToken = await refreshSession(for: vmssid) {
+          WebSocketLogger.shared.logInfo("Refresh succeeded after \(rawCode) — re-authenticating WebSocket")
+          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
+        } else {
+          // Refresh failed — session is truly gone, user must start a new one.
+          WebSocketLogger.shared.logInfo("Error state: sessionExpired — refresh failed after \(rawCode), msg: \(rawMsg)")
+          await MainActor.run {
+            webSocketConnectionTitle = "Session not found"
+            webSocketErrorMessage = "Session not found. Please start a new session."
+            chatErrorState = .sessionExpired
+          }
         }
         
       case .invalidEvent, .invalidContentType:
@@ -767,9 +777,8 @@ extension ChatViewModel {
         
       case .parsingError:
         WebSocketLogger.shared.logInfo("Error: parsingError — code: \(rawCode), msg: \(rawMsg). Attempting session refresh...")
-        let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? vmssid
-        if let newToken = await refreshSession(for: sessionId) {
-          await webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
+        if let newToken = await refreshSession(for: vmssid) {
+          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
         } else {
           WebSocketLogger.shared.logInfo("Error state: connectionError — parsingError, session refresh failed. code: \(rawCode), msg: \(rawMsg)")
           await MainActor.run {
@@ -781,9 +790,8 @@ extension ChatViewModel {
         
       case .timeout:
         WebSocketLogger.shared.logInfo("Error: timeout — code: \(rawCode), msg: \(rawMsg). Attempting session refresh...")
-        let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? vmssid
-        if let newToken = await refreshSession(for: sessionId) {
-          await webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
+        if let newToken = await refreshSession(for: vmssid) {
+          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
         } else {
           WebSocketLogger.shared.logInfo("Error state: connectionError — timeout, session refresh failed. code: \(rawCode), msg: \(rawMsg)")
           await MainActor.run {
@@ -795,9 +803,8 @@ extension ChatViewModel {
         
       case .promptFetchError, .invalidFileRequest, .serverError, .none:
         WebSocketLogger.shared.logInfo("Error: \(rawCode) — msg: \(rawMsg). Attempting session refresh...")
-        let sessionId = UserDefaults.standard.string(forKey: "SessionId") ?? vmssid
-        if let newToken = await refreshSession(for: sessionId) {
-          await webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
+        if let newToken = await refreshSession(for: vmssid) {
+          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
         } else {
           WebSocketLogger.shared.logInfo("Error state: connectionError — \(rawCode), session refresh failed. msg: \(rawMsg)")
           await MainActor.run {
@@ -859,45 +866,57 @@ extension ChatViewModel {
   }
   
   private func fetchExistingActiveSession(userDocId: String, userBId: String) async -> String? {
-    // Prefer UserDefaults SessionId — it survives DB cleanup of empty sessions.
-    // Trust it without a server round-trip here; WebSocket connection will validate it.
-    // Only fall back to the DB if UserDefaults has nothing.
-    let sessionId: String
-    let token: String
-
-    if let udId = UserDefaults.standard.string(forKey: "SessionId"), !udId.isEmpty {
-      sessionId = udId
-      token = UserDefaults.standard.string(forKey: "SessionToken") ?? ""
-      print("#BB fetchExistingActiveSession — reusing UserDefaults session: \(sessionId)")
-    } else if let dbSession = try? await DatabaseConfig.shared
+    // Always fetch from DB scoped to this user — never from UserDefaults,
+    // which is shared across profiles and would return the wrong session.
+    guard let dbSession = try? await DatabaseConfig.shared
       .fetchSessionIdwithoutoid(userDocId: userDocId, userBId: userBId)
-      .last {
-      sessionId = dbSession.sessionId
-      token = dbSession.sessionToken ?? ""
-      print("#BB fetchExistingActiveSession — reusing DB session: \(sessionId)")
-    } else {
+      .last else {
       print("#BB fetchExistingActiveSession — no existing session found, will create new")
       return nil
     }
 
-    // Re-insert into DB if it was cleaned up (empty-session deletion on disappear)
-    if (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId)) == nil {
-      let _ = await DatabaseConfig.shared.createSession(
-        subTitle: nil,
-        oid: "",
-        userDocId: userDocId,
-        userBId: userBId,
-        sessionId: sessionId,
-        sessionToken: token
-      )
-      print("#BB re-inserted session \(sessionId) into DB after cleanup")
-    }
+    let sessionId = dbSession.sessionId
+    print("#BB fetchExistingActiveSession — found DB session: \(sessionId), validating with server...")
 
-    activateSession(id: sessionId, token: token)
-    Task {
-      await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+    // Architecture requires GET /session/{id} before establishing WebSocket.
+    let statusResult = await checkSessionStatus(for: sessionId)
+
+    switch statusResult {
+    case .active:
+      // Token may have been updated by checkSessionStatus — re-read from DB.
+      let latestToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId))?.sessionToken ?? dbSession.sessionToken ?? ""
+      print("#BB fetchExistingActiveSession — session active, connecting WebSocket")
+      activateSession(id: sessionId, token: latestToken)
+      Task {
+        await webSocketAuthentication(sessionId: sessionId, sessionToken: latestToken)
+      }
+      return sessionId
+
+    case .expired:
+      // Session is gone on server — try to refresh it.
+      print("#BB fetchExistingActiveSession — session expired, attempting refresh")
+      if let newToken = await refreshSession(for: sessionId) {
+        print("#BB fetchExistingActiveSession — refresh succeeded, connecting WebSocket")
+        activateSession(id: sessionId, token: newToken)
+        Task {
+          await webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
+        }
+        return sessionId
+      }
+      // Refresh also failed — fall through to create a new session.
+      print("#BB fetchExistingActiveSession — refresh failed, will create new session")
+      return nil
+
+    case .networkError:
+      // Transient failure — trust the DB token and proceed rather than blocking the user.
+      let token = dbSession.sessionToken ?? ""
+      print("#BB fetchExistingActiveSession — network error during validation, proceeding with cached token")
+      activateSession(id: sessionId, token: token)
+      Task {
+        await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
+      }
+      return sessionId
     }
-    return sessionId
   }
   
   public func createNewSession(
@@ -954,8 +973,6 @@ extension ChatViewModel {
   }
   
   private func activateSession(id: String, token: String) {
-    UserDefaults.standard.set(id, forKey: "SessionId")
-    UserDefaults.standard.set(token, forKey: "SessionToken")
     switchToSession(id)
     isWebSocketSetupDone = true
   }
