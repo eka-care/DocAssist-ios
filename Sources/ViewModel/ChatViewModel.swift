@@ -64,6 +64,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var initialMessageSuggestions: [String]? = nil
   var chatErrorState: ChatErrorState = .none
   var webSocketErrorMessage: String? = nil
+  var lastSessionRecoveryReason: String? = nil
   var isWebSocketSetupDone: Bool = false
   
   var showPermissionAlertBinding: Binding<Bool> {
@@ -383,6 +384,7 @@ extension ChatViewModel {
       print("#BB Session has expired — showing refresh banner")
       WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
       await MainActor.run {
+        lastSessionRecoveryReason = "session_check_expired"
         webSocketErrorMessage = "Session expired. Tap to refresh."
         chatErrorState = .connectionError
       }
@@ -461,6 +463,9 @@ extension ChatViewModel {
           }
         case .failure(let error):
           print("#BB refreshSession failure:", error.localizedDescription)
+          Task { @MainActor in
+              self.lastSessionRecoveryReason = "refresh_failed"
+          }
           continuation.resume(returning: nil)
         }
       }
@@ -473,18 +478,27 @@ extension ChatViewModel {
       webSocketConnectionTitle = "Not connected"
       return
     }
-
-    webSocketClient = WebSocketNetworkRequest(url: url)
-    webSocketClient?.onMessageDecoded = { [weak self] model in
+    await MainActor.run {
+      webSocketConnectionTitle = "Connecting..."
+    }
+    
+    // Always tear down any existing socket before opening a new one
+    // so token refresh re-auth starts from a clean transport.
+    webSocketClient?.disconnect()
+    
+    let socketClient = WebSocketNetworkRequest(url: url)
+    webSocketClient = socketClient
+    socketClient.onMessageDecoded = { [weak self] model in
       guard let self else { return }
       serialTaskQueue.enqueue { [weak self] in
         guard let self else { return }
         await handleWebSocketModel(model)
       }
     }
-    webSocketClient?.onConnectionError = { [weak self] error in
+    socketClient.onConnectionError = { [weak self] error in
       guard let self else { return }
       Task { @MainActor in
+        self.lastSessionRecoveryReason = "websocket_transport_error"
         self.webSocketConnectionTitle = "Something went wrong"
         self.webSocketErrorMessage = "Something went wrong. Please try again."
         self.chatErrorState = .connectionError
@@ -492,7 +506,7 @@ extension ChatViewModel {
         print("❌ WebSocket connection dropped: \(error.localizedDescription)")
       }
     }
-    webSocketClient?.connect { [weak self] connected in
+    socketClient.connect { [weak self, weak socketClient] connected in
       guard connected else {
         print("❌ WebSocket connection failed")
         WebSocketLogger.shared.logInfo("Error: WebSocket initial connection failed to \(url)")
@@ -521,7 +535,7 @@ extension ChatViewModel {
         let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
         if let jsonString = String(data: jsonData, encoding: .utf8) {
           print("📤 Sending auth message: \(jsonString)")
-          self?.webSocketClient?.send(message: jsonString)
+          socketClient?.send(message: jsonString)
         }
       } catch {
         print("❌ Failed to encode auth payload: \(error)")
@@ -756,19 +770,12 @@ extension ChatViewModel {
       switch errorCode {
         
       case .sessionInactive, .sessionTokenMismatch:
-        // Architecture: try refresh + re-authenticate before forcing a new session.
-        WebSocketLogger.shared.logInfo("Error: \(rawCode) — attempting refresh before forcing new session. msg: \(rawMsg)")
-        if let newToken = await refreshSession(for: vmssid) {
-          WebSocketLogger.shared.logInfo("Refresh succeeded after \(rawCode) — re-authenticating WebSocket")
-          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
-        } else {
-          // Refresh failed — session is truly gone, user must start a new one.
-          WebSocketLogger.shared.logInfo("Error state: sessionExpired — refresh failed after \(rawCode), msg: \(rawMsg)")
-          await MainActor.run {
-            webSocketConnectionTitle = "Session not found"
-            webSocketErrorMessage = "Session not found. Please start a new session."
-            chatErrorState = .sessionExpired
-          }
+        WebSocketLogger.shared.logInfo("Error: \(rawCode) — prompting user retry. msg: \(rawMsg)")
+        await MainActor.run {
+          lastSessionRecoveryReason = rawCode
+          webSocketConnectionTitle = "Session refresh needed"
+          webSocketErrorMessage = "Session expired. Tap Retry to continue."
+          chatErrorState = .connectionError
         }
         
       case .invalidEvent, .invalidContentType:
@@ -776,42 +783,30 @@ extension ChatViewModel {
         print("⚠️ Ignorable WebSocket error (\(model.data?.code ?? ""))")
         
       case .parsingError:
-        WebSocketLogger.shared.logInfo("Error: parsingError — code: \(rawCode), msg: \(rawMsg). Attempting session refresh...")
-        if let newToken = await refreshSession(for: vmssid) {
-          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
-        } else {
-          WebSocketLogger.shared.logInfo("Error state: connectionError — parsingError, session refresh failed. code: \(rawCode), msg: \(rawMsg)")
-          await MainActor.run {
-            webSocketConnectionTitle = "Error parsing request"
-            webSocketErrorMessage = "Error parsing request. Please try again."
-            chatErrorState = .connectionError
-          }
+        WebSocketLogger.shared.logInfo("Error: parsingError — code: \(rawCode), msg: \(rawMsg). Prompting retry...")
+        await MainActor.run {
+          lastSessionRecoveryReason = rawCode
+          webSocketConnectionTitle = "Error parsing request"
+          webSocketErrorMessage = "Something went wrong. Tap Retry to continue."
+          chatErrorState = .connectionError
         }
         
       case .timeout:
-        WebSocketLogger.shared.logInfo("Error: timeout — code: \(rawCode), msg: \(rawMsg). Attempting session refresh...")
-        if let newToken = await refreshSession(for: vmssid) {
-          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
-        } else {
-          WebSocketLogger.shared.logInfo("Error state: connectionError — timeout, session refresh failed. code: \(rawCode), msg: \(rawMsg)")
-          await MainActor.run {
-            webSocketConnectionTitle = "Request timed out"
-            webSocketErrorMessage = "Request timed out. Please try again."
-            chatErrorState = .connectionError
-          }
+        WebSocketLogger.shared.logInfo("Error: timeout — code: \(rawCode), msg: \(rawMsg). Prompting retry...")
+        await MainActor.run {
+          lastSessionRecoveryReason = rawCode
+          webSocketConnectionTitle = "Request timed out"
+          webSocketErrorMessage = "Request timed out. Tap Retry to continue."
+          chatErrorState = .connectionError
         }
         
       case .promptFetchError, .invalidFileRequest, .serverError, .none:
-        WebSocketLogger.shared.logInfo("Error: \(rawCode) — msg: \(rawMsg). Attempting session refresh...")
-        if let newToken = await refreshSession(for: vmssid) {
-          await webSocketAuthentication(sessionId: vmssid, sessionToken: newToken)
-        } else {
-          WebSocketLogger.shared.logInfo("Error state: connectionError — \(rawCode), session refresh failed. msg: \(rawMsg)")
-          await MainActor.run {
-            webSocketConnectionTitle = "Something went wrong"
-            webSocketErrorMessage = "Something went wrong. Please try again."
-            chatErrorState = .connectionError
-          }
+        WebSocketLogger.shared.logInfo("Error: \(rawCode) — msg: \(rawMsg). Prompting retry...")
+        await MainActor.run {
+          lastSessionRecoveryReason = rawCode
+          webSocketConnectionTitle = "Something went wrong"
+          webSocketErrorMessage = "Something went wrong. Tap Retry to continue."
+          chatErrorState = .connectionError
         }
       }
       
@@ -878,45 +873,39 @@ extension ChatViewModel {
     let sessionId = dbSession.sessionId
     print("#BB fetchExistingActiveSession — found DB session: \(sessionId), validating with server...")
 
-    // Architecture requires GET /session/{id} before establishing WebSocket.
-    let statusResult = await checkSessionStatus(for: sessionId)
-
-    switch statusResult {
-    case .active:
-      // Token may have been updated by checkSessionStatus — re-read from DB.
-      let latestToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId))?.sessionToken ?? dbSession.sessionToken ?? ""
-      print("#BB fetchExistingActiveSession — session active, connecting WebSocket")
-      activateSession(id: sessionId, token: latestToken)
-      Task {
-        await webSocketAuthentication(sessionId: sessionId, sessionToken: latestToken)
-      }
-      return sessionId
-
-    case .expired:
-      // Session is gone on server — try to refresh it.
-      print("#BB fetchExistingActiveSession — session expired, attempting refresh")
-      if let newToken = await refreshSession(for: sessionId) {
-        print("#BB fetchExistingActiveSession — refresh succeeded, connecting WebSocket")
-        activateSession(id: sessionId, token: newToken)
-        Task {
-          await webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
-        }
-        return sessionId
-      }
-      // Refresh also failed — fall through to create a new session.
-      print("#BB fetchExistingActiveSession — refresh failed, will create new session")
-      return nil
-
-    case .networkError:
-      // Transient failure — trust the DB token and proceed rather than blocking the user.
-      let token = dbSession.sessionToken ?? ""
-      print("#BB fetchExistingActiveSession — network error during validation, proceeding with cached token")
-      activateSession(id: sessionId, token: token)
-      Task {
-        await webSocketAuthentication(sessionId: sessionId, sessionToken: token)
-      }
-      return sessionId
+    // Fast path: connect immediately with cached token instead of waiting
+    // for validation network call, which can delay auth by several seconds.
+    let cachedToken = dbSession.sessionToken ?? ""
+    print("#BB fetchExistingActiveSession — connecting immediately with cached token")
+    activateSession(id: sessionId, token: cachedToken)
+    Task {
+      await webSocketAuthentication(sessionId: sessionId, sessionToken: cachedToken)
     }
+
+    // Validate in background and adjust only if needed.
+    Task { [weak self] in
+      guard let self else { return }
+      let statusResult = await checkSessionStatus(for: sessionId)
+      switch statusResult {
+      case .active:
+        // Token may have been rotated on server; if changed, re-auth quickly.
+        let latestToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId))?.sessionToken ?? cachedToken
+        if !latestToken.isEmpty, latestToken != cachedToken {
+          WebSocketLogger.shared.logInfo("Session validated active with rotated token — reconnecting with latest token")
+          await webSocketAuthentication(sessionId: sessionId, sessionToken: latestToken)
+        }
+      case .expired:
+        await MainActor.run {
+          self.lastSessionRecoveryReason = "existing_session_expired"
+          self.webSocketConnectionTitle = "Session expired"
+          self.webSocketErrorMessage = "Session expired. Tap Retry to refresh."
+          self.chatErrorState = .connectionError
+        }
+      case .networkError:
+        break
+      }
+    }
+    return sessionId
   }
   
   public func createNewSession(

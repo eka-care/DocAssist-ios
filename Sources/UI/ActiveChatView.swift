@@ -137,15 +137,21 @@ public struct ActiveChatView: View {
         await viewModel.checkandValidateWebSocketConnection()
       }
     }
+    .onChange(of: viewModel.chatErrorState) { _, newState in
+      guard newState != .none else { return }
+      DocAssistEventManager.shared.trackEvent(
+        event: .docAssistLandingPgClick,
+        properties: [
+          "type": "session_recovery_banner_shown",
+          "session_id": viewModel.vmssid,
+          "error_state": String(describing: newState),
+          "error_reason": viewModel.lastSessionRecoveryReason ?? "unknown",
+          "error_message": viewModel.webSocketErrorMessage ?? ""
+        ]
+      )
+    }
     .onDisappear {
       viewModel.inputString = ""
-      let sessionToCheck = session
-      Task {
-        let hasMessages = await DatabaseConfig.shared.hasMessages(forSessionId: sessionToCheck)
-        if !hasMessages {
-          await DatabaseConfig.shared.deleteSession(sessionId: sessionToCheck)
-        }
-      }
     }
   }
   
@@ -161,15 +167,50 @@ public struct ActiveChatView: View {
         Task {
           if viewModel.chatErrorState == .connectionError {
             let sessionId = viewModel.vmssid
+            DocAssistEventManager.shared.trackEvent(
+              event: .docAssistLandingPgClick,
+              properties: [
+                "type": "session_recovery_retry_clicked",
+                "session_id": sessionId,
+                "error_reason": viewModel.lastSessionRecoveryReason ?? "unknown"
+              ]
+            )
             if let newToken = await viewModel.refreshSession(for: sessionId) {
               await viewModel.webSocketAuthentication(sessionId: sessionId, sessionToken: newToken)
+              DocAssistEventManager.shared.trackEvent(
+                event: .docAssistLandingPgClick,
+                properties: [
+                  "type": "session_recovery_retry_success",
+                  "session_id": sessionId,
+                  "error_reason": viewModel.lastSessionRecoveryReason ?? "unknown"
+                ]
+              )
+              viewModel.lastSessionRecoveryReason = nil
               viewModel.webSocketErrorMessage = nil
               viewModel.chatErrorState = .none
             } else {
+              DocAssistEventManager.shared.trackEvent(
+                event: .docAssistLandingPgClick,
+                properties: [
+                  "type": "session_recovery_retry_failed",
+                  "session_id": sessionId,
+                  "error_reason": viewModel.lastSessionRecoveryReason ?? "unknown"
+                ]
+              )
               viewModel.webSocketErrorMessage = "Session not found. Please start a new session."
+              viewModel.lastSessionRecoveryReason = "refresh_failed_after_retry"
               viewModel.chatErrorState = .sessionExpired
             }
           } else {
+            let oldSessionId = viewModel.vmssid
+            DocAssistEventManager.shared.trackEvent(
+              event: .docAssistLandingPgClick,
+              properties: [
+                "type": "session_recovery_start_new_clicked",
+                "session_id": oldSessionId,
+                "error_reason": viewModel.lastSessionRecoveryReason ?? "unknown"
+              ]
+            )
             viewModel.chatErrorState = .none
             viewModel.webSocketErrorMessage = nil
             let newSessionId = await viewModel.createNewSession(
@@ -178,6 +219,15 @@ public struct ActiveChatView: View {
               userBId: userBId
             )
             if !newSessionId.isEmpty {
+              DocAssistEventManager.shared.trackEvent(
+                event: .docAssistLandingPgClick,
+                properties: [
+                  "type": "session_recovery_start_new_success",
+                  "session_id": newSessionId,
+                  "previous_session_id": oldSessionId
+                ]
+              )
+              viewModel.lastSessionRecoveryReason = nil
               session = newSessionId
             }
           }
