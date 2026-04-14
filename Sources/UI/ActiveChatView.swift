@@ -137,8 +137,9 @@ public struct ActiveChatView: View {
         await viewModel.checkandValidateWebSocketConnection()
       }
     }
-    .onChange(of: viewModel.chatErrorState) { _, newState in
-      guard newState != .none else { return }
+    .onChange(of: viewModel.chatErrorState) { oldState, newState in
+      // Only track when error first appears — not on transitions between error states
+      guard oldState == .none, newState != .none else { return }
       DocAssistEventManager.shared.trackEvent(
         event: .docAssistLandingPgClick,
         properties: [

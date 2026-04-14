@@ -1,4 +1,3 @@
-//
 //  ChatViewModel.swift
 //  Chatbot
 //
@@ -770,12 +769,13 @@ extension ChatViewModel {
       switch errorCode {
         
       case .sessionInactive, .sessionTokenMismatch:
-        WebSocketLogger.shared.logInfo("Error: \(rawCode) — prompting user retry. msg: \(rawMsg)")
+        // Session is truly invalid — retry with same token won't work, user must start a new session
+        WebSocketLogger.shared.logInfo("Error: \(rawCode) — session truly expired, prompting new session. msg: \(rawMsg)")
         await MainActor.run {
           lastSessionRecoveryReason = rawCode
-          webSocketConnectionTitle = "Session refresh needed"
-          webSocketErrorMessage = "Session expired. Tap Retry to continue."
-          chatErrorState = .connectionError
+          webSocketConnectionTitle = "Session expired"
+          webSocketErrorMessage = "Session expired. Please start a new session."
+          chatErrorState = .sessionExpired
         }
         
       case .invalidEvent, .invalidContentType:
