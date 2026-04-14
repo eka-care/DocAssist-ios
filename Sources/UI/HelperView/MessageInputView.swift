@@ -41,7 +41,7 @@ struct MessageInputView: View {
       }
             
       TextField("Message...", text: $inputString, axis: .vertical)
-        .font(Font.custom("Lato-Regular", size: 16))
+        .font(.system(size: 16))
         .focused($isTextFieldFocused)
         .lineLimit(1...6)
         .padding(.horizontal, 14)
@@ -54,7 +54,7 @@ struct MessageInputView: View {
         } label: {
           Image(systemName: "paperclip")
             .font(.system(size: 20, weight: .medium))
-            .foregroundStyle(Color.primaryprimary)
+            .foregroundStyle(Color(red: 0.42, green: 0.36, blue: 0.878))
             .frame(width: 32, height: 32)
         }
         .fullScreenCover(isPresented: $showRecordsView) {
@@ -83,7 +83,7 @@ struct MessageInputView: View {
     .background(
       RoundedRectangle(cornerRadius: 24)
         .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
-        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+        .stroke(Color(red: 0.42, green: 0.36, blue: 0.878).opacity(isTextFieldFocused ? 0.5 : 0.2), lineWidth: 1)
     )
     .padding(.horizontal, 16)
     .padding(.vertical, 6)
@@ -115,7 +115,7 @@ struct MessageInputView: View {
     } label: {
       Image(systemName: "mic.fill")
         .font(.system(size: 18, weight: .medium))
-        .foregroundStyle(Color.primaryprimary)
+        .foregroundStyle(Color(red: 0.42, green: 0.36, blue: 0.878))
         .frame(width: 36, height: 36)
     }
   }
@@ -146,7 +146,7 @@ struct MessageInputView: View {
         .foregroundStyle(
           inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.streamStarted
             ? Color.gray.opacity(0.5)
-            : Color.primaryprimary
+            : Color(red: 0.42, green: 0.36, blue: 0.878)
         )
         .frame(width: 36, height: 36)
     }
@@ -240,7 +240,7 @@ struct VoiceInputView: View {
     .background(
       RoundedRectangle(cornerRadius: 16)
         .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
-        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+        .stroke(Color(red: 0.42, green: 0.36, blue: 0.878).opacity(0.2), lineWidth: 1)
     )
     .padding(.horizontal, 16)
     .padding(.vertical, 8)

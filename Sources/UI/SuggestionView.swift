@@ -31,7 +31,7 @@ struct SuggestionView: View {
   
   var body: some View {
     HStack(alignment: .top) {
-      BotAvatarImage()
+   //   BotAvatarImage()
       VStack(alignment: .leading) {
         Text(constantSuggestionString)
           .font(.custom("Lato-Regular", size: 12))

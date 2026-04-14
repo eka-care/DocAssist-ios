@@ -12,6 +12,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     private var session: URLSession?
     private var isConnected = false
     private var isBackgrounded = false
+    private var isIntentionalDisconnect = false
     private var connectCompletion: ((Bool) -> Void)?
     var onMessageDecoded: ((WebSocketModel) -> Void)?
     /// Called when the connection drops unexpectedly (transport abort, receive failure mid-session)
@@ -91,7 +92,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
         print("❌ WebSocket receive error: \(error.localizedDescription)")
         self.isConnected = false
         WebSocketLogger.shared.logInfo("Receive error: \(error.localizedDescription)")
-        if !self.isBackgrounded {
+        if !self.isBackgrounded && !self.isIntentionalDisconnect {
             self.onConnectionError?(error)
         }
         
@@ -122,8 +123,9 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
 
     // 4️⃣ Disconnect cleanly
     func disconnect() {
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        isIntentionalDisconnect = true
         isConnected = false
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
         print("🔌 WebSocket disconnected.")
     }
 
@@ -152,7 +154,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
             if isConnected {
                 // Mid-session drop — notify the view model
                 isConnected = false
-                if !isBackgrounded {
+                if !isBackgrounded && !isIntentionalDisconnect {
                     onConnectionError?(error)
                 }
             } else {
