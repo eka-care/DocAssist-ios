@@ -505,7 +505,7 @@ extension ChatViewModel {
         print("❌ WebSocket connection dropped: \(error.localizedDescription)")
       }
     }
-    socketClient.connect { [weak self, weak socketClient] connected in
+    socketClient.connect { [weak self] connected in
       guard connected else {
         print("❌ WebSocket connection failed")
         WebSocketLogger.shared.logInfo("Error: WebSocket initial connection failed to \(url)")
@@ -529,12 +529,13 @@ extension ChatViewModel {
         ]
       ]
       
-      // Convert to JSON string
+      // Convert to JSON string — use self.webSocketClient (the property) rather than
+      // a weak-captured local variable, which may be nil by the time this callback fires.
       do {
         let jsonData = try JSONSerialization.data(withJSONObject: authPayload, options: [])
         if let jsonString = String(data: jsonData, encoding: .utf8) {
           print("📤 Sending auth message: \(jsonString)")
-          socketClient?.send(message: jsonString)
+          self?.webSocketClient?.send(message: jsonString)
         }
       } catch {
         print("❌ Failed to encode auth payload: \(error)")
