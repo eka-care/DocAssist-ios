@@ -333,7 +333,6 @@ public struct ActiveChatView: View {
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)
-      .padding(.bottom, 8)
       .frame(maxWidth: .infinity, alignment: .topLeading)
     }
   }
@@ -450,14 +449,14 @@ struct SessionChatContentView: View {
             VStack {
               ForEach(messages) { message in
                 messageBubbleView(message: message)
-                  .padding(.horizontal)
+                  .padding(.horizontal, 16)
                   .id(message.id)
               }
-              
+
               if viewModel.streamStarted {
                 if viewModel.messageText.isEmpty {
                   LoadingView()
-                    .padding(.horizontal)
+                    .padding(.horizontal, 16)
                     .id("streamingID")
                 } else {
                   HStack(alignment: .top) {
@@ -465,7 +464,7 @@ struct SessionChatContentView: View {
                     StreamingTextView(text: viewModel.messageText)
                     Spacer()
                   }
-                  .padding(.horizontal)
+                  .padding(.horizontal, 16)
                   .id("streamingID")
                 }
               }

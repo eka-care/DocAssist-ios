@@ -10,8 +10,6 @@ import SwiftData
 
 @ModelActor
 public final actor DatabaseConfig {
-  private let lock = NSLock()
-  private let upsertLock = NSLock()
   
   public static var shared: DatabaseConfig!
   
@@ -75,9 +73,6 @@ public final actor DatabaseConfig {
   }
   
   func fetchSessionId(fromOid oid: String, userDocId: String, userBId: String) throws -> [SessionDataModel] {
-    lock.lock()
-    defer{ lock.unlock() }
-    
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId && $0.oid == oid }
     )
@@ -86,9 +81,6 @@ public final actor DatabaseConfig {
   }
   
   func fetchSessionIdwithoutoid(userDocId: String, userBId: String) throws -> [SessionDataModel] {
-    lock.lock()
-    defer{ lock.unlock() }
-    
     let fetchDescriptor = FetchDescriptor<SessionDataModel>(
       predicate: #Predicate { $0.userBId == userBId && $0.userDocId == userDocId}
     )
@@ -110,9 +102,6 @@ public final actor DatabaseConfig {
   }
   
   func fetchMessage(bySessionId sessionId: String, messageId: Int) throws -> ChatMessageModel? {
-    lock.lock()
-    defer { lock.unlock() }
-    
     var descriptor = FetchDescriptor<ChatMessageModel>(
       predicate: #Predicate<ChatMessageModel> { session in
         session.sessionId == sessionId && session.msgId == messageId }
@@ -122,8 +111,6 @@ public final actor DatabaseConfig {
   }
   
   func fetchAllMessages(bySessionId sessionId: String) throws -> [ChatMessageModel]? {
-    lock.lock()
-    defer { lock.unlock() }
     let descriptor = FetchDescriptor<ChatMessageModel>(
       predicate: #Predicate<ChatMessageModel> { session in
         session.sessionId == sessionId
@@ -235,23 +222,17 @@ extension DatabaseConfig {
     
     public func appendSuggestions(sessionId: String, msgId: Int, suggestions: [String]) {
         if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: msgId) {
-            
-            DispatchQueue.main.async {
-                messageToUpdate.suggestions?.append(contentsOf: suggestions)
-            }
+            messageToUpdate.suggestions?.append(contentsOf: suggestions)
             saveData()
         }
     }
     
     func fetchLatestMessage(bySessionId sessionId: String) throws -> Int {
-        lock.lock()
-        defer { lock.unlock() }
-
         var descriptor = FetchDescriptor<ChatMessageModel>(
             predicate: #Predicate<ChatMessageModel> { session in
                 session.sessionId == sessionId
             },
-            sortBy: [SortDescriptor(\.msgId, order: .reverse)] 
+            sortBy: [SortDescriptor(\.msgId, order: .reverse)]
         )
         descriptor.fetchLimit = 1
 
@@ -259,9 +240,6 @@ extension DatabaseConfig {
     }
   
   func hasMessages(forSessionId sessionId: String) async -> Bool {
-    lock.lock()
-    defer { lock.unlock() }
-    
     var descriptor = FetchDescriptor<ChatMessageModel>(
       predicate: #Predicate<ChatMessageModel> { message in
         message.sessionId == sessionId

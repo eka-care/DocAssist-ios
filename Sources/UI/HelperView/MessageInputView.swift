@@ -85,6 +85,7 @@ struct MessageInputView: View {
         .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
         .stroke(Color(red: 0.42, green: 0.36, blue: 0.878).opacity(isTextFieldFocused ? 0.5 : 0.2), lineWidth: 1)
     )
+    .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: -4)
     .padding(.horizontal, 16)
     .padding(.vertical, 6)
     .onAppear {
@@ -124,7 +125,7 @@ struct MessageInputView: View {
     Button {
       inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !inputString.isEmpty else { return }
-      Task {
+      Task { @MainActor in
         await viewModel.sendMessage(
           newMessage: inputString,
           imageUrls: selectedImages,

@@ -37,13 +37,13 @@ struct SuggestionsComponentView: View {
           HStack(spacing: EkaSpacing.spacingXs) {
             if isMultiSelect {
               Image(systemName: selectedSuggestions.contains(suggestion) ? "checkmark.square.fill" : "square")
-                .foregroundColor(selectedSuggestions.contains(suggestion) ? Color.primaryprimary : Color.neutrals400)
+                .foregroundColor(selectedSuggestions.contains(suggestion) ? Color(red: 0.42, green: 0.36, blue: 0.878) : Color.neutrals400)
                 .font(.system(size: 20))
             }
             
             Text(suggestion)
-              .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(suggestionsEnabled ? Color.primaryprimary : Color.neutrals400)
+              .font(.system(size: 16))
+              .foregroundColor(suggestionsEnabled ? Color(red: 0.42, green: 0.36, blue: 0.878) : Color.neutrals400)
               .multilineTextAlignment(.leading)
               .frame(maxWidth: .infinity, alignment: .leading)
             
@@ -68,11 +68,11 @@ struct SuggestionsComponentView: View {
           selectedSuggestions.removeAll()
         } label: {
           Text("Confirm")
-            .font(Font.custom("Lato-Bold", size: 16))
+            .font(.system(size: 16, weight: .bold))
             .foregroundColor(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, EkaSpacing.spacingS)
-            .background(Color.primaryprimary)
+            .background(Color(red: 0.42, green: 0.36, blue: 0.878))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .padding(.top, EkaSpacing.spacingXs)
@@ -82,7 +82,7 @@ struct SuggestionsComponentView: View {
   }
   
   private func sendMessage(_ message: String) {
-    Task {
+    Task { @MainActor in
       do {
         let lastMessageId = try await DatabaseConfig.shared.fetchLatestMessage(bySessionId: viewModel.vmssid)
         await viewModel.sendMessage(

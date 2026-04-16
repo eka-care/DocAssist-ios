@@ -124,6 +124,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   /// Collects the file IDs of successfully uploaded files
   private var uploadedFileIds: [String] = []
 
+  @MainActor
   func sendMessage(
     newMessage: String,
     imageUrls: [String]?,
@@ -367,8 +368,17 @@ extension ChatViewModel {
 
     switch statusResult {
     case .active:
-      if !token.isEmpty {
-        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: token)
+      // Re-fetch token from DB after the session check — checkSessionStatus may have rotated it.
+      let latestToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: webSocketSessionId))?.sessionToken ?? token
+      let connectToken = latestToken.isEmpty ? token : latestToken
+      if !connectToken.isEmpty {
+        // Clear any stale error banner before reconnecting.
+        await MainActor.run {
+          chatErrorState = .none
+          webSocketErrorMessage = nil
+          lastSessionRecoveryReason = nil
+        }
+        await webSocketAuthentication(sessionId: webSocketSessionId, sessionToken: connectToken)
       } else {
         WebSocketLogger.shared.logInfo("Session active but SessionToken missing — skipping WebSocket auth")
       }
@@ -383,6 +393,10 @@ extension ChatViewModel {
       print("#BB Session has expired — showing refresh banner")
       WebSocketLogger.shared.logInfo("Session \(webSocketSessionId) is no longer active — prompting user to refresh")
       await MainActor.run {
+        // Ensure vmssid is set so the Retry button can use the correct session ID.
+        if vmssid.isEmpty {
+          vmssid = webSocketSessionId
+        }
         lastSessionRecoveryReason = "session_check_expired"
         webSocketErrorMessage = "Session expired. Tap to refresh."
         chatErrorState = .connectionError
@@ -891,6 +905,14 @@ extension ChatViewModel {
       case .active:
         // Token may have been rotated on server; if changed, re-auth quickly.
         let latestToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId))?.sessionToken ?? cachedToken
+        // Clear any stale error banner — the session is confirmed active.
+        await MainActor.run {
+          if self.chatErrorState != .none {
+            self.chatErrorState = .none
+            self.webSocketErrorMessage = nil
+            self.lastSessionRecoveryReason = nil
+          }
+        }
         if !latestToken.isEmpty, latestToken != cachedToken {
           WebSocketLogger.shared.logInfo("Session validated active with rotated token — reconnecting with latest token")
           await webSocketAuthentication(sessionId: sessionId, sessionToken: latestToken)
