@@ -280,11 +280,11 @@ public struct ActiveChatView: View {
         Spacer()
         
         HStack(spacing: 12) {
-          Button {
-            showWSLogs = true
-          } label: {
-            Text("Logs")
-          }
+//          Button {
+//            showWSLogs = true
+//          } label: {
+//            Text("Logs")
+//          }
           
           Button {
             Task {
