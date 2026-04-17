@@ -58,7 +58,7 @@ struct MessageTextView: View {
           .background(backgroundColor)
           .foregroundColor(foregroundColor)
           .contentTransition(.numericText())
-          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
+          .customCornerRadius(12, corners: [.bottomLeft, .topRight, .topLeft])
       }
     }
   }

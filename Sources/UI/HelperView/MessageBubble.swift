@@ -90,7 +90,7 @@ struct MessageBubble: View {
             }) {
               Image(systemName: thumsUpClicked ? "hand.thumbsup.fill" : "hand.thumbsup")
                 .scaledToFit()
-                .frame(width: 14)
+                .frame(width: 12)
                 .fontWeight(.medium)
                 .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
                 .frame(width: 34, height: 34)
@@ -115,7 +115,7 @@ struct MessageBubble: View {
             }) {
               Image(systemName: thumsDownClicked ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                 .scaledToFit()
-                .frame(width: 14)
+                .frame(width: 12)
                 .padding(4)
                 .fontWeight(.medium)
                 .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
@@ -141,7 +141,7 @@ struct MessageBubble: View {
             }) {
               Image(systemName: copyClicked ? "checkmark" : "document.on.document")
                 .scaledToFit()
-                .frame(width: 14)
+                .frame(width: 12)
                 .padding(4)
                 .contentTransition(.symbolEffect(.replace))
                 .fontWeight(.medium)
@@ -175,7 +175,7 @@ struct MessageBubble: View {
             }) {
               Image(systemName: "square.and.arrow.up")
                 .scaledToFit()
-                .frame(width: 14)
+                .frame(width: 12)
                 .fontWeight(.medium)
                 .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
                 .frame(width: 34, height: 34)
