@@ -30,12 +30,14 @@ final class NetworkCall: NSObject, URLSessionTaskDelegate {
   func startStreamingPostRequest(query: String?, vault_files: [String]?, onStreamComplete: @Sendable @escaping () -> Void, completion: @escaping @Sendable (Result<String, Error>) -> Void) {
     let streamDelegate = StreamDelegate(completion: completion, onStreamComplete: onStreamComplete)
     guard var urlComponents = URLComponents(string: NetworkConfig.shared.baseUrl) else {
-      fatalError("Invalid URL")
+      completion(.failure(NSError(domain: "NetworkCall", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid base URL: \(NetworkConfig.shared.baseUrl)"])))
+      return
     }
     let queryItems = NetworkConfig.shared.queryParams.map { URLQueryItem(name: $0.key, value: $0.value) }
     urlComponents.queryItems = queryItems
     guard let url = urlComponents.url else {
-      fatalError("Invalid URL")
+      completion(.failure(NSError(domain: "NetworkCall", code: -1, userInfo: [NSLocalizedDescriptionKey: "Failed to construct URL from components"])))
+      return
     }
     
     var request = URLRequest(url: url)

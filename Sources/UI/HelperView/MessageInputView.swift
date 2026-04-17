@@ -80,6 +80,10 @@ struct MessageInputView: View {
       .padding(.horizontal, 8)
       .padding(.bottom, 6)
     }
+    .contentShape(Rectangle())
+    .onTapGesture {
+      isTextFieldFocused = true
+    }
     .background(
       RoundedRectangle(cornerRadius: 24)
         .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
@@ -137,7 +141,7 @@ struct MessageInputView: View {
         selectedImages = []
         selectedDocumentId = []
         DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
-        isTextFieldFocused.toggle()
+        isTextFieldFocused = false
       }
     } label: {
       Image(systemName: "arrow.up.circle.fill")

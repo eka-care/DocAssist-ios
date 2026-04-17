@@ -16,7 +16,7 @@ enum ChatErrorState {
   case connectionError
 }
 
-@Observable
+@Observable @MainActor
 public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   /// Constant Strings
@@ -167,22 +167,16 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
     print("#BB msgId in send \(messageId)")
     self.lastMsgId = messageId + 1
-    let chat = await DatabaseConfig.shared.createMessage(
+    // Single actor hop: creates the message and sets the session title (if first message)
+    // in one modelContext.save() call, avoiding a second cross-actor round-trip.
+    let chat = await DatabaseConfig.shared.createUserMessageWithTitle(
       message: query,
       sessionId: sessionId,
       messageId: messageId,
-      role: .user,
       imageUrls: imageUrls
     )
-    
-    if chat?.msgId == 1 {
-      await DatabaseConfig.shared.saveTitle(sessionId: sessionId, title: query)
-    }
-    
     return chat
   }
-  
-  static let dispatchSemaphore = DispatchSemaphore(value: 1)
   
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
     do {
@@ -231,7 +225,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
       try recordingSession.setCategory(.record, mode: .default)
       try recordingSession.setActive(true)
       
-      let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+      let documentsPath = DocAssistFileHelper.getDocumentDirectoryURL()
       let fileName = Date().toString(dateFormat: "dd-MM-YY_'at'_HH:mm:ss") + ".m4a"
       let audioURL = documentsPath.appendingPathComponent(fileName)
       
@@ -258,18 +252,39 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
       print("No recording to stop.")
       return
     }
-    
+
     recorder.stop()
-    DispatchQueue.global().asyncAfter(deadline: .now() + 0.1) { [weak self] in
+    // Read the audio file off the main thread but mutate @Observable properties
+    // only on the MainActor to avoid SwiftUI threading violations.
+    // Task(priority:) inherits actor context and cancellation from the caller;
+    // we do NOT use Task.detached here so that cancellation propagates correctly.
+    Task(priority: .userInitiated) {
+      try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s wait for file flush
       do {
-        self?.voiceProcessing = true
-        let audioData = try Data(contentsOf: url)
+        // File I/O is blocking — suspend off the main thread with a throwing continuation.
+        let audioData: Data = try await withCheckedThrowingContinuation { continuation in
+          DispatchQueue.global(qos: .userInitiated).async {
+            do {
+              let data = try Data(contentsOf: url)
+              continuation.resume(returning: data)
+            } catch {
+              continuation.resume(throwing: error)
+            }
+          }
+        }
         let base64String = audioData.base64EncodedString()
-        self?.sendAudioBase64ToServer(base64String)
-        self?.isRecording = false
-        self?.audioRecorder = nil
+        await MainActor.run {
+          self.voiceProcessing = true
+          self.isRecording = false
+          self.audioRecorder = nil
+        }
+        sendAudioBase64ToServer(base64String)
       } catch {
         print("❌ Failed to read audio file:", error)
+        await MainActor.run {
+          self.isRecording = false
+          self.audioRecorder = nil
+        }
       }
     }
   }
@@ -404,7 +419,7 @@ extension ChatViewModel {
     }
   }
   
-  enum SessionCheckResult {
+  enum SessionCheckResult: Equatable {
     case active       // Server confirmed session is valid
     case expired      // Server returned a 4xx — session is genuinely gone
     case networkError // Call failed for a reason unrelated to session validity (auth token issue, decode error, no network)
@@ -423,19 +438,18 @@ extension ChatViewModel {
   }
 
   private func checkSessionStatus(for sessionId: String) async -> SessionCheckResult {
-    return await withCheckedContinuation { continuation in
+    // Bridge the callback into async. Capture only the server token (a value type),
+    // never a SwiftData model object, across the actor boundary.
+    let (result, serverToken): (SessionCheckResult, String?) = await withCheckedContinuation { continuation in
       MatrixApiService.shared.checkSessionStatus(sessionId: sessionId) { [weak self] result, statusCode in
         switch result {
         case .success(let sessionResponse):
           print("#BB Session is valid - \(sessionResponse.sessionID)")
-          let serverToken = sessionResponse.sessionData.sessionToken
+          let token = sessionResponse.sessionData.sessionToken
           DispatchQueue.main.async {
             self?.webSocketConnectionTitle = "Connected"
           }
-          Task {
-            await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: serverToken)
-          }
-          continuation.resume(returning: .active)
+          continuation.resume(returning: (.active, token))
 
         case .failure(let error):
           let code = statusCode ?? 0
@@ -444,14 +458,20 @@ extension ChatViewModel {
           // Only treat explicit 4xx as a real expiry; everything else (network, decode, interceptor) is a transient error
           if code >= 400 && code < 500 {
             print("#BB Session \(sessionId) is expired (4xx from server)")
-            continuation.resume(returning: .expired)
+            continuation.resume(returning: (.expired, nil))
           } else {
             print("#BB Session check failed due to transient error — not treating as expired")
-            continuation.resume(returning: .networkError)
+            continuation.resume(returning: (.networkError, nil))
           }
         }
       }
     }
+
+    // Persist rotated token on the DB actor — safely outside the continuation.
+    if result == .active, let serverToken, !serverToken.isEmpty {
+      await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: serverToken)
+    }
+    return result
   }
   
 
@@ -459,30 +479,40 @@ extension ChatViewModel {
   func refreshSession(for sessionId: String) async -> String? {
     // Fetch current token from DB — never from UserDefaults to avoid cross-profile contamination.
     let currentToken = (try? await DatabaseConfig.shared.fetchSession(bySessionId: sessionId))?.sessionToken ?? ""
-    return await withCheckedContinuation { continuation in
+
+    // Use AsyncStream bridge so the DB write completes before we return the token,
+    // without capturing the continuation inside a nested Task (which would violate
+    // the single-resume contract if the outer scope deallocates concurrently).
+    let newToken: String? = await withCheckedContinuation { continuation in
       MatrixApiService.shared.refreshSession(sessionId: sessionId, sessionToken: currentToken) { result, _ in
         switch result {
         case .success(let sessionResponse):
-          let newToken = sessionResponse.sessionData.sessionToken
+          // Refresh endpoint returns a flat response: session_token is a top-level field,
+          // not nested inside session_data (which is only present on checkSessionStatus).
+          let token = sessionResponse.sessionToken
           print("#BB refreshSession success: \(sessionResponse.sessionID)")
-          guard !newToken.isEmpty else {
-            WebSocketLogger.shared.logInfo("refreshSession: empty session_token in response")
+          guard !token.isEmpty else {
+            Task { @MainActor in WebSocketLogger.shared.logInfo("refreshSession: empty session_token in response") }
             continuation.resume(returning: nil)
             return
           }
-          Task {
-            await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: newToken)
-            continuation.resume(returning: newToken)
-          }
+          continuation.resume(returning: token)
         case .failure(let error):
           print("#BB refreshSession failure:", error.localizedDescription)
-          Task { @MainActor in
-              self.lastSessionRecoveryReason = "refresh_failed"
-          }
           continuation.resume(returning: nil)
         }
       }
     }
+
+    if let newToken {
+      // Persist the new token on the DB actor — now safely outside the continuation.
+      await DatabaseConfig.shared.updateSessionToken(sessionId: sessionId, sessionToken: newToken)
+    } else {
+      await MainActor.run {
+        self.lastSessionRecoveryReason = "refresh_failed"
+      }
+    }
+    return newToken
   }
   
   func webSocketAuthentication(sessionId: String, sessionToken: String) async {
@@ -832,8 +862,7 @@ extension ChatViewModel {
       }
       else if (model.contentType == .audioTranscript || model.contentType == .inlineText),
          let transcribedText = model.data?.text {
-        DispatchQueue.main.async { [weak self] in
-          guard let self else { return }
+        await MainActor.run {
           self.inputString = transcribedText.trimmingCharacters(in: .whitespacesAndNewlines)
           self.voiceProcessing = false
           self.messageInput = true
@@ -938,49 +967,47 @@ extension ChatViewModel {
     userBId: String
   ) async -> String {
     let requestModel = AuthSessionRequestModel(uerId: userDocId)
-    
-    do {
-      return try await withCheckedThrowingContinuation { continuation in
-        MatrixApiService.shared.createSession(requestModel: requestModel) { [weak self] result, _ in
-          guard let self else { return }
-          
-          switch result {
-          case .success(let sessionResponse):
-            Task {
-              let _ = await DatabaseConfig.shared.createSession(
-                subTitle: subTitle,
-                oid: oid,
-                userDocId: userDocId,
-                userBId: userBId,
-                sessionId: sessionResponse.sessionID,
-                sessionToken: sessionResponse.sessionToken
-              )
-              
-              self.activateSession(id: sessionResponse.sessionID, token: sessionResponse.sessionToken)
-              
-              if let initialMessage = sessionResponse.initialMessage {
-                let text = initialMessage.text
-                await MainActor.run {
-                  self.initialMessageText = text
-                }
-              }
-              
-              await self.webSocketAuthentication(
-                sessionId: sessionResponse.sessionID,
-                sessionToken: sessionResponse.sessionToken
-              )
-              
-              continuation.resume(returning: sessionResponse.sessionID)
-            }
-            
-          case .failure(let error):
-            continuation.resume(throwing: error)
-          }
+
+    // Bridge the callback API into async — resume immediately with the server response
+    // (a value type), never inside a nested Task. Doing async DB/WebSocket work inside
+    // the continuation's Task would violate the single-resume contract and lose actor context.
+    typealias SessionResult = Result<(id: String, token: String, initialMessage: String?), Error>
+    let serverResult: SessionResult = await withCheckedContinuation { continuation in
+      MatrixApiService.shared.createSession(requestModel: requestModel) { result, _ in
+        switch result {
+        case .success(let sessionResponse):
+          let text = sessionResponse.initialMessage?.text
+          continuation.resume(returning: .success((
+            id: sessionResponse.sessionID,
+            token: sessionResponse.sessionToken,
+            initialMessage: text
+          )))
+        case .failure(let error):
+          continuation.resume(returning: .failure(error))
         }
       }
-    } catch {
+    }
+
+    switch serverResult {
+    case .failure(let error):
       print("Error creating session: \(error)")
       return ""
+    case .success(let session):
+      // All async work happens after the continuation has already resolved.
+      let _ = await DatabaseConfig.shared.createSession(
+        subTitle: subTitle,
+        oid: oid,
+        userDocId: userDocId,
+        userBId: userBId,
+        sessionId: session.id,
+        sessionToken: session.token
+      )
+      activateSession(id: session.id, token: session.token)
+      if let text = session.initialMessage {
+        initialMessageText = text
+      }
+      await webSocketAuthentication(sessionId: session.id, sessionToken: session.token)
+      return session.id
     }
   }
   

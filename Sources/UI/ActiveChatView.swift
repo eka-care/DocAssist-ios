@@ -446,7 +446,7 @@ struct SessionChatContentView: View {
           if messages.isEmpty {
             emptyChatView
           } else {
-            VStack {
+            VStack(spacing: 10) {
               ForEach(messages) { message in
                 messageBubbleView(message: message)
                   .padding(.horizontal, 16)

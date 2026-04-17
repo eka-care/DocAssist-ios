@@ -108,13 +108,15 @@ extension NetworkRequestInterceptor {
     
     /// Device information
     urlRequest.headers.add(name: "make", value: "Apple")
+    urlRequest.headers.add(name: "client-id", value: "patient-app-ios")
     
     if let appVersion = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
       urlRequest.headers.add(name: "version", value: appVersion)
     }
     
-    let deviceID = UIDevice.current.identifierForVendor?.uuidString
-    urlRequest.headers.add(name: "device-id", value: deviceID!)
+    if let deviceID = UIDevice.current.identifierForVendor?.uuidString {
+      urlRequest.headers.add(name: "device-id", value: deviceID)
+    }
     
     if addAuthHeader {
       if let accessToken = AuthAndUserDetailsSetter.shared.authToken {

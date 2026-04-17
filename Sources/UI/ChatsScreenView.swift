@@ -423,7 +423,9 @@ struct ChatsScreenView: View {
     )
     .contextMenu {
       Button(role: .destructive) {
-        DatabaseConfig.shared.deleteSession(sessionId: thread.sessionId)
+        Task {
+          await DatabaseConfig.shared.deleteSession(sessionId: thread.sessionId)
+        }
       } label: {
         Label("Delete", systemImage: "trash")
       }
@@ -437,7 +439,9 @@ struct ChatsScreenView: View {
         Spacer()
         Button(action: {
           if allSessions.isEmpty {
-            DatabaseConfig.shared.deleteAllValues()
+            Task {
+              await DatabaseConfig.shared.deleteAllValues()
+            }
           }
           newViewChat = true
           if let patientDelegate {
