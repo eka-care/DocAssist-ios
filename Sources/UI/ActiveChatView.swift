@@ -19,7 +19,7 @@ public struct ActiveChatView: View {
   @State var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
-
+  
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
@@ -39,10 +39,11 @@ public struct ActiveChatView: View {
   private let authToken: String
   private let authRefreshToken: String
   @State var voiceToRxTip = VoiceToRxTip()
-
+  
   @State private var animatedText: String = ""
   @State private var lastAnimatedText: String = ""
   @State private var showWSLogs: Bool = false
+  @State private var isCurrentSessionEmpty: Bool = true
   @State private var inputHeight: CGFloat = 0
   @State private var glowAngle: Double = 0.0
   @State private var glowOpacity: Double = 0.0
@@ -66,7 +67,7 @@ public struct ActiveChatView: View {
         if calledFromPatientContext {
           headerView
         }
-
+        
         if viewModel.chatErrorState != .none {
           sessionExpiredBanner
         }
@@ -85,7 +86,8 @@ public struct ActiveChatView: View {
           voiceToRxTip: $voiceToRxTip,
           glowAngle: $glowAngle,
           glowOpacity: $glowOpacity,
-          inputHeight: $inputHeight
+          inputHeight: $inputHeight,
+          isSessionEmpty: $isCurrentSessionEmpty
         )
         .id(session)
       }
@@ -247,7 +249,18 @@ public struct ActiveChatView: View {
     .padding(.vertical, 12)
     .background(Color.red.opacity(0.85))
   }
-
+  
+  private var connectionStatusColor: Color {
+    switch viewModel.webSocketConnectionTitle {
+    case "Connected":
+      return .green
+    case "Connecting...":
+      return Color.orange
+    default:
+      return .red
+    }
+  }
+  
   private var headerView: some View {
     VStack(alignment: .leading, spacing: 4) {
       HStack {
@@ -256,42 +269,72 @@ public struct ActiveChatView: View {
         }) {
           HStack(spacing: 6) {
             Image(systemName: "chevron.left")
-              .font(.system(size: 21, weight: .medium))
-              .foregroundColor(.blue)
+              .font(.system(size: 18, weight: .medium))
+              .foregroundColor(Color(red: 0.42, green: 0.36, blue: 0.878))
             Text("Back")
-              .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
-            
-            Spacer()
-            
-            Button {
-              showWSLogs = true
-            } label: {
-              Text("Logs")
-            }
+              .font(.system(size: 18, weight: .medium))
+              .foregroundColor(Color(red: 0.42, green: 0.36, blue: 0.878))
           }
         }
-        .contentShape(Rectangle())
+        
         Spacer()
+        
+        HStack(spacing: 12) {
+//          Button {
+//            showWSLogs = true
+//          } label: {
+//            Text("Logs")
+//          }
+          
+          Button {
+            Task {
+              let newSessionId = await viewModel.createNewSession(
+                subTitle: patientName,
+                userDocId: userDocId,
+                userBId: userBId
+              )
+              if !newSessionId.isEmpty {
+                viewModel.chatErrorState = .none
+                viewModel.webSocketErrorMessage = nil
+                session = newSessionId
+                isCurrentSessionEmpty = true
+              }
+            }
+          } label: {
+            Image(systemName: "plus")
+              .font(.system(size: 18, weight: .medium))
+              .foregroundStyle(isCurrentSessionEmpty ? Color(red: 0.42, green: 0.36, blue: 0.878).opacity(0.3) : Color(red: 0.42, green: 0.36, blue: 0.878))
+              .frame(width: 44, height: 44)
+              .contentShape(Rectangle())
+          }
+          .disabled(isCurrentSessionEmpty)
+        }
+        .contentShape(Rectangle())
       }
       .padding(.leading, 10)
       .padding(.top, 9)
       
-      VStack(alignment: .leading, spacing: 0) {
+      VStack(alignment: .leading, spacing: 4) {
         Text("New chat")
-          .font(
-            Font.custom("Lato-Bold", size: 24)
-          )
-          .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
-        Text(viewModel.webSocketConnectionTitle)
-          .newTextStyle(ekaFont: .calloutRegular, color: .black)
+          .font(.system(size: 28, weight: .bold))
+          .foregroundColor(.black)
+        
+        HStack(spacing: 6) {
+          Circle()
+            .fill(connectionStatusColor)
+            .frame(width: 8, height: 8)
+          Text(viewModel.webSocketConnectionTitle)
+            .font(.system(size: 14))
+            .foregroundColor(Color(.systemGray))
+        }
+        
+        Divider()
+          .padding(.top, 4)
       }
       .padding(.horizontal, 16)
       .padding(.top, 3)
-      .padding(.bottom, 8)
       .frame(maxWidth: .infinity, alignment: .topLeading)
     }
-    .padding(.bottom, 5)
   }
   
   private func setupView(with oid: String) {
@@ -309,11 +352,11 @@ public struct ActiveChatView: View {
       lastAnimatedText = newValue
       return
     }
-
+    
     let full = newValue
     let startIndex = full.index(full.startIndex, offsetBy: lastAnimatedText.count)
     let newChunk = full[startIndex...]
-
+    
     Task {
       for char in newChunk {
         try? await Task.sleep(nanoseconds: 30_000_000)
@@ -344,6 +387,7 @@ struct SessionChatContentView: View {
   @Binding var glowAngle: Double
   @Binding var glowOpacity: Double
   @Binding var inputHeight: CGFloat
+  @Binding var isSessionEmpty: Bool
   
   @Query private var messages: [ChatMessageModel] = []
   @FocusState private var isTextFieldFocused: Bool
@@ -362,7 +406,8 @@ struct SessionChatContentView: View {
     voiceToRxTip: Binding<VoiceToRxTip>,
     glowAngle: Binding<Double>,
     glowOpacity: Binding<Double>,
-    inputHeight: Binding<CGFloat>
+    inputHeight: Binding<CGFloat>,
+    isSessionEmpty: Binding<Bool>
   ) {
     self.session = session
     self.viewModel = viewModel
@@ -378,6 +423,7 @@ struct SessionChatContentView: View {
     self._glowAngle = glowAngle
     self._glowOpacity = glowOpacity
     self._inputHeight = inputHeight
+    self._isSessionEmpty = isSessionEmpty
     _messages = Query(
       filter: #Predicate<ChatMessageModel> { message in
         message.sessionId == session
@@ -391,31 +437,34 @@ struct SessionChatContentView: View {
     ZStack(alignment: .bottom) {
       Color(red: 0.96, green: 0.96, blue: 0.96)
         .ignoresSafeArea()
+        .onTapGesture {
+          UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
       
       ScrollViewReader { proxy in
         ScrollView {
           if messages.isEmpty {
             emptyChatView
           } else {
-            VStack {
+            VStack(spacing: 10) {
               ForEach(messages) { message in
                 messageBubbleView(message: message)
-                  .padding(.horizontal)
+                  .padding(.horizontal, 16)
                   .id(message.id)
               }
-              
+
               if viewModel.streamStarted {
                 if viewModel.messageText.isEmpty {
                   LoadingView()
-                    .padding(.horizontal)
+                    .padding(.horizontal, 16)
                     .id("streamingID")
                 } else {
                   HStack(alignment: .top) {
-                    BotAvatarImage()
+                    //   BotAvatarImage()
                     StreamingTextView(text: viewModel.messageText)
                     Spacer()
                   }
-                  .padding(.horizontal)
+                  .padding(.horizontal, 16)
                   .id("streamingID")
                 }
               }
@@ -452,6 +501,12 @@ struct SessionChatContentView: View {
           }
         }
         .scrollDismissesKeyboard(.interactively)
+        .onAppear {
+          isSessionEmpty = messages.isEmpty
+        }
+        .onChange(of: messages.count) { _, newCount in
+          isSessionEmpty = newCount == 0
+        }
       }
       
       VStack(spacing: 0) {
@@ -462,10 +517,10 @@ struct SessionChatContentView: View {
           .stroke(
             AngularGradient(
               stops: [
-                .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 0.0),
-                .init(color: Color(red: 0.25, green: 0.5, blue: 1.0),  location: 0.35),
-                .init(color: Color(red: 0.55, green: 0.25, blue: 1.0), location: 0.65),
-                .init(color: Color(red: 0.42, green: 0.2, blue: 0.9),  location: 1.0),
+                .init(color: Color(red: 0.42, green: 0.36, blue: 0.878), location: 0.0),
+                .init(color: Color(red: 0.42, green: 0.36, blue: 0.878).opacity(0.6), location: 0.35),
+                .init(color: Color(red: 0.42, green: 0.36, blue: 0.878), location: 0.65),
+                .init(color: Color(red: 0.42, green: 0.36, blue: 0.878), location: 1.0),
               ],
               center: .center,
               angle: .degrees(glowAngle)

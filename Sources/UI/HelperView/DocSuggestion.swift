@@ -28,11 +28,11 @@ struct DocSuggestion: View {
       VStack(alignment: .leading, spacing: 4) {
         Text(title)
           .foregroundStyle(Color.neutrals600)
-          .font(.custom("Lato-Bold", size: 16))
+          .font(.system(size: 16, weight: .bold))
           .frame(maxWidth: .infinity, alignment: .leading)
         Text(subTitle)
           .foregroundStyle(Color.neutrals600)
-          .font(.custom("Lato-Regular", size: 13))
+          .font(.system(size: 13))
           .frame(maxWidth: .infinity, alignment: .leading)
       }
       .frame(width: 260)

@@ -31,10 +31,10 @@ struct SuggestionView: View {
   
   var body: some View {
     HStack(alignment: .top) {
-      BotAvatarImage()
+   //   BotAvatarImage()
       VStack(alignment: .leading) {
         Text(constantSuggestionString)
-          .font(.custom("Lato-Regular", size: 12))
+          .font(.system(size: 12))
           .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
           .frame(width: 306, height: 16, alignment: .topLeading)
         SuggestionsComponentView(

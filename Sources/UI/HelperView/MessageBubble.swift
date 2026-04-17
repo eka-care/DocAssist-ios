@@ -48,12 +48,7 @@ struct MessageBubble: View {
         if message.role == .user {
           Spacer()
         }
-        
-        if message.role == .Bot && hasVisibleBotMessage {
-          BotAvatarImage()
-            .alignmentGuide(.top) { d in d[.top] }
-        }
-        
+
         if hasVisibleBotMessage {
           MessageTextView(
             text: m,
@@ -94,6 +89,8 @@ struct MessageBubble: View {
               )
             }) {
               Image(systemName: thumsUpClicked ? "hand.thumbsup.fill" : "hand.thumbsup")
+                .scaledToFit()
+                .frame(width: 14)
                 .fontWeight(.medium)
                 .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
                 .frame(width: 34, height: 34)
@@ -118,7 +115,7 @@ struct MessageBubble: View {
             }) {
               Image(systemName: thumsDownClicked ? "hand.thumbsdown.fill" : "hand.thumbsdown")
                 .scaledToFit()
-                .frame(width: 18)
+                .frame(width: 14)
                 .padding(4)
                 .fontWeight(.medium)
                 .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
@@ -144,6 +141,7 @@ struct MessageBubble: View {
             }) {
               Image(systemName: copyClicked ? "checkmark" : "document.on.document")
                 .scaledToFit()
+                .frame(width: 14)
                 .padding(4)
                 .contentTransition(.symbolEffect(.replace))
                 .fontWeight(.medium)
@@ -176,6 +174,8 @@ struct MessageBubble: View {
               shareText()
             }) {
               Image(systemName: "square.and.arrow.up")
+                .scaledToFit()
+                .frame(width: 14)
                 .fontWeight(.medium)
                 .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
                 .frame(width: 34, height: 34)
@@ -183,10 +183,10 @@ struct MessageBubble: View {
             
             Spacer()
           }
-          .padding(.leading, 30)
+          .padding(.top, 6)
         }
       }
-    
+
       if message.role == .Bot {
         if let suggestions = message.suggestions {
           VStack(alignment: .leading) {

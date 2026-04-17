@@ -10,8 +10,10 @@ import Foundation
 class DocAssistFileHelper {
   
   public static func getDocumentDirectoryURL() -> URL {
-    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
-    let documentsDirectory = paths[0]
+    guard let documentsDirectory = FileManager.default
+      .urls(for: .documentDirectory, in: .userDomainMask).first else {
+      return FileManager.default.temporaryDirectory
+    }
     return documentsDirectory
   }
   

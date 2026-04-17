@@ -51,7 +51,10 @@ struct MessageTextView: View {
       if let text, text != "" {
         Markdown(text)
           .font(.body)
-          .padding(8)
+          .padding(role == .user ? 10 : 2)
+          .markdownTextStyle {
+            ForegroundColor(foregroundColor)
+          }
           .background(backgroundColor)
           .foregroundColor(foregroundColor)
           .contentTransition(.numericText())
@@ -61,11 +64,11 @@ struct MessageTextView: View {
   }
   
   private var backgroundColor: Color {
-    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .white) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
+    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? Color(red: 0.42, green: 0.36, blue: 0.878)) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
   }
   
   private var foregroundColor: Color {
-    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (.neutrals800)
+    role == .user ? (SetUIComponents.shared.usertextColor ?? .white) : (SetUIComponents.shared.botTextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1))
   }
   
   func shareText() {

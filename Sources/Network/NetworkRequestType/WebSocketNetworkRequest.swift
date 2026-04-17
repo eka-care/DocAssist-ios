@@ -12,6 +12,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     private var session: URLSession?
     private var isConnected = false
     private var isBackgrounded = false
+    private var isIntentionalDisconnect = false
     private var connectCompletion: ((Bool) -> Void)?
     var onMessageDecoded: ((WebSocketModel) -> Void)?
     /// Called when the connection drops unexpectedly (transport abort, receive failure mid-session)
@@ -42,7 +43,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
         guard isConnected else { return }
         isBackgrounded = true
         disconnect()
-        WebSocketLogger.shared.logInfo("Disconnected gracefully on app background")
+        Task { @MainActor in WebSocketLogger.shared.logInfo("Disconnected gracefully on app background") }
     }
 
     // 1️⃣ Establish the connection
@@ -68,11 +69,11 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
             return
         }
 
-        WebSocketLogger.shared.logSent(message)
+        Task { @MainActor in WebSocketLogger.shared.logSent(message) }
         webSocketTask?.send(.string(message)) { error in
             if let error = error {
                 print("WebSocket send error: \(error)")
-                WebSocketLogger.shared.logInfo("Send error: \(error.localizedDescription)")
+                Task { @MainActor in WebSocketLogger.shared.logInfo("Send error: \(error.localizedDescription)") }
             } else {
                 print("📤 Sent message: \(message)")
             }
@@ -90,15 +91,15 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
       case .failure(let error):
         print("❌ WebSocket receive error: \(error.localizedDescription)")
         self.isConnected = false
-        WebSocketLogger.shared.logInfo("Receive error: \(error.localizedDescription)")
-        if !self.isBackgrounded {
+        Task { @MainActor in WebSocketLogger.shared.logInfo("Receive error: \(error.localizedDescription)") }
+        if !self.isBackgrounded && !self.isIntentionalDisconnect {
             self.onConnectionError?(error)
         }
         
       case .success(let message):
         switch message {
         case .string(let text):
-          WebSocketLogger.shared.logReceived(text)
+          Task { @MainActor in WebSocketLogger.shared.logReceived(text) }
           if let data = text.data(using: .utf8) {
             do {
               let decoded = try JSONDecoder().decode(WebSocketModel.self, from: data)
@@ -122,8 +123,9 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
 
     // 4️⃣ Disconnect cleanly
     func disconnect() {
-        webSocketTask?.cancel(with: .normalClosure, reason: nil)
+        isIntentionalDisconnect = true
         isConnected = false
+        webSocketTask?.cancel(with: .normalClosure, reason: nil)
         print("🔌 WebSocket disconnected.")
     }
 
@@ -131,7 +133,7 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         print("✅ WebSocket connected to \(url)")
         isConnected = true
-        WebSocketLogger.shared.logInfo("Connected to \(url)")
+        Task { @MainActor in WebSocketLogger.shared.logInfo("Connected to \(url)") }
         listenForMessages()
         connectCompletion?(true)
         connectCompletion = nil
@@ -141,18 +143,18 @@ final class WebSocketNetworkRequest: NSObject, URLSessionWebSocketDelegate {
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         print("WebSocket closed with code: \(closeCode)")
         isConnected = false
-        WebSocketLogger.shared.logInfo("Disconnected (code: \(closeCode))")
+        Task { @MainActor in WebSocketLogger.shared.logInfo("Disconnected (code: \(closeCode))") }
     }
 
     // 7️⃣ Delegate: connection failed at transport level
     func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
         if let error = error {
             print("❌ WebSocket connection error: \(error.localizedDescription)")
-            WebSocketLogger.shared.logInfo("Connection error: \(error.localizedDescription)")
+            Task { @MainActor in WebSocketLogger.shared.logInfo("Connection error: \(error.localizedDescription)") }
             if isConnected {
                 // Mid-session drop — notify the view model
                 isConnected = false
-                if !isBackgrounded {
+                if !isBackgrounded && !isIntentionalDisconnect {
                     onConnectionError?(error)
                 }
             } else {

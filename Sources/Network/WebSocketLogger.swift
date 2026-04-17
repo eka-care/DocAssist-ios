@@ -26,7 +26,7 @@ struct WSLogEntry: Identifiable {
   }
 }
 
-@Observable
+@Observable @MainActor
 final class WebSocketLogger {
   static let shared = WebSocketLogger()
   private init() {}
@@ -35,23 +35,17 @@ final class WebSocketLogger {
 
   func logSent(_ message: String) {
     let entry = WSLogEntry(timestamp: Date(), direction: .sent, message: message)
-    DispatchQueue.main.async { [weak self] in
-      self?.logs.append(entry)
-    }
+    logs.append(entry)
   }
 
   func logReceived(_ message: String) {
     let entry = WSLogEntry(timestamp: Date(), direction: .received, message: message)
-    DispatchQueue.main.async { [weak self] in
-      self?.logs.append(entry)
-    }
+    logs.append(entry)
   }
 
   func logInfo(_ message: String) {
     let entry = WSLogEntry(timestamp: Date(), direction: .info, message: message)
-    DispatchQueue.main.async { [weak self] in
-      self?.logs.append(entry)
-    }
+    logs.append(entry)
   }
 
   func clear() {

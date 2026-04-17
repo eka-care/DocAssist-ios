@@ -41,7 +41,7 @@ struct MessageInputView: View {
       }
             
       TextField("Message...", text: $inputString, axis: .vertical)
-        .font(Font.custom("Lato-Regular", size: 16))
+        .font(.system(size: 16))
         .focused($isTextFieldFocused)
         .lineLimit(1...6)
         .padding(.horizontal, 14)
@@ -54,7 +54,7 @@ struct MessageInputView: View {
         } label: {
           Image(systemName: "paperclip")
             .font(.system(size: 20, weight: .medium))
-            .foregroundStyle(Color.primaryprimary)
+            .foregroundStyle(Color(red: 0.42, green: 0.36, blue: 0.878))
             .frame(width: 32, height: 32)
         }
         .fullScreenCover(isPresented: $showRecordsView) {
@@ -80,11 +80,16 @@ struct MessageInputView: View {
       .padding(.horizontal, 8)
       .padding(.bottom, 6)
     }
+    .contentShape(Rectangle())
+    .onTapGesture {
+      isTextFieldFocused = true
+    }
     .background(
       RoundedRectangle(cornerRadius: 24)
         .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
-        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+        .stroke(Color(red: 0.42, green: 0.36, blue: 0.878).opacity(isTextFieldFocused ? 0.5 : 0.2), lineWidth: 1)
     )
+    .shadow(color: Color.black.opacity(0.08), radius: 12, x: 0, y: -4)
     .padding(.horizontal, 16)
     .padding(.vertical, 6)
     .onAppear {
@@ -115,7 +120,7 @@ struct MessageInputView: View {
     } label: {
       Image(systemName: "mic.fill")
         .font(.system(size: 18, weight: .medium))
-        .foregroundStyle(Color.primaryprimary)
+        .foregroundStyle(Color(red: 0.42, green: 0.36, blue: 0.878))
         .frame(width: 36, height: 36)
     }
   }
@@ -124,7 +129,7 @@ struct MessageInputView: View {
     Button {
       inputString = inputString.trimmingCharacters(in: .whitespacesAndNewlines)
       guard !inputString.isEmpty else { return }
-      Task {
+      Task { @MainActor in
         await viewModel.sendMessage(
           newMessage: inputString,
           imageUrls: selectedImages,
@@ -136,7 +141,7 @@ struct MessageInputView: View {
         selectedImages = []
         selectedDocumentId = []
         DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
-        isTextFieldFocused.toggle()
+        isTextFieldFocused = false
       }
     } label: {
       Image(systemName: "arrow.up.circle.fill")
@@ -146,7 +151,7 @@ struct MessageInputView: View {
         .foregroundStyle(
           inputString.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || viewModel.streamStarted
             ? Color.gray.opacity(0.5)
-            : Color.primaryprimary
+            : Color(red: 0.42, green: 0.36, blue: 0.878)
         )
         .frame(width: 36, height: 36)
     }
@@ -240,7 +245,7 @@ struct VoiceInputView: View {
     .background(
       RoundedRectangle(cornerRadius: 16)
         .fill(Color(red: 0.96, green: 0.96, blue: 0.96))
-        .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
+        .stroke(Color(red: 0.42, green: 0.36, blue: 0.878).opacity(0.2), lineWidth: 1)
     )
     .padding(.horizontal, 16)
     .padding(.vertical, 8)

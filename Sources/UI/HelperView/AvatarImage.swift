@@ -50,8 +50,6 @@ struct UserAvatarImage: View {
 struct LoadingView: View {
   var body: some View {
     HStack {
-      BotAvatarImage()
-        .padding()
       Text("Thinking...")
         .font(.custom("Lato-Regular", size: 18))
         .foregroundColor(.neutrals800)

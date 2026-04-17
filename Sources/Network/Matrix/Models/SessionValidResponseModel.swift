@@ -38,3 +38,18 @@ struct SessionData: Codable {
         case exp, referer, rno, userid, ttl
     }
 }
+
+struct RefreshSessionResponseModel: Codable {
+    let sessionID: String
+    let sessionToken: String
+    let sessionValidityS: Int
+    let userID: String?
+
+    enum CodingKeys: String, CodingKey {
+        case sessionID = "session_id"
+        case sessionToken = "session_token"
+        case sessionValidityS = "session_validity_s"
+        case userID = "user_id"
+    }
+}
+
