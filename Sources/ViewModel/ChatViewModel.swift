@@ -854,6 +854,14 @@ extension ChatViewModel {
           chatErrorState = .connectionError
         }
       }
+
+      
+      await MainActor.run {
+        if voiceProcessing || !messageInput {
+          voiceProcessing = false
+          messageInput = true
+        }
+      }
       
     case .chat:
       if model.contentType == .file,

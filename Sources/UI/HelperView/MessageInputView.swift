@@ -200,16 +200,18 @@ struct VoiceInputView: View {
   
   var body: some View {
     HStack(alignment: .center, spacing: 10) {
-      Button {
-        viewModel.dontRecord()
-      } label: {
-        Image(systemName: "xmark")
-          .frame(width: 24, height: 24)
-          .padding(6)
+      if viewModel.isRecording {
+        Button {
+          viewModel.dontRecord()
+        } label: {
+          Image(systemName: "xmark")
+            .frame(width: 24, height: 24)
+            .padding(6)
+        }
+        .frame(width: 36, height: 36)
+        .background(Color.white)
+        .cornerRadius(18)
       }
-      .frame(width: 36, height: 36)
-      .background(Color.white)
-      .cornerRadius(18)
       
       if viewModel.isRecording {
         AudioWaveformView()

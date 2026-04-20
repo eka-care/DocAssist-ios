@@ -8,7 +8,6 @@
 
 import Foundation
 import Alamofire
-import SwiftProtobuf
 
 // TODO: - Remove unnecssary functions
 
