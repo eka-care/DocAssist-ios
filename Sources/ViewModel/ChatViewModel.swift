@@ -17,7 +17,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   /// Constant Strings
   private let role = "user"
-  private let sessionId = "session_id"
   private let userAgent = "d-iOS"
   private var firestoreListener: ListenerRegistration?
   
@@ -31,7 +30,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var suggestionsDelegate: GetMoreSuggestions? = nil
   var getPatientDetailsDelegate: GetPatientDetails? = nil
   
-  private let networkCall = NetworkCall()
+  private var streamTask: Task<Void, Never>?
   var inputString = ""
   var isRecording = false
   var currentRecording: URL?
@@ -102,7 +101,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   func sendMessage(
     newMessage: String,
     imageUrls: [String]?,
-    vaultFiles: [String]?,
+    documentPaths: [String]?,
     sessionId: String,
     lastMesssageId: Int?
   ) async {
@@ -116,7 +115,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     
     /// Start streaming post request
     startStreamingPostRequest(
-      vaultFiles: vaultFiles,
+      documentPaths: documentPaths,
       userChat: userMessage
     )
   }
@@ -150,80 +149,45 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   
   static let dispatchSemaphore = DispatchSemaphore(value: 1)
   
-  func startStreamingPostRequest(vaultFiles: [String]?, userChat: ChatMessageModel?) {
-      guard let userChat else { return }
-      
-    ///Firestore handling
-    let ownerId = userDocId + "_" + userBid
+  /// Sends the user's message to Matrix and streams the answer into the bot message.
+  func startStreamingPostRequest(documentPaths: [String]?, userChat: ChatMessageModel?) {
+    guard let userChat else { return }
     DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = true
+      self?.streamStarted = true
     }
-//      Task {
-//          do {
-//              isOidPresent = try await DatabaseConfig.shared.isOidPreset(sessionId: userChat.sessionId)
-//              
-//              // Calculate patientContext after getting isOidPresent
-//              let patientContext = isOidPresent != nil && isOidPresent != ""
-//              
-//            /// if patient context is true then chat context should be a json object which as field oid and patientName
-//            
-//            var chatContext: String? = nil
-//            if let oid = isOidPresent, !oid.isEmpty {
-//                let contextDict: [String: String] = [
-//                    "patientId": oid,
-//                    "patientName": patientName
-//                ]
-//                if let jsonData = try? JSONSerialization.data(withJSONObject: contextDict, options: []),
-//                   let jsonString = String(data: jsonData, encoding: .utf8) {
-//                    chatContext = jsonString
-//                }
-//            }
-//
-//              DocAssistFireStoreManager.shared
-//                  .sendMessageToFirestore(
-//                      businessId: userBid,
-//                      doctorId: userDocId,
-//                      context: patientContext,
-//                      sessionId: userChat.sessionId,
-//                      messageId: userChat.msgId - 1,
-//                      message: .init(
-//                          message: userChat.messageText ?? "",
-//                          sessionId: userChat.sessionId,
-//                          doctorId: userDocId,
-//                          patientId: isOidPresent ?? "", // Use the fetched OID
-//                          role: role,
-//                          vaultFiles: userChat.imageUrls,
-//                          userAgent: userAgent,
-//                          ownerId: ownerId,
-//                          createdAt: Int64(Date().timeIntervalSince1970 * 1000),
-//                          chatContext: chatContext
-//                      )
-//                  ) { [weak self] str in
-//                      guard let self else { return }
-//                      print("Message sent to Firestore: \(str)")
-//                      self.startFirestoreListener(userChat: userChat)
-//                  }
-//          } catch {
-//              print("#BB Error determining OID presence: \(error)")
-//          }
-//      }
-
-      
-    /// Stream api
-    NetworkConfig.shared.queryParams[sessionId] = userChat.sessionId
-    networkCall.startStreamingPostRequest(query: userChat.messageText, vault_files: vaultFiles, onStreamComplete: { [weak self] in
-      DispatchQueue.main.async { [weak self] in
-        self?.streamStarted = false
-      }
-    }) { [weak self] result in
-      guard let self else { return }
-      Task {
-        switch result {
-        case .success(let responseString):
-          await self.handleStreamResponse(responseString: responseString, userChat: userChat)
-        case .failure(let error):
-          print("Error streaming: \(error)")
+    
+    streamTask?.cancel()
+    streamTask = Task { [weak self] in
+      let files = MatrixUploadFile.load(paths: documentPaths ?? [])
+      let stream = MatrixClient.shared.chat(
+        localSessionId: userChat.sessionId,
+        text: userChat.messageText ?? "",
+        files: files
+      )
+      var answer = ""
+      var suggestions: [String]?
+      do {
+        for try await event in stream {
+          switch event {
+          case .chunk(let text):
+            answer += text
+          case .tips(let tips):
+            suggestions = tips
+          case .progress:
+            continue
+          }
+          await DatabaseConfig.shared.upsertMessageV2(responseMessage: answer, userChat: userChat, suggestions: suggestions)
         }
+      } catch is CancellationError {
+      } catch {
+        print("#Matrix stream failed: \(error)")
+        if answer.isEmpty, !Task.isCancelled {
+          let message = (error as? MatrixError)?.errorDescription ?? "Something went wrong. Please try again."
+          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message, userChat: userChat, suggestions: nil)
+        }
+      }
+      await MainActor.run { [weak self] in
+        self?.streamStarted = false
       }
     }
   }
@@ -259,32 +223,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
         }
       }
       
-    }
-  }
-  
-  /// Stream response handling
-  func handleStreamResponse(responseString: String, userChat: ChatMessageModel) async {
-      let splitLines = responseString.split(separator: "\n")
-
-      var message: Message?
-
-      for line in splitLines {
-          guard line.contains("data:") else { continue }
-          guard let jsonRange = line.range(of: "{") else { return }
-
-          let jsonString = String(line[jsonRange.lowerBound...])
-          guard let jsonData = jsonString.data(using: .utf8) else { return }
-
-          do {
-              message = try JSONDecoder().decode(Message.self, from: jsonData)
-          } catch {
-              print("Failed to decode JSON: \(error.localizedDescription)")
-          }
-      }
-    await MainActor.run {
-      Task {
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message?.text ?? "", userChat: userChat, suggestions: message?.suggestions)
-      }
     }
   }
   
@@ -350,7 +288,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   func stopStreaming() {
-    networkCall.cancelStreaming()
+    streamTask?.cancel()
+    streamTask = nil
     streamStarted = false
   }
 }
@@ -412,7 +351,7 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
-      NetworkConfig.shared.queryParams["pt_oid"] = oid
+      NetworkConfig.shared.sessionContext["pt_oid"] = oid
   }
 }
 

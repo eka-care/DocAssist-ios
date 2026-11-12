@@ -29,7 +29,7 @@ public struct ActiveChatView: View {
   @State private var hasFocusedOnce = false
   @State private var showRecordsView = false
   @State private var selectedImages: [String] = []
-  @State private var selectedDocumentId: [String] = []
+  @State private var selectedDocumentPaths: [String] = []
   var title: String?
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo = RecordsRepo.shared
@@ -135,6 +135,10 @@ public struct ActiveChatView: View {
                 withAnimation {
                   proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
                 }
+              }
+              /// The streamed answer grows inside the same row, so the array above doesn't change.
+              .onChange(of: messages.last?.messageText) { _, _ in
+                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
               }
               .onAppear {
                 DispatchQueue.main.async {
@@ -289,7 +293,7 @@ public struct ActiveChatView: View {
         MessageInputView(
           inputString: viewModel.inputStringBinding,
           selectedImages: $selectedImages,
-          selectedDocumentId: $selectedDocumentId,
+          selectedDocumentPaths: $selectedDocumentPaths,
           showRecordsView: $showRecordsView,
           patientName: patientName,
           viewModel: viewModel,

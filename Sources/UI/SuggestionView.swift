@@ -46,7 +46,7 @@ struct SuggestionsComponentView: View {
                 Task {
                     do {
                         let lastMessageId = try await DatabaseConfig.shared.fetchLatestMessage(bySessionId: viewModel.vmssid)
-                        await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, vaultFiles: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
+                        await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, documentPaths: nil, sessionId: viewModel.vmssid, lastMesssageId: lastMessageId)
                     } catch {
                         print("Error fetching last message id")
                     }
