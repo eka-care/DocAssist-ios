@@ -176,13 +176,10 @@ extension DatabaseConfig {
     let streamMessageId = userChat.msgId + 1
     /// Check if message already exists
     if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: streamMessageId) {
-      
-      DispatchQueue.main.async {
-        messageToUpdate.messageText = responseMessage
-          messageToUpdate.suggestions = suggestions
-      }
+      /// The model belongs to this actor's context, so it is changed here, never on another thread.
+      messageToUpdate.messageText = responseMessage
+      messageToUpdate.suggestions = suggestions
       saveData()
-  
       return
     }
     
@@ -202,9 +199,7 @@ extension DatabaseConfig {
     public func appendSuggestions(sessionId: String, msgId: Int, suggestions: [String]) {
         if let messageToUpdate = try? fetchMessage(bySessionId: sessionId, messageId: msgId) {
             
-            DispatchQueue.main.async {
-                messageToUpdate.suggestions?.append(contentsOf: suggestions)
-            }
+            messageToUpdate.suggestions?.append(contentsOf: suggestions)
             saveData()
         }
     }
