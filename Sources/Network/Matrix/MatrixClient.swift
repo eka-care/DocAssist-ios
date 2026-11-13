@@ -402,10 +402,14 @@ actor MatrixClient {
     return result.sessToken
   }
 
-  /// POST /med-assist/auth/token-exchange. Sends only the agent id; the doctor is identified through `session_context`.
+  /// POST /med-assist/auth/token-exchange. Sends the agent id and the doctor's Eka access token.
   private func exchangeTokens() async throws -> MatrixTokenResponse {
     var request = try makeRequest(path: "/med-assist/auth/token-exchange", method: "POST", bearer: nil)
-    request.httpBody = try JSONSerialization.data(withJSONObject: ["agent_id": config.agentId])
+    var body: [String: Any] = ["agent_id": config.agentId]
+    if let authToken = config.authTokenProvider(), !authToken.isEmpty {
+      body["auth_token"] = authToken
+    }
+    request.httpBody = try JSONSerialization.data(withJSONObject: body)
     return try await decodeTokenResponse(for: request)
   }
 

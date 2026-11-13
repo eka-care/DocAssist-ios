@@ -16,6 +16,9 @@ public final class NetworkConfig: @unchecked Sendable {
   public var agentId: String = ""
   /// Surface the chat is drawn in; sent as `x-channel`.
   public var channel: String = "widget"
+  /// Returns the doctor's current Eka access token, sent as `auth_token` in the token exchange body.
+  /// Read on every exchange so a refreshed token is always picked up.
+  public var authTokenProvider: @Sendable () -> String? = { nil }
   /// Extra keys sent in `session_context` when a Matrix session is created (doctor, patient, business, region).
   public var sessionContext: [String: String] = [:]
 
