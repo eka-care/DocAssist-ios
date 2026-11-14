@@ -195,7 +195,7 @@ struct ChatRow: View {
             authToken: authToken,
             authRefreshToken: authRefreshToken
           )
-            .modelContext( DatabaseConfig.shared.modelContext)
+            .modelContainer(ChatStore.container)
             
         } label: {
             HStack(spacing: 12) {

@@ -13,9 +13,9 @@ import EkaUI
 
 struct MessageTextView: View {
   let text: String?
-  let role: MessageRole
+  let role: ChatRole
   let url: [String]?
-  let message: ChatMessageModel
+  let message: ChatMessage
   let viewModel: ChatViewModel
   let createdAt: Date
   @ObservedObject var v2rxViewModel: VoiceToRxViewModel

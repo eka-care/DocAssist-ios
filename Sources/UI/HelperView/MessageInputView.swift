@@ -19,7 +19,7 @@ struct MessageInputView: View {
   let patientName: String?
   let viewModel: ChatViewModel
   let session: String
-  let messages: [ChatMessageModel]
+  let messages: [ChatMessage]
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
   var liveActivityDelegate: LiveActivityDelegate?
@@ -153,8 +153,7 @@ struct MessageInputView: View {
           newMessage: inputString,
           imageUrls: selectedImages,
           documentPaths: selectedDocumentPaths,
-          sessionId: session,
-          lastMesssageId: messages.last?.msgId
+          sessionId: session
         )
         inputString = ""
         selectedImages = []

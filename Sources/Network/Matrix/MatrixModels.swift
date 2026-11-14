@@ -92,6 +92,67 @@ struct MatrixSessionResponse: Decodable {
   }
 }
 
+/// GET /med-assist/session: `{ region, data: [MatrixSessionSummary] }`.
+struct MatrixSessionListResponse: Decodable {
+  let data: [MatrixSessionSummary]
+}
+
+struct MatrixSessionSummary: Decodable, Sendable {
+  let sessionId: String
+  let topic: String?
+  let channel: String?
+  /// Created-at, epoch seconds.
+  let createdAt: TimeInterval?
+
+  enum CodingKeys: String, CodingKey {
+    case topic, channel
+    case sessionId = "session_id"
+    case createdAt = "c_ate"
+  }
+}
+
+/// GET /med-assist/session/{id}?messages=true
+struct MatrixSessionHistoryResponse: Decodable {
+  let sessionId: String
+  let messages: [MatrixHistoryMessage]?
+
+  enum CodingKeys: String, CodingKey {
+    case messages
+    case sessionId = "session_id"
+  }
+}
+
+struct MatrixHistoryMessage: Decodable, Sendable {
+  let id: String
+  let content: String?
+  /// `user` or `assistant`.
+  let role: String
+  /// Epoch seconds; the server sends null for some user messages.
+  let timestamp: TimeInterval?
+  let elicitations: [Elicitation]?
+
+  struct Elicitation: Decodable, Sendable {
+    let toolId: String?
+    let component: String?
+    let input: Input?
+
+    struct Input: Decodable, Sendable {
+      let text: String?
+      let options: [Option]?
+    }
+
+    struct Option: Decodable, Sendable {
+      let label: String
+      let value: String?
+    }
+
+    enum CodingKeys: String, CodingKey {
+      case component, input
+      case toolId = "tool_id"
+    }
+  }
+}
+
 struct MatrixPresignedURL: Decodable, Sendable {
   let id: String
   let url: String

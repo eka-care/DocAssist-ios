@@ -13,7 +13,8 @@ actor MatrixClient {
   static let shared = MatrixClient()
 
   private let urlSession = URLSession(configuration: .default)
-  private let sessionStore = MatrixSessionStore()
+  /// Where each chat's Matrix session id is kept (the chat cache).
+  private let links: MatrixSessionLinks = ChatStore.shared
   private let tokenStore = MatrixTokenStore()
 
   private var tokens: MatrixTokenResponse?
@@ -167,7 +168,7 @@ actor MatrixClient {
       case 4403:
         clearTokens(removeStored: true)
       case 4404:
-        sessionStore.remove(localSessionId: localSessionId, identity: config.identity)
+        await links.unlink(chat: localSessionId)
       default:
         /// Dropped or idle-closed socket: reconnecting is enough.
         break
@@ -179,7 +180,7 @@ actor MatrixClient {
         return true
       }
       if MatrixErrorCode.sessionGone.contains(code) {
-        sessionStore.remove(localSessionId: localSessionId, identity: config.identity)
+        await links.unlink(chat: localSessionId)
         return true
       }
       return false
@@ -335,8 +336,7 @@ actor MatrixClient {
   // MARK: - Session
 
   private func matrixSessionId(for localSessionId: String) async throws -> String {
-    let identity = config.identity
-    if let sessionId = sessionStore.sessionId(localSessionId: localSessionId, identity: identity) {
+    if let sessionId = await links.matrixSessionId(forChat: localSessionId) {
       return sessionId
     }
     if let task = sessionTasks[localSessionId] {
@@ -346,8 +346,28 @@ actor MatrixClient {
     sessionTasks[localSessionId] = task
     defer { sessionTasks[localSessionId] = nil }
     let sessionId = try await task.value
-    sessionStore.save(sessionId: sessionId, localSessionId: localSessionId, identity: identity)
+    await links.link(chat: localSessionId, toMatrixSession: sessionId)
     return sessionId
+  }
+
+  // MARK: - History
+
+  /// GET /med-assist/session: every Matrix session of the current doctor, newest first.
+  func listSessions() async throws -> [MatrixSessionSummary] {
+    let bearer = try await bearerToken()
+    let data = try await sendREST(path: "/med-assist/session", bearer: bearer)
+    return try JSONDecoder().decode(MatrixSessionListResponse.self, from: data).data
+  }
+
+  /// GET /med-assist/session/{id}?messages=true: the stored messages of one session.
+  func messages(matrixSessionId: String) async throws -> [MatrixHistoryMessage] {
+    let bearer = try await bearerToken()
+    let data = try await sendREST(
+      path: "/med-assist/session/\(matrixSessionId)",
+      query: [URLQueryItem(name: "messages", value: "true")],
+      bearer: bearer
+    )
+    return try JSONDecoder().decode(MatrixSessionHistoryResponse.self, from: data).messages ?? []
   }
 
   /// POST /med-assist/session
@@ -366,9 +386,17 @@ actor MatrixClient {
   }
 
   /// Sends an authenticated REST call, refreshing the token once on a 401.
-  private func sendREST(path: String, body: [String: Any], bearer: String) async throws -> Data {
-    var request = try makeRequest(path: path, method: "POST", bearer: bearer)
-    request.httpBody = try JSONSerialization.data(withJSONObject: body)
+  /// A nil `body` sends a GET; otherwise a POST with that JSON body.
+  private func sendREST(
+    path: String,
+    query: [URLQueryItem] = [],
+    body: [String: Any]? = nil,
+    bearer: String
+  ) async throws -> Data {
+    var request = try makeRequest(path: path, query: query, method: body == nil ? "GET" : "POST", bearer: bearer)
+    if let body {
+      request.httpBody = try JSONSerialization.data(withJSONObject: body)
+    }
     var (data, response) = try await urlSession.data(for: request)
     if (response as? HTTPURLResponse)?.statusCode == 401 {
       await refreshTokens()
@@ -495,31 +523,9 @@ actor MatrixClient {
   }
 }
 
-/// Persists which Matrix session each local chat session talks to, per doctor identity.
-struct MatrixSessionStore: Sendable {
-  private let defaultsKey = "DocAssistMatrixSessionIds"
-
-  func sessionId(localSessionId: String, identity: String) -> String? {
-    stored()[key(localSessionId, identity)]
-  }
-
-  func save(sessionId: String, localSessionId: String, identity: String) {
-    var sessions = stored()
-    sessions[key(localSessionId, identity)] = sessionId
-    UserDefaults.standard.set(sessions, forKey: defaultsKey)
-  }
-
-  func remove(localSessionId: String, identity: String) {
-    var sessions = stored()
-    sessions[key(localSessionId, identity)] = nil
-    UserDefaults.standard.set(sessions, forKey: defaultsKey)
-  }
-
-  private func stored() -> [String: String] {
-    UserDefaults.standard.dictionary(forKey: defaultsKey) as? [String: String] ?? [:]
-  }
-
-  private func key(_ localSessionId: String, _ identity: String) -> String {
-    "\(identity)|\(localSessionId)"
-  }
+/// Keeps the link between a chat and its Matrix session.
+protocol MatrixSessionLinks: Sendable {
+  func matrixSessionId(forChat chatId: String) async -> String?
+  func link(chat chatId: String, toMatrixSession matrixSessionId: String) async
+  func unlink(chat chatId: String) async
 }

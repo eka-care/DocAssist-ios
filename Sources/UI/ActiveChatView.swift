@@ -17,11 +17,13 @@ import AVFAudio
 public struct ActiveChatView: View {
   private let session: String
   @Environment(\.modelContext) var modelContext
-  @Query private var messages: [ChatMessageModel] = []
+  @Query private var messages: [ChatMessage]
   private var viewModel: ChatViewModel
   var backgroundColor: Color?
   @FocusState private var isTextFieldFocused: Bool
-  @State private var scrollToBottom = false
+  @State private var followsLatest = true
+  @State private var isNearBottom = true
+  @State private var isUserScrolling = false
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
@@ -46,20 +48,14 @@ public struct ActiveChatView: View {
   
   public init(session: String, viewModel: ChatViewModel, backgroundColor: Color?, patientName: String, calledFromPatientContext: Bool, title: String? = "New Chat", userDocId: String, userBId: String, authToken: String, authRefreshToken: String) {
     self.session = session
-    _messages = Query(
-      filter: #Predicate<ChatMessageModel> { message in
-        message.sessionId == session
-      },
-      sort: \.msgId,
-      order: .forward
-    )
+    _messages = Query(ChatMessage.inSession(session))
     self.viewModel = viewModel
     self.backgroundColor = backgroundColor
     self.patientName = patientName
     self.calledFromPatientContext = calledFromPatientContext
     self.title = title
     
-    V2RxInitConfigurations.shared.modelContainer = DatabaseConfig.shared.modelContainer
+    V2RxInitConfigurations.shared.modelContainer = ChatStore.container
     V2RxInitConfigurations.shared.ownerOID = SetUIComponents.shared.docOId
     V2RxInitConfigurations.shared.ownerUUID = SetUIComponents.shared.docUUId
     V2RxInitConfigurations.shared.ownerName = SetUIComponents.shared.docName
@@ -124,21 +120,24 @@ public struct ActiveChatView: View {
                   }
                 }
                 
-                Color.clear.frame(height: 1)
-                  .id(bottomScrollIdentifier)
+                ChatBottomMarker(id: bottomScrollIdentifier)
               }
               .padding(.top, 10)
-              .onChange(of: isTextFieldFocused, { _, _ in
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .top)
-              })
-              .onChange(of: messages) { oldValue , newValue in
-                withAnimation {
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+              .onChange(of: isTextFieldFocused) { _, focused in
+                guard focused else { return }
+                resumeFollowing(proxy)
+              }
+              /// A new message from the doctor always brings the chat back to the bottom.
+              .onChange(of: messages.count) { _, _ in
+                if messages.last?.role == .user {
+                  resumeFollowing(proxy, animated: true)
+                } else {
+                  followIfPinned(proxy, animated: true)
                 }
               }
-              /// The streamed answer grows inside the same row, so the array above doesn't change.
-              .onChange(of: messages.last?.messageText) { _, _ in
-                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+              /// The streamed answer grows inside the same row, so the count above doesn't change.
+              .onChange(of: messages.last?.text) { _, _ in
+                followIfPinned(proxy)
               }
               .onAppear {
                 DispatchQueue.main.async {
@@ -148,6 +147,24 @@ public struct ActiveChatView: View {
             }
           }
           .scrollDismissesKeyboard(.immediately)
+          .trackChatScroll(isNearBottom: $isNearBottom, isUserScrolling: $isUserScrolling)
+          /// Scrolling by hand pauses following; letting go at the bottom resumes it.
+          .onChange(of: isUserScrolling) { _, scrolling in
+            followsLatest = scrolling ? false : isNearBottom
+          }
+          .onChange(of: isNearBottom) { _, nearBottom in
+            if nearBottom, !isUserScrolling {
+              followsLatest = true
+            }
+          }
+          .overlay(alignment: .bottomTrailing) {
+            if !followsLatest, !messages.isEmpty {
+              JumpToLatestButton { resumeFollowing(proxy, animated: true) }
+                .padding(16)
+                .transition(.scale.combined(with: .opacity))
+            }
+          }
+          .animation(.easeInOut(duration: 0.2), value: followsLatest)
           .background(Color(red: 0.96, green: 0.96, blue: 0.96))
         }
         
@@ -184,9 +201,9 @@ public struct ActiveChatView: View {
         
       case .deletedRecording:
         Task {
-          await DatabaseConfig.shared.deleteChatMessageByVoiceToRxSessionId(
-            v2RxAudioSessionId: voiceToRxViewModel.sessionID
-          )
+          if let audioSessionId = voiceToRxViewModel.sessionID {
+            await ChatStore.shared.deleteVoiceToRxMessages(audioSessionId: audioSessionId)
+          }
         }
         viewModel.v2rxEnabled = true
 
@@ -198,20 +215,21 @@ public struct ActiveChatView: View {
       viewModel.switchToSession(session)
       print("#BB session \(session)")
       Task {
-        fetchedOid =  try await DatabaseConfig.shared.isOidPresent(sessionId: session)
-          if fetchedOid != "" {
-            setupView(with: fetchedOid ?? "")
-          }
+        await ChatSync.syncMessages(sessionId: session)
+      }
+      Task {
+        fetchedOid = await ChatStore.shared.patientOid(sessionId: session)
+        if let fetchedOid, !fetchedOid.isEmpty {
+          setupView(with: fetchedOid)
+        }
       }
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
       handleVoiceToRxStates()
     }
     .onDisappear {
       viewModel.inputString = ""
-      if messages.isEmpty {
-        Task {
-          await DatabaseConfig.shared.deleteSession(sessionId: session)
-        }
+      Task {
+        await ChatStore.shared.discardIfEmpty(id: session)
       }
     }
   }
@@ -311,10 +329,30 @@ public struct ActiveChatView: View {
     }
   }
   
-  private func messageBubbleView(message: ChatMessageModel) -> some View {
+  // MARK: - Auto-scroll
+
+  private func followIfPinned(_ proxy: ScrollViewProxy, animated: Bool = false) {
+    guard followsLatest else { return }
+    scrollToBottom(proxy, animated: animated)
+  }
+
+  private func resumeFollowing(_ proxy: ScrollViewProxy, animated: Bool = false) {
+    followsLatest = true
+    scrollToBottom(proxy, animated: animated)
+  }
+
+  private func scrollToBottom(_ proxy: ScrollViewProxy, animated: Bool) {
+    if animated {
+      withAnimation { proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom) }
+    } else {
+      proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
+    }
+  }
+  
+  private func messageBubbleView(message: ChatMessage) -> some View {
     MessageBubble(
       message: message,
-      m: message.messageText,
+      m: message.text,
       url: message.imageUrls,
       viewModel: viewModel,
       v2rxViewModel: voiceToRxViewModel,

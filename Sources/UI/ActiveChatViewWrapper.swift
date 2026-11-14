@@ -19,7 +19,6 @@ public struct ActiveChatViewWrapper: View {
   @State private var didCheckSession = false
   
   private let backgroundColor: Color?
-  private let ctx: ModelContext
   private let patientSubtitle: String?
   private let oid: String
   private let userDocId: String
@@ -34,7 +33,6 @@ public struct ActiveChatViewWrapper: View {
   
   public init(
     backgroundColor: Color? = nil,
-    ctx: ModelContext,
     patientSubtitle: String?,
     oid: String,
     userDocId: String,
@@ -51,7 +49,6 @@ public struct ActiveChatViewWrapper: View {
     openType: String? = nil
   ) {
     self.viewModel = ChatViewModel(
-      context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
       liveActivityDelegate: liveActivityDelegate,
@@ -63,7 +60,6 @@ public struct ActiveChatViewWrapper: View {
       openType: openType
     )
     self.backgroundColor = backgroundColor
-    self.ctx = ctx
     self.patientSubtitle = patientSubtitle
     self.oid = oid
     self.userDocId = userDocId
@@ -91,7 +87,7 @@ public struct ActiveChatViewWrapper: View {
             useNavigationStack: false,
             liveActivityDelegate: liveActivityDelegate
           )
-          .modelContext(DatabaseConfig.shared.modelContext)
+          .modelContainer(ChatStore.container)
         } else if let sessionId = newSession {
           ActiveChatView(
             session: sessionId,
@@ -105,7 +101,7 @@ public struct ActiveChatViewWrapper: View {
             authRefreshToken: authRefreshToken
           )
         //  .navigationBarHidden(true)
-          .modelContext(DatabaseConfig.shared.modelContext)
+          .modelContainer(ChatStore.container)
         } else {
           ProgressView("Loading chat…")
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -116,7 +112,6 @@ public struct ActiveChatViewWrapper: View {
       }
     }
     .onAppear {
-      DatabaseConfig.setup(modelContainer: ctx.container)
       MRInitializer.shared.registerCoreSdk(
         authToken: authToken,
         refreshToken: authRefreshToken,

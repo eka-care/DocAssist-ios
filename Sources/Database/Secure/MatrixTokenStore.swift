@@ -51,12 +51,11 @@ struct MatrixTokenStore: Sendable {
   }
 }
 
-public enum DocAssistMatrixTokens {
-  /// Deletes every stored Matrix token pair. Call on logout.
-  public static func clearAll() {
+extension MatrixTokenStore {
+  static func clearAll() {
     let query: [String: Any] = [
       kSecClass as String: kSecClassGenericPassword,
-      kSecAttrService as String: MatrixTokenStore.service
+      kSecAttrService as String: service
     ]
     SecItemDelete(query as CFDictionary)
   }

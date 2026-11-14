@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import SwiftData
 import AVFAudio
 import AVFoundation
 import EkaVoiceToRx
@@ -23,7 +22,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var streamStarted: Bool = false
   
   private(set) var vmssid: String = ""
-  private var context: ModelContext
   private var delegate: ConvertVoiceToText? = nil
   private var deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil
   var liveActivityDelegate: LiveActivityDelegate? = nil
@@ -45,7 +43,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var userDocId: String
   var patientName: String
   var isOidPresent: String? = ""
-  var lastMsgId: Int?
   var showTranscriptionFailureAlert = false
   var openType: String?
   
@@ -75,7 +72,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   }
   
   init(
-    context: ModelContext,
     delegate: ConvertVoiceToText? = nil,
     deepThoughtNavigationDelegate: DeepThoughtsViewDelegate? = nil,
     liveActivityDelegate: LiveActivityDelegate? = nil,
@@ -86,7 +82,6 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     getPatientDetailsDelegate: GetPatientDetails? = nil,
     openType: String? = nil
   ) {
-    self.context = context
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
     self.liveActivityDelegate = liveActivityDelegate
@@ -98,60 +93,27 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.openType = openType
   }
   
+  /// Saves the doctor's message, then streams the answer from Matrix into the chat.
   func sendMessage(
     newMessage: String,
     imageUrls: [String]?,
     documentPaths: [String]?,
-    sessionId: String,
-    lastMesssageId: Int?
+    sessionId: String
   ) async {
-    /// Create user message
-    let userMessage =  await addUserMessage(
-      newMessage,
-      imageUrls,
-      sessionId,
-      lastMesssageId
-    )
-    
-    /// Start streaming post request
-    startStreamingPostRequest(
-      documentPaths: documentPaths,
-      userChat: userMessage
-    )
-  }
-  
-  private func addUserMessage(
-    _ query: String,
-    _ imageUrls: [String]?,
-    _ sessionId: String,
-    _ lastMessageId: Int?
-  ) async -> ChatMessageModel? {
-    var messageId: Int = 1
-    if let lastMessageId = lastMessageId {
-      messageId = lastMessageId + 1
-    }
-    print("#BB msgId in send \(messageId)")
-    self.lastMsgId = messageId + 1
-    let chat = await DatabaseConfig.shared.createMessage(
-      message: query,
+    let userMessageId = await ChatStore.shared.appendUserMessage(
       sessionId: sessionId,
-      messageId: messageId,
-      role: .user,
+      text: newMessage,
       imageUrls: imageUrls
     )
-    
-    if chat?.msgId == 1 {
-      await DatabaseConfig.shared.saveTitle(sessionId: sessionId, title: query)
-    }
-    
-    return chat
+    streamReply(
+      to: userMessageId,
+      sessionId: sessionId,
+      text: newMessage,
+      documentPaths: documentPaths
+    )
   }
   
-  static let dispatchSemaphore = DispatchSemaphore(value: 1)
-  
-  /// Sends the user's message to Matrix and streams the answer into the bot message.
-  func startStreamingPostRequest(documentPaths: [String]?, userChat: ChatMessageModel?) {
-    guard let userChat else { return }
+  private func streamReply(to userMessageId: String, sessionId: String, text: String, documentPaths: [String]?) {
     DispatchQueue.main.async { [weak self] in
       self?.streamStarted = true
     }
@@ -159,11 +121,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     streamTask?.cancel()
     streamTask = Task { [weak self] in
       let files = MatrixUploadFile.load(paths: documentPaths ?? [])
-      let stream = MatrixClient.shared.chat(
-        localSessionId: userChat.sessionId,
-        text: userChat.messageText ?? "",
-        files: files
-      )
+      let stream = MatrixClient.shared.chat(localSessionId: sessionId, text: text, files: files)
       var answer = ""
       var suggestions: [String]?
       do {
@@ -176,14 +134,14 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
           case .progress:
             continue
           }
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: answer, userChat: userChat, suggestions: suggestions)
+          await ChatStore.shared.upsertReply(to: userMessageId, sessionId: sessionId, text: answer, suggestions: suggestions)
         }
       } catch is CancellationError {
       } catch {
         print("#Matrix stream failed: \(error)")
         if answer.isEmpty, !Task.isCancelled {
           let message = (error as? MatrixError)?.errorDescription ?? "Something went wrong. Please try again."
-          await DatabaseConfig.shared.upsertMessageV2(responseMessage: message, userChat: userChat, suggestions: nil)
+          await ChatStore.shared.upsertReply(to: userMessageId, sessionId: sessionId, text: message, suggestions: nil)
         }
       }
       await MainActor.run { [weak self] in
@@ -192,57 +150,17 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     }
   }
   
-  func startFirestoreListener(userChat: ChatMessageModel) {
-    let patientContext = isOidPresent != nil && !isOidPresent!.isEmpty
-    
-    DocAssistFireStoreManager.shared.listenToFirestoreMessages(
-      businessId: self.userBid,
-      doctorId: self.userDocId,
-      sessionId: userChat.sessionId,
-      context: patientContext,  // Added context parameter
-      patientId: self.isOidPresent ?? "",
-      messageId: userChat.msgId
-    ) { [weak self] data in
-      guard let self = self else { return }
-      
-      if let message = data["message"] as? String,
-         let status = data["status"] as? String,
-         let role = data["role"] as? String,
-         role == "assistant" {
-        Task { @MainActor in
-          await DatabaseConfig.shared.upsertMessageV2(
-            responseMessage: message,
-            userChat: userChat, suggestions: nil
-          )
-        }
-      }
-      
-      if let eof = data["is_eof"] as? Bool, eof == true {
-        DispatchQueue.main.async { [weak self] in
-          self?.streamStarted = false
-        }
-      }
-      
-    }
-  }
-  
   func isSessionsPresent(oid: String, userDocId: String, userBId: String) async -> Bool {
-    do {
-      let sessions = try await DatabaseConfig.shared.fetchSessionId(fromOid: oid, userDocId: userDocId, userBId: userBId)
-      
-      if sessions.count > 0 {
-        return true
-      } else {
-        return false
-      }
-    } catch {
-      print("Can't fetch the sessions")
-    }
-    return false
+    await ChatStore.shared.hasSessions(patientOid: oid, doctorOid: userDocId, businessId: userBId)
   }
   
   public func createSession(subTitle: String?, oid: String = "", userDocId: String, userBId: String) async -> String {
-    let session = await DatabaseConfig.shared.createSession(subTitle: subTitle,oid: oid, userDocId: userDocId, userBId: userBId)
+    let session = await ChatStore.shared.createSession(
+      doctorOid: userDocId,
+      businessId: userBId,
+      patientOid: oid,
+      patientName: subTitle
+    )
     switchToSession(session)
     return session
   }

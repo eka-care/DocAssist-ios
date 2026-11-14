@@ -16,7 +16,7 @@ enum SuggestionsState {
 }
 
 struct MessageBubble: View {
-  let message: ChatMessageModel
+  let message: ChatMessage
   let m: String?
   let url: [String]?
   let viewModel: ChatViewModel
@@ -28,7 +28,7 @@ struct MessageBubble: View {
   @State private var copyClicked: Bool = false
   var onClickOfFeedback: () -> Void
   var onClickOfCopy: () -> Void
-  var messages: [ChatMessageModel]
+  var messages: [ChatMessage]
   
   var body: some View {
       HStack(alignment: .top) {
@@ -36,7 +36,7 @@ struct MessageBubble: View {
           Spacer()
         }
         
-        if message.role == .Bot {
+        if message.role != .user {
           BotAvatarImage()
             .alignmentGuide(.top) { d in d[.top] }
         }
@@ -47,18 +47,18 @@ struct MessageBubble: View {
           url: url,
           message: message,
           viewModel: viewModel,
-          createdAt: message.createdAtDate ?? .now,
+          createdAt: message.createdAt,
           v2rxViewModel: v2rxViewModel
         )
         .alignmentGuide(.top) { d in d[.top] }
         
-        if message.role == .Bot {
+        if message.role != .user {
           Spacer()
         }
       }
       .padding(.top, 4)
     
-    if (message.role == .Bot && message.messageText != nil) {
+    if message.role == .assistant && message.text != nil {
       if ((message.id != messages.last?.id) || (message.id == messages.last?.id && !viewModel.streamStarted)) {
         HStack (spacing: 8) {
           Button(action: {
@@ -144,7 +144,7 @@ struct MessageBubble: View {
         .padding(.leading, 30)
       }
     }
-      if message.role == .Bot {
+      if message.role == .assistant {
           if let suggestions = message.suggestions {
               VStack(alignment: .leading) {
                   SuggestionView(suggestionText: suggestions, viewModel: viewModel)
