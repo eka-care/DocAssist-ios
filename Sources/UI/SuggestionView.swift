@@ -1,66 +1,71 @@
 //
-//  SwiftUIView.swift
+//  SuggestionView.swift
 //  ChatBotAiPackage
 //
 //  Created by Brunda B on 06/01/25.
 //
+//  Follow-up questions offered under an answer and on an empty chat.
+//
 
 import SwiftUI
-import EkaUI
 
+/// Follow-ups under the latest answer, aligned with the answer text.
 struct SuggestionView: View {
-    
-    var suggestionText: [String]
-    var viewModel: ChatViewModel
-    
-    private var constantSuggestionString = "Suggested questions you can ask me:"
-    
-    init(suggestionText: [String], viewModel: ChatViewModel) {
-        self.suggestionText = suggestionText
-        self.viewModel = viewModel
+  var suggestionText: [String]
+  var viewModel: ChatViewModel
+
+  init(suggestionText: [String], viewModel: ChatViewModel) {
+    self.suggestionText = suggestionText
+    self.viewModel = viewModel
+  }
+
+  var body: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Text("Suggested follow-ups")
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(.secondary)
+      SuggestionsComponentView(suggestionText: suggestionText, viewModel: viewModel)
     }
-    
-    var body: some View {
-        
-        HStack(alignment: .top) {
-            BotAvatarImage()
-            VStack(alignment: .leading) {
-                Text(constantSuggestionString)
-                    .font(.custom("Lato-Regular", size: 12))
-                    .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-                    .frame(width: 306, height: 16, alignment: .topLeading)
-                SuggestionsComponentView(suggestionText: suggestionText, viewModel: viewModel)
-            }
-            
-        }
-    }
+    .padding(.leading, 30)
+  }
 }
 
+/// Tappable glass chips; tapping sends the suggestion as the doctor's message.
 struct SuggestionsComponentView: View {
-    var suggestionText: [String]
-    var viewModel: ChatViewModel
-    
-    var body: some View {
-        ForEach(suggestionText, id: \.self) { suggestionText in
-            Button {
-                Task {
-                    await viewModel.sendMessage(newMessage: suggestionText, imageUrls: nil, documentPaths: nil, sessionId: viewModel.vmssid)
-                }
-            } label: {
-                HStack {
-                    Text(suggestionText)
-                        .font(Font.custom("Lato-Regular", size: 16))
-                        .foregroundColor(viewModel.streamStarted ? Color.neutrals400 : Color.primaryprimary)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, EkaSpacing.spacingS)
-                        .padding(.vertical, EkaSpacing.spacingXs)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                    Spacer()
-                }
+  var suggestionText: [String]
+  var viewModel: ChatViewModel
+  @State private var sentTick = 0
+
+  var body: some View {
+    ChatGlassContainer(spacing: 8) {
+      VStack(alignment: .leading, spacing: 8) {
+        ForEach(suggestionText, id: \.self) { suggestion in
+          Button {
+            sentTick += 1
+            Task {
+              await viewModel.sendMessage(newMessage: suggestion, imageUrls: nil, documentPaths: nil, sessionId: viewModel.vmssid)
             }
-            .disabled(viewModel.streamStarted)
+          } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+              Text(suggestion)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .multilineTextAlignment(.leading)
+              Image(systemName: "arrow.up.right")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+          }
+          .buttonStyle(.plain)
+          .chatGlass(in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+          .disabled(viewModel.streamStarted)
+          .opacity(viewModel.streamStarted ? 0.5 : 1)
         }
+      }
     }
+    .sensoryFeedback(.impact(weight: .light), trigger: sentTick)
+  }
 }

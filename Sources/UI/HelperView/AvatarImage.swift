@@ -47,16 +47,20 @@ struct UserAvatarImage: View {
   }
 }
 
+/// Shown while the answer is being prepared, before the first words arrive.
 struct LoadingView: View {
   var body: some View {
-    HStack {
+    HStack(alignment: .center, spacing: 10) {
       BotAvatarImage()
-        .padding()
-      Text("Thinking...")
-        .font(.custom("Lato-Regular", size: 18))
-        .foregroundColor(.neutrals800)
-        .shimmer()
+      Image(systemName: "ellipsis")
+        .font(.title3.weight(.bold))
+        .foregroundStyle(.secondary)
+        .symbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeating)
+        .frame(width: 52, height: 34)
+        .chatGlass(in: Capsule(), interactive: false)
+        .accessibilityLabel("DocAssist is thinking")
       Spacer()
     }
+    .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .leading)))
   }
 }

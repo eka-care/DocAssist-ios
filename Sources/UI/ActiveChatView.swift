@@ -27,7 +27,6 @@ public struct ActiveChatView: View {
   private var patientName: String?
   @Environment(\.dismiss) var dismiss
   private var calledFromPatientContext: Bool
-  private var subTitle: String = "Ask anything.."
   @State private var hasFocusedOnce = false
   @State private var showRecordsView = false
   @State private var selectedImages: [String] = []
@@ -87,105 +86,85 @@ public struct ActiveChatView: View {
   }
   
   public var body: some View {
-    ZStack {
-      VStack {
-        Image(.bg)
-          .resizable()
-          .frame(height: 120)
-          .edgesIgnoringSafeArea(.all)
-        Spacer()
+    VStack(spacing: 0) {
+      if calledFromPatientContext {
+        headerView
       }
       
-      VStack(spacing: 0) {
-        if calledFromPatientContext {
-          headerView
-        }
-        
-        ScrollViewReader { proxy in
-          ScrollView {
-            if messages.isEmpty {
-              emptyChatView
-            }
-            else {
-              VStack {
-                ForEach(messages) { message in
-                  messageBubbleView(message: message)
-                    .padding(.horizontal)
-                    .id(message.id)
-                  
-                  if message.role == .user && messages.last?.id == message.id {
-                    if viewModel.streamStarted {
-                      LoadingView()
-                    }
-                  }
-                }
+      ScrollViewReader { proxy in
+        ScrollView {
+          if messages.isEmpty {
+            emptyChatView
+          } else {
+            VStack(alignment: .leading, spacing: 18) {
+              ForEach(messages) { message in
+                messageBubbleView(message: message)
+                  .id(message.id)
                 
-                ChatBottomMarker(id: bottomScrollIdentifier)
-              }
-              .padding(.top, 10)
-              .onChange(of: isTextFieldFocused) { _, focused in
-                guard focused else { return }
-                resumeFollowing(proxy)
-              }
-              /// A new message from the doctor always brings the chat back to the bottom.
-              .onChange(of: messages.count) { _, _ in
-                if messages.last?.role == .user {
-                  resumeFollowing(proxy, animated: true)
-                } else {
-                  followIfPinned(proxy, animated: true)
+                if message.role == .user, messages.last?.id == message.id, viewModel.streamStarted {
+                  LoadingView()
                 }
               }
-              /// The streamed answer grows inside the same row, so the count above doesn't change.
-              .onChange(of: messages.last?.text) { _, _ in
-                followIfPinned(proxy)
+              
+              ChatBottomMarker(id: bottomScrollIdentifier)
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: messages.count)
+            .onChange(of: isTextFieldFocused) { _, focused in
+              guard focused else { return }
+              resumeFollowing(proxy, animated: true)
+            }
+            /// A new message from the doctor always brings the chat back to the bottom.
+            .onChange(of: messages.count) { _, _ in
+              if messages.last?.role == .user {
+                resumeFollowing(proxy, animated: true)
+              } else {
+                followIfPinned(proxy, animated: true)
               }
-              .onAppear {
-                DispatchQueue.main.async {
-                  proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
-                }
+            }
+            /// The streamed answer grows inside the same row, so the count above doesn't change.
+            .onChange(of: messages.last?.text) { _, _ in
+              followIfPinned(proxy)
+            }
+            .onAppear {
+              DispatchQueue.main.async {
+                proxy.scrollTo(bottomScrollIdentifier, anchor: .bottom)
               }
             }
           }
-          .scrollDismissesKeyboard(.immediately)
-          .trackChatScroll(isNearBottom: $isNearBottom, isUserScrolling: $isUserScrolling)
-          /// Scrolling by hand pauses following; letting go at the bottom resumes it.
-          .onChange(of: isUserScrolling) { _, scrolling in
-            followsLatest = scrolling ? false : isNearBottom
+        }
+        /// Drag the conversation down to pull the keyboard away, like Messages.
+        .scrollDismissesKeyboard(.interactively)
+        .trackChatScroll(isNearBottom: $isNearBottom, isUserScrolling: $isUserScrolling)
+        /// Scrolling by hand pauses following; letting go at the bottom resumes it.
+        .onChange(of: isUserScrolling) { _, scrolling in
+          followsLatest = scrolling ? false : isNearBottom
+        }
+        .onChange(of: isNearBottom) { _, nearBottom in
+          if nearBottom, !isUserScrolling {
+            followsLatest = true
           }
-          .onChange(of: isNearBottom) { _, nearBottom in
-            if nearBottom, !isUserScrolling {
-              followsLatest = true
-            }
-          }
-          .overlay(alignment: .bottomTrailing) {
+        }
+        /// The composer floats over the conversation, so messages scroll under its glass.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+          VStack(spacing: 8) {
             if !followsLatest, !messages.isEmpty {
               JumpToLatestButton { resumeFollowing(proxy, animated: true) }
-                .padding(16)
                 .transition(.scale.combined(with: .opacity))
             }
+            chatInputView
           }
-          .animation(.easeInOut(duration: 0.2), value: followsLatest)
-          .background(Color(red: 0.96, green: 0.96, blue: 0.96))
         }
-        
-        chatInputView
+        .animation(.easeInOut(duration: 0.2), value: followsLatest)
       }
-      .toolbarBackground(
-        LinearGradient(
-          gradient: Gradient(colors: [
-            Color(red: 0.93, green: 0.91, blue: 0.98),
-            Color(red: 0.96, green: 0.94, blue: 1.0)
-          ]),
-          startPoint: .top,
-          endPoint: .bottom
-        ),
-        for: .navigationBar)
-      .toolbarBackground(.visible, for: .navigationBar)
-      .navigationTitle(title ?? "New Chat")
-      .navigationBarTitleDisplayMode(.large)
-      
+    }
+    .background(Color(.systemBackground).ignoresSafeArea())
+    .overlay {
       FeedbackView(showFeedback: showFeedback, feedbackText: feedbackText)
     }
+    .navigationTitle(title ?? "New Chat")
+    .navigationBarTitleDisplayMode(.inline)
     .alert(isPresented: viewModel.showTranscriptionFailureAlertBinding) {
       Alert(
         title: Text(viewModel.alertTitle),
@@ -234,75 +213,76 @@ public struct ActiveChatView: View {
     }
   }
   
+  /// A fresh chat: greeting and starter questions, centred like a native empty state.
   var emptyChatView: some View {
-    VStack(alignment: .leading, spacing: 8) {
-        Text("Hello \(SetUIComponents.shared.docName ?? ""), how can I help you today?")
-          .font(Font.custom("Lato-Regular", size: 16))
-          .foregroundStyle(Color.neutrals600)
-          .padding(.bottom, 4)
-          .padding(.top, 20)
-          .padding(.leading, 16)
-      Group {
-        if SetUIComponents.shared.isPatientApp == nil {
-          SuggestionsComponentView(
-            suggestionText: (patientName == patientNameConstant) ?
-            (SetUIComponents.shared.generalChatDefaultSuggestion ?? []) :
-              (SetUIComponents.shared.patientChatDefaultSuggestion ?? []),
-            viewModel: viewModel
-          )
-        } else {
-          SuggestionsComponentView(
-            suggestionText: SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"],
-            viewModel: viewModel
-          )
+    VStack(spacing: 28) {
+      VStack(spacing: 12) {
+        AvatarImage(image: SetUIComponents.shared.chatIcon, frameSize: 40, cornerRadius: nil, foregroundColor: nil)
+          .frame(width: 72, height: 72)
+          .chatGlass(in: Circle(), interactive: false)
+        
+        Text(greeting)
+          .font(.title2.weight(.bold))
+        Text("How can I help you today?")
+          .font(.body)
+          .foregroundStyle(.secondary)
+      }
+      .multilineTextAlignment(.center)
+      
+      SuggestionsComponentView(suggestionText: starterSuggestions, viewModel: viewModel)
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    .padding(.horizontal, 20)
+    .padding(.top, 48)
+    .frame(maxWidth: .infinity)
+  }
+  
+  private var greeting: String {
+    guard let name = SetUIComponents.shared.docName, !name.isEmpty else { return "Hello" }
+    return "Hello, \(name)"
+  }
+  
+  private var starterSuggestions: [String] {
+    if SetUIComponents.shared.isPatientApp != nil {
+      return SetUIComponents.shared.patientChatDefaultSuggestion ?? ["Hello can i help you"]
+    }
+    return patientName == patientNameConstant
+      ? (SetUIComponents.shared.generalChatDefaultSuggestion ?? [])
+      : (SetUIComponents.shared.patientChatDefaultSuggestion ?? [])
+  }
+  
+  /// Shown when the chat is pushed without a navigation bar (patient context).
+  private var headerView: some View {
+    HStack(spacing: 12) {
+      Button {
+        dismiss()
+      } label: {
+        Image(systemName: "chevron.left")
+          .font(.system(size: 17, weight: .semibold))
+          .foregroundStyle(.primary)
+          .frame(width: 44, height: 44)
+          .contentShape(Circle())
+      }
+      .buttonStyle(.plain)
+      .chatGlass(in: Circle())
+      .accessibilityLabel("Back")
+      
+      VStack(alignment: .leading, spacing: 1) {
+        Text(title ?? "New Chat")
+          .font(.headline)
+          .lineLimit(1)
+        if let patientName, patientName != patientNameConstant, !patientName.isEmpty {
+          Text(patientName)
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .lineLimit(1)
         }
       }
-      .padding(.leading, 16)
       
       Spacer()
     }
-  }
-  
-  private var headerView: some View {
-    VStack(alignment: .leading, spacing: 4) {
-      HStack {
-        Button(action: {
-          dismiss()
-        }) {
-          HStack(spacing: 6) {
-            Image(systemName: "chevron.left")
-              .font(.system(size: 21, weight: .medium))
-              .foregroundColor(.blue)
-            Text("Back")
-              .font(Font.custom("Lato-Regular", size: 16))
-              .foregroundColor(Color(red: 0.13, green: 0.37, blue: 1))
-            Spacer()
-          }
-        }
-        .contentShape(Rectangle())
-        Spacer()
-      }
-      .padding(.leading, 10)
-      .padding(.top, 9)
-      
-      VStack(alignment: .leading, spacing: 0) {
-        Text("New chat")
-          .font(
-            Font.custom("Lato-Bold", size: 34)
-          )
-          .foregroundColor(Color(red: 0.35, green: 0.03, blue: 0.5))
-        
-        Text("Parrotlet Lite")
-          .font(Font.custom("Lato-Regular", size: 14))
-          .foregroundColor(Color(red: 0.46, green: 0.46, blue: 0.46))
-          .frame(maxWidth: .infinity, alignment: .leading)
-      }
-      .padding(.horizontal, 16)
-      .padding(.top, 3)
-      .padding(.bottom, 8)
-      .frame(maxWidth: .infinity, alignment: .topLeading)
-    }
-    .padding(.bottom, 5)
+    .padding(.horizontal, 16)
+    .padding(.vertical, 6)
   }
   
   var chatInputView : some View {
@@ -319,7 +299,8 @@ public struct ActiveChatView: View {
           messages: messages,
           voiceToRxViewModel: voiceToRxViewModel,
           recordsRepo: recordsRepo,
-          voiceToRxTip: $voiceToRxTip
+          voiceToRxTip: $voiceToRxTip,
+          isTextFieldFocused: $isTextFieldFocused
         )
       )
     } else {
@@ -399,34 +380,5 @@ extension ActiveChatView {
         viewModel.v2rxEnabled = true
       }
     }
-  }
-}
-
-extension View {
-  func customCornerRadius(_ radius: CGFloat, corners: UIRectCorner) -> some View {
-    clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
-  }
-  
-  func customCornerBorder(_ radius: CGFloat, corners: UIRectCorner, color: Color, lineWidth: CGFloat = 1) -> some View {
-    self
-      .overlay(
-        CustomCornerShape(cornerRadius: radius, corners: corners)
-          .stroke(Color(red: 0.83, green: 0.87, blue: 1), lineWidth: 1)
-      )
-      .clipShape(CustomCornerShape(cornerRadius: radius, corners: corners))
-  }
-}
-
-struct CustomCornerShape: Shape {
-  var cornerRadius: CGFloat
-  var corners: UIRectCorner
-  
-  func path(in rect: CGRect) -> Path {
-    let path = UIBezierPath(
-      roundedRect: rect,
-      byRoundingCorners: corners,
-      cornerRadii: CGSize(width: cornerRadius, height: cornerRadius)
-    )
-    return Path(path.cgPath)
   }
 }
