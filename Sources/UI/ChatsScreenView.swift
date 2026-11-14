@@ -15,15 +15,10 @@ enum ChatSegment: String, CaseIterable {
 }
 
 struct ChatsScreenView: View {
-  @Query(
-    filter: #Predicate<SessionDataModel> { !$0.sessionId.isEmpty },
-    sort: \SessionDataModel.lastUpdatedAt,
-    order: .reverse
-  ) var allSessions: [SessionDataModel]
+  @Query private var sessions: [ChatSession]
   
   var viewModel: ChatViewModel
   @State private var newSessionId: String? = nil
-  @Environment(\.modelContext) var modelContext
   @Environment(\.dismiss) var dismiss
   @State private var selectedSessionId: String? = nil
   @State private var searchText: String = ""
@@ -35,8 +30,9 @@ struct ChatsScreenView: View {
   @State private var selectedSegment: ChatSegment = .allChats
   @State private var selectedPatient: String?
   @Binding var selectedScreen: SelectedScreen?
-  @State var selectedPatientThread: SessionDataModel?
-  @State private var messageMatches: [String: Bool] = [:]
+  @State var selectedPatientThread: ChatSession?
+  /// Chats whose replies match `searchText`; looked up when the search changes.
+  @State private var replyMatches: Set<String> = []
   @State var newViewChat: Bool = false
   
   var patientDelegate: NavigateToPatientDirectory?
@@ -48,37 +44,12 @@ struct ChatsScreenView: View {
   var suggestionsDelegate: GetMoreSuggestions?
   var getPatientDetailsDelegate: GetPatientDetails?
   
-  var thread: [SessionDataModel] {
-    allSessions.filter { session in
-      session.userBId == userBId &&
-      session.userDocId == userDocId
-    }
-  }
-  
-  var filteredSessions: [SessionDataModel] {
-    if searchText.isEmpty {
-      return thread
-    } else {
-      return thread.filter { session in
-        let basicMatch = session.title.localizedCaseInsensitiveContains(searchText) ||
-        (session.subTitle?.localizedCaseInsensitiveContains(searchText) ?? false)
-        
-        let hasMatchingMessages = messageMatches[session.sessionId] ?? false
-        
-        if messageMatches[session.sessionId] == nil {
-          Task {
-            if let messages = try? await DatabaseConfig.shared.searchBotMessages(searchText: searchText) {
-              await MainActor.run {
-                messageMatches[session.sessionId] = messages.contains {
-                  $0.sessionId == session.sessionId && $0.role == .Bot
-                }
-              }
-            }
-          }
-        }
-        
-        return basicMatch
-      }
+  var filteredSessions: [ChatSession] {
+    guard !searchText.isEmpty else { return sessions }
+    return sessions.filter { session in
+      session.title.localizedCaseInsensitiveContains(searchText) ||
+      (session.patientName?.localizedCaseInsensitiveContains(searchText) ?? false) ||
+      replyMatches.contains(session.id)
     }
   }
   
@@ -86,7 +57,6 @@ struct ChatsScreenView: View {
        subTitle: String? = "General Chat",
        userDocId: String,
        userBid: String,
-       ctx: ModelContext,
        delegate: ConvertVoiceToText?,
        patientDelegate: NavigateToPatientDirectory?,
        searchForPatient: (() -> Void)?,
@@ -101,8 +71,8 @@ struct ChatsScreenView: View {
   ) {
     self.backgroundColor = backgroundColor
     self.subTitle = subTitle
+    _sessions = Query(ChatSession.visible(doctorOid: userDocId, businessId: userBid))
     self.viewModel = ChatViewModel(
-      context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
       liveActivityDelegate: liveActivityDelegate,
@@ -134,10 +104,10 @@ struct ChatsScreenView: View {
         chatView
           .navigationDestination(item: $selectedPatientThread) { _ in
             ActiveChatView(
-              session: selectedPatientThread?.sessionId ?? "",
+              session: selectedPatientThread?.id ?? "",
               viewModel: viewModel,
               backgroundColor: .white,
-              patientName: selectedPatientThread?.subTitle ?? "General Chat",
+              patientName: selectedPatientThread?.patientName ?? "General Chat",
               calledFromPatientContext: false,
               title: selectedPatientThread?.title,
               userDocId: userDocId,
@@ -145,7 +115,7 @@ struct ChatsScreenView: View {
               authToken: authToken,
               authRefreshToken: authRefreshToken
             )
-            .modelContext( DatabaseConfig.shared.modelContext)
+            .modelContainer(ChatStore.container)
           }
           .navigationDestination(item: $newSessionId) { sessionId in
             ActiveChatView(
@@ -159,7 +129,7 @@ struct ChatsScreenView: View {
               authToken: authToken,
               authRefreshToken: authRefreshToken
             )
-            .modelContext( DatabaseConfig.shared.modelContext)
+            .modelContainer(ChatStore.container)
           }
       }
     }
@@ -193,6 +163,12 @@ struct ChatsScreenView: View {
     .navigationBarHidden(true)
     .onAppear {
       DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
+    }
+    .task {
+      await ChatSync.syncSessions(doctorOid: userDocId, businessId: userBId)
+    }
+    .task(id: searchText) {
+      replyMatches = searchText.isEmpty ? [] : await ChatStore.shared.sessionIds(withReplyContaining: searchText)
     }
   }
   
@@ -267,7 +243,7 @@ struct ChatsScreenView: View {
   
   var mainContentView: some View {
     Group {
-      if thread.isEmpty {
+      if sessions.isEmpty {
         EmptyStateView()
       } else {
         if selectedSegment == .patients {
@@ -280,17 +256,17 @@ struct ChatsScreenView: View {
   }
   
   func patientThreadListView() -> some View {
-    let groupedThreads = Dictionary(grouping: filteredSessions.filter { !($0.oid?.isEmpty ?? true) }) { session in
-      session.oid ?? ""
+    let groupedThreads = Dictionary(grouping: filteredSessions.filter(\.isPatientChat)) { session in
+      session.patientOid ?? ""
     }
     let sortedKeys = groupedThreads.keys.sorted { key1, key2 in
         guard let sessions1 = groupedThreads[key1],
               let sessions2 = groupedThreads[key2],
-              let latestSession1 = sessions1.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }),
-              let latestSession2 = sessions2.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) else {
+              let latestSession1 = sessions1.max(by: { $0.updatedAt < $1.updatedAt }),
+              let latestSession2 = sessions2.max(by: { $0.updatedAt < $1.updatedAt }) else {
             return false
         }
-        return latestSession1.lastUpdatedAt > latestSession2.lastUpdatedAt
+        return latestSession1.updatedAt > latestSession2.updatedAt
     }
     
     return VStack {
@@ -299,14 +275,14 @@ struct ChatsScreenView: View {
         LazyVStack {
           ForEach(sortedKeys, id: \.self) { key in
             if let sessions = groupedThreads[key],
-               let firstSession = sessions.max(by: { $0.lastUpdatedAt < $1.lastUpdatedAt }) {
+               let firstSession = sessions.max(by: { $0.updatedAt < $1.updatedAt }) {
               Button {
                 selectedScreen = .selectedPatient(
                   viewModel,
-                  firstSession.oid ?? "",
-                  firstSession.userBId,
-                  firstSession.userDocId,
-                  firstSession.subTitle ?? ""
+                  firstSession.patientOid ?? "",
+                  firstSession.businessId,
+                  firstSession.doctorOid,
+                  firstSession.patientName ?? ""
                 )
                 DocAssistEventManager.shared.trackEvent(
                   event: .docAssistHistoryClicks,
@@ -314,14 +290,13 @@ struct ChatsScreenView: View {
                 )
               } label: {
                 GroupPatientView(
-                  subTitle: firstSession.subTitle ?? "",
+                  subTitle: firstSession.patientName ?? "",
                   count: " \(String(sessions.count)) chats",
                   viewModel: viewModel,
-                  ctx: modelContext,
-                  oid: firstSession.oid ?? "" ,
-                  bid: firstSession.userBId,
-                  docId: firstSession.userDocId,
-                  date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.lastUpdatedAt),
+                  oid: firstSession.patientOid ?? "",
+                  bid: firstSession.businessId,
+                  docId: firstSession.doctorOid,
+                  date: viewModel.getFormatedDateToDDMMYYYY(date: firstSession.updatedAt),
                   authToken: authToken,
                   authRefreshToken: authRefreshToken,
                   liveActivityDelegate: liveActivityDelegate
@@ -338,7 +313,6 @@ struct ChatsScreenView: View {
     var subTitle: String
     var count: String
     var viewModel: ChatViewModel
-    var ctx: ModelContext
     var oid: String
     var bid: String
     var docId: String
@@ -361,7 +335,7 @@ struct ChatsScreenView: View {
     private var messageSubViewIPhone: some View {
       NavigationLink {
         ExistingPatientChatsView(patientName: subTitle, viewModel: viewModel, oid: oid, userDocId: docId, userBId: bid, calledFromPatientContext: false, authToken: authToken ,authRefreshToken: authRefreshToken, liveActivityDelegate: liveActivityDelegate)
-          .modelContext( DatabaseConfig.shared.modelContext)
+          .modelContainer(ChatStore.container)
       } label: {
         messageSubView
       }
@@ -387,7 +361,7 @@ struct ChatsScreenView: View {
       Divider()
       ScrollView {
         LazyVStack {
-          ForEach(filteredSessions, id: \.sessionId) { thread in
+          ForEach(filteredSessions) { thread in
             Button {
               handleThreadSelection(thread)
             } label: {
@@ -400,20 +374,20 @@ struct ChatsScreenView: View {
     }
   }
   
-  func handleThreadSelection(_ thread: SessionDataModel) {
-    selectedSessionId = thread.sessionId
-    viewModel.switchToSession(thread.sessionId)
+  func handleThreadSelection(_ thread: ChatSession) {
+    selectedSessionId = thread.id
+    viewModel.switchToSession(thread.id)
     selectedPatientThread = thread
     selectedScreen = .allPatient(thread, viewModel, userDocId, userBId)
   }
   
-  private func threadItemView(for thread: SessionDataModel, allChats: Bool) -> some View {
+  private func threadItemView(for thread: ChatSession, allChats: Bool) -> some View {
     MessageSubViewComponent(
       title: thread.title,
-      date: viewModel.getFormatedDateToDDMMYYYY(date: thread.lastUpdatedAt),
-      subTitle: thread.subTitle,
-      foregroundColor: (newSessionId == thread.sessionId) ||
-      (selectedSessionId == thread.sessionId && newSessionId == nil) ? true : false,
+      date: viewModel.getFormatedDateToDDMMYYYY(date: thread.updatedAt),
+      subTitle: thread.patientName,
+      foregroundColor: (newSessionId == thread.id) ||
+      (selectedSessionId == thread.id && newSessionId == nil) ? true : false,
       allChat: allChats
     )
     .background(Color.clear)
@@ -421,16 +395,16 @@ struct ChatsScreenView: View {
       UIDevice.current.userInterfaceIdiom == .phone ? nil :
         RoundedRectangle(cornerRadius: 10)
         .fill(
-          (newSessionId == thread.sessionId) ||
-          (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.primaryprimary : Color.clear)
+          (newSessionId == thread.id) ||
+          (selectedSessionId == thread.id && newSessionId == nil) ? Color.primaryprimary : Color.clear)
     )
     .foregroundColor(
-      (newSessionId == thread.sessionId) ||
-      (selectedSessionId == thread.sessionId && newSessionId == nil) ? Color.blue : Color.primary
+      (newSessionId == thread.id) ||
+      (selectedSessionId == thread.id && newSessionId == nil) ? Color.blue : Color.primary
     )
     .contextMenu {
       Button(role: .destructive) {
-        DatabaseConfig.shared.deleteSession(sessionId: thread.sessionId)
+        Task { await ChatStore.shared.deleteSession(id: thread.id) }
       } label: {
         Label("Delete", systemImage: "trash")
       }
@@ -443,9 +417,6 @@ struct ChatsScreenView: View {
       HStack() {
         Spacer()
         Button(action: {
-          if allSessions.isEmpty {
-            DatabaseConfig.shared.deleteAllValues()
-          }
           newViewChat = true
           if let patientDelegate {
                   patientDelegate.navigateToPatientDirectory()

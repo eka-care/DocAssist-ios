@@ -17,7 +17,6 @@ public class ChatsViewController: UIViewController {
   private var docAssistView: UIView!
   private var uiHostingController: UIHostingController<AnyView>!
   private var patientDelegate: NavigateToPatientDirectory?
-  let ctx: ModelContext
   var liveActivityDelegate: LiveActivityDelegate?
   var suggestionsDelegate: GetMoreSuggestions?
   var userMergedOids: [String]?
@@ -28,7 +27,6 @@ public class ChatsViewController: UIViewController {
     emptyMessageColor: Color? = nil,
     editButtonColor: Color? = nil,
     subTitle: String? = nil,
-    ctx: ModelContext,
     deviceType: String? = "phone",
     userDocId: String,
     userBId: String,
@@ -43,7 +41,6 @@ public class ChatsViewController: UIViewController {
     getPatientDetailsDelegate: GetPatientDetails?
   ) {
     self.patientDelegate = patientDelegate
-    self.ctx = ctx
     self.liveActivityDelegate = liveActivityDelegate
     self.userMergedOids = userMergedOids
     super.init(nibName: nil, bundle: nil)
@@ -54,7 +51,6 @@ public class ChatsViewController: UIViewController {
         emptyMessageColor: emptyMessageColor,
         editButtonColor: editButtonColor,
         subTitle: subTitle,
-        ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
         delegate: delegate,
@@ -80,7 +76,6 @@ public class ChatsViewController: UIViewController {
         emptyMessageColor: emptyMessageColor,
         editButtonColor: editButtonColor,
         subTitle: subTitle,
-        ctx: ctx,
         userDocId: userDocId,
         userBId: userBId,
         delegate: delegate,
@@ -126,7 +121,6 @@ public class ChatsViewController: UIViewController {
     
     uiHostingController.didMove(toParent: self)
     
-    DatabaseConfig.setup(modelContainer: ctx.container)
     DocAssistEventManager.shared.trackEvent(event: .docAssistHistoryPage, properties: ["type": "overall"])
   }
   

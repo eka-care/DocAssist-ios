@@ -13,13 +13,13 @@ import EkaVoiceToRx
 struct MessageInputView: View {
   @Binding var inputString: String
   @Binding var selectedImages: [String]
-  @Binding var selectedDocumentId: [String]
+  @Binding var selectedDocumentPaths: [String]
   @Binding var showRecordsView: Bool
   @FocusState private var isTextFieldFocused: Bool
   let patientName: String?
   let viewModel: ChatViewModel
   let session: String
-  let messages: [ChatMessageModel]
+  let messages: [ChatMessage]
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
   let recordsRepo: RecordsRepo
   var liveActivityDelegate: LiveActivityDelegate?
@@ -61,11 +61,11 @@ struct MessageInputView: View {
               let images = data.compactMap { record in
                 record.image
               }
-              let docIds = data.compactMap { record in
-                record.documentID
+              let documentPaths = data.flatMap { record in
+                record.documentPath ?? []
               }
               selectedImages = Array(images.prefix(3))
-              selectedDocumentId = Array(docIds.prefix(3))
+              selectedDocumentPaths = Array(documentPaths.prefix(3))
               showRecordsView = false
             })
           }
@@ -152,13 +152,12 @@ struct MessageInputView: View {
         await viewModel.sendMessage(
           newMessage: inputString,
           imageUrls: selectedImages,
-          vaultFiles: selectedDocumentId,
-          sessionId: session,
-          lastMesssageId: messages.last?.msgId
+          documentPaths: selectedDocumentPaths,
+          sessionId: session
         )
         inputString = ""
         selectedImages = []
-        selectedDocumentId = []
+        selectedDocumentPaths = []
         DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
         isTextFieldFocused.toggle()
       }
