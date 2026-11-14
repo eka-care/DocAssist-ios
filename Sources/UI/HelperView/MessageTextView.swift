@@ -1,100 +1,108 @@
 //
-//  SwiftUIView.swift
+//  MessageTextView.swift
 //  ChatBotAiPackage
 //
 //  Created by Brunda B on 03/03/25.
 //
+//  How a message's content is drawn: the doctor's message as a tinted bubble,
+//  the assistant's answer as plain Markdown on the page.
+//
 
 import SwiftUI
 import MarkdownUI
-import EkaVoiceToRx
-import EkaPDFMaker
 import EkaUI
 
-struct MessageTextView: View {
+/// The doctor's message: attachments, then a tinted bubble aligned to the trailing edge.
+struct UserMessageBubble: View {
   let text: String?
-  let role: ChatRole
-  let url: [String]?
-  let message: ChatMessage
-  let viewModel: ChatViewModel
-  let createdAt: Date
-  @ObservedObject var v2rxViewModel: VoiceToRxViewModel
-  @State private var showShareSheet = false
-  @State private var pdfURL: URL?
-  
+  let imageUrls: [String]?
+
   var body: some View {
-    VStack {
-      if let url = url {
-        HStack {
-          ForEach(Array(url.enumerated()), id: \.offset) { index, urlImage in
-            let completeUrl = DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(urlImage)
-            AsyncImage(url: completeUrl) { phase in
-                switch phase {
-                case .empty:
-                    ProgressView()
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 86, height: 86)
-                        .clipped()
-                        .cornerRadius(10)
-                case .failure(_):
-                  ProgressView()
-                   
-                @unknown default:
-                    ProgressView()
-                }
+    VStack(alignment: .trailing, spacing: 6) {
+      if let imageUrls, !imageUrls.isEmpty {
+        MessageImages(imageUrls: imageUrls)
+      }
+      if let text, !text.isEmpty {
+        Text(text)
+          .font(.body)
+          .foregroundStyle(.white)
+          .textSelection(.enabled)
+          .padding(.horizontal, 14)
+          .padding(.vertical, 10)
+          .background(Color.primaryprimary, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+          .contextMenu {
+            Button {
+              UIPasteboard.general.string = text
+            } label: {
+              Label("Copy", systemImage: "doc.on.doc")
             }
           }
-        }
-      }
-      
-      if let text, text != "" {
-        Markdown(text)
-          .font(.body)
-          .padding(8)
-          .background(backgroundColor)
-          .foregroundColor(foregroundColor)
-          .contentTransition(.numericText())
-          .customCornerRadius(12, corners: [.bottomLeft, .bottomRight, .topLeft])
       }
     }
-  }
-  
-  private var backgroundColor: Color {
-    role == .user ? (SetUIComponents.shared.userBackGroundColor ?? .white) : (SetUIComponents.shared.botBackGroundColor ?? .clear)
-  }
-  
-  private var foregroundColor: Color {
-    role == .user ? (SetUIComponents.shared.usertextColor ?? Color(red: 0.1, green: 0.1, blue: 0.1)) : (.neutrals800)
-  }
-  
-  func shareText() {
-    guard let url = pdfURL else { return }
-    let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
-      
-      if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-         let rootViewController = windowScene.windows.first?.rootViewController {
-          rootViewController.present(activityVC, animated: true, completion: nil)
-      }
+    .frame(maxWidth: .infinity, alignment: .trailing)
+    .padding(.leading, 48)
   }
 }
 
-extension View {
-    @ViewBuilder func ifCondition<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
-        }
-    }
-}
-
-struct PdfBodyView: View {
-  
+/// The assistant's answer: Markdown straight on the page, like Messages' Apple Intelligence replies.
+struct AssistantMessageText: View {
   let text: String
-  
+
+  var body: some View {
+    Markdown(text)
+      .markdownTheme(.docAssist)
+      .textSelection(.enabled)
+      .frame(maxWidth: .infinity, alignment: .leading)
+  }
+}
+
+/// Attached images as rounded thumbnails.
+struct MessageImages: View {
+  let imageUrls: [String]
+
+  var body: some View {
+    HStack(spacing: 6) {
+      ForEach(Array(imageUrls.enumerated()), id: \.offset) { _, path in
+        AsyncImage(url: DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(path)) { phase in
+          switch phase {
+          case .success(let image):
+            image
+              .resizable()
+              .aspectRatio(contentMode: .fill)
+          default:
+            Rectangle()
+              .fill(Color(.secondarySystemFill))
+              .overlay { ProgressView() }
+          }
+        }
+        .frame(width: 96, height: 96)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+      }
+    }
+  }
+}
+
+extension MarkdownUI.Theme {
+  /// System typography and semantic colours, so answers follow Dynamic Type and dark mode.
+  static let docAssist = Theme.basic
+    .text {
+      ForegroundColor(Color(.label))
+      FontSize(17)
+    }
+    .code {
+      FontFamilyVariant(.monospaced)
+      FontSize(.em(0.88))
+      BackgroundColor(Color(.secondarySystemFill))
+    }
+    .link {
+      ForegroundColor(Color.primaryprimary)
+    }
+}
+
+/// Body of the PDF made when an answer is shared.
+struct PdfBodyView: View {
+  let text: String
+
   var body: some View {
     VStack {
       Markdown(text)
