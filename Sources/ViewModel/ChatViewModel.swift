@@ -45,6 +45,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var isOidPresent: String? = ""
   var showTranscriptionFailureAlert = false
   var openType: String?
+  /// Sent once when the chat opens, e.g. a question typed on the host app's home screen.
+  var initialMessage: String?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -80,7 +82,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     patientName: String = "",
     suggestionsDelegate: GetMoreSuggestions? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
-    openType: String? = nil
+    openType: String? = nil,
+    initialMessage: String? = nil
   ) {
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
@@ -91,6 +94,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
     self.openType = openType
+    self.initialMessage = initialMessage
   }
   
   /// Saves the doctor's message, then streams the answer from Matrix into the chat.

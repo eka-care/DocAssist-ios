@@ -47,7 +47,8 @@ public class ActiveChatViewController: UIViewController {
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
-    openType: String? = nil
+    openType: String? = nil,
+    initialMessage: String? = nil
   ) {
     self.vm = ChatViewModel(
       delegate: delegate,
@@ -58,7 +59,8 @@ public class ActiveChatViewController: UIViewController {
       patientName: patientSubtitle ?? "",
       suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate,
-      openType: openType
+      openType: openType,
+      initialMessage: initialMessage
     )
     self.backgroundColor = backgroundColor
     self.patientSubtitle = patientSubtitle

@@ -101,6 +101,7 @@ struct MessageInputView: View {
       )
     }
     .onAppear {
+      sendInitialMessageIfNeeded()
       guard let type = viewModel.openType else { return }
       if type == "EkaScribe" {
         startVoiceToRx()
@@ -225,6 +226,16 @@ struct MessageInputView: View {
     .buttonStyle(.plain)
     .chatGlass(in: Circle(), tint: Color(.label).opacity(0.85))
     .accessibilityLabel("Stop generating")
+  }
+  
+  /// Sends the question the chat was opened with, once.
+  private func sendInitialMessageIfNeeded() {
+    guard let message = viewModel.initialMessage?.trimmingCharacters(in: .whitespacesAndNewlines), !message.isEmpty else { return }
+    viewModel.initialMessage = nil
+    DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPgClick, properties: ["type": "send"])
+    Task {
+      await viewModel.sendMessage(newMessage: message, imageUrls: nil, documentPaths: nil, sessionId: session)
+    }
   }
   
   /// Clears the composer right away and keeps the keyboard up, like Messages.
