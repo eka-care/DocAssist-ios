@@ -14,6 +14,7 @@ actor MatrixClient {
 
   private let urlSession = URLSession(configuration: .default)
   private let sessionStore = MatrixSessionStore()
+  private let tokenStore = MatrixTokenStore()
 
   private var tokens: MatrixTokenResponse?
   private var tokenIdentity: String?
@@ -164,7 +165,7 @@ actor MatrixClient {
       case 4401:
         await refreshTokens()
       case 4403:
-        clearTokens()
+        clearTokens(removeStored: true)
       case 4404:
         sessionStore.remove(localSessionId: localSessionId, identity: config.identity)
       default:
@@ -387,6 +388,7 @@ actor MatrixClient {
     if tokenIdentity != config.identity {
       clearTokens()
       tokenIdentity = config.identity
+      tokens = tokenStore.tokens(identity: config.identity)
     }
     if let tokens {
       return tokens.sessToken
@@ -398,7 +400,7 @@ actor MatrixClient {
     tokenTask = task
     defer { tokenTask = nil }
     let result = try await task.value
-    tokens = result
+    store(result)
     return result.sessToken
   }
 
@@ -425,9 +427,9 @@ actor MatrixClient {
         bearer: current.sessToken
       )
       request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": current.refreshToken])
-      tokens = try await decodeTokenResponse(for: request)
+      store(try await decodeTokenResponse(for: request))
     } catch {
-      clearTokens()
+      clearTokens(removeStored: true)
     }
   }
 
@@ -447,10 +449,20 @@ actor MatrixClient {
     return .server(code: error.code, message: error.msg)
   }
 
-  private func clearTokens() {
+  private func store(_ newTokens: MatrixTokenResponse) {
+    tokens = newTokens
+    tokenStore.save(newTokens, identity: config.identity)
+  }
+
+  /// Drops the in-memory pair; `removeStored` also deletes the Keychain copy
+  /// when the server has rejected it, so the next call runs a fresh exchange.
+  private func clearTokens(removeStored: Bool = false) {
     tokens = nil
     tokenTask?.cancel()
     tokenTask = nil
+    if removeStored {
+      tokenStore.remove(identity: config.identity)
+    }
   }
 
   // MARK: - Request building

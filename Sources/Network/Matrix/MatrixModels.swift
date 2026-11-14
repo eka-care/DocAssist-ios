@@ -72,7 +72,7 @@ struct MatrixUploadFile: Sendable {
 
 // MARK: - Wire types
 
-struct MatrixTokenResponse: Decodable {
+struct MatrixTokenResponse: Codable, Sendable {
   let userId: String?
   let sessToken: String
   let refreshToken: String
