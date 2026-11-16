@@ -18,7 +18,7 @@ struct UserMessageBubble: View {
   let imageUrls: [String]?
 
   var body: some View {
-    VStack(alignment: .trailing, spacing: 6) {
+    VStack(alignment: .trailing, spacing: EkaSpacing.spacingXs) {
       if let imageUrls, !imageUrls.isEmpty {
         MessageImages(imageUrls: imageUrls)
       }
@@ -27,8 +27,8 @@ struct UserMessageBubble: View {
           .font(.body)
           .foregroundStyle(.white)
           .textSelection(.enabled)
-          .padding(.horizontal, 14)
-          .padding(.vertical, 10)
+          .padding(.horizontal, EkaSpacing.spacingS)
+          .padding(.vertical, EkaSpacing.spacingS)
           .background(Color.primaryprimary, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
           .contextMenu {
             Button {
@@ -40,7 +40,7 @@ struct UserMessageBubble: View {
       }
     }
     .frame(maxWidth: .infinity, alignment: .trailing)
-    .padding(.leading, 48)
+    .padding(.leading, EkaSpacing.spacingXxl)
   }
 }
 
@@ -61,7 +61,7 @@ struct MessageImages: View {
   let imageUrls: [String]
 
   var body: some View {
-    HStack(spacing: 6) {
+    HStack(spacing: EkaSpacing.spacingXs) {
       ForEach(Array(imageUrls.enumerated()), id: \.offset) { _, path in
         AsyncImage(url: DocAssistFileHelper.getDocumentDirectoryURL().appendingPathComponent(path)) { phase in
           switch phase {

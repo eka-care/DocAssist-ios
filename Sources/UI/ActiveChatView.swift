@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 import SwiftData
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
@@ -96,7 +97,7 @@ public struct ActiveChatView: View {
           if messages.isEmpty {
             emptyChatView
           } else {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: EkaSpacing.spacingM) {
               ForEach(messages) { message in
                 messageBubbleView(message: message)
                   .id(message.id)
@@ -114,8 +115,8 @@ public struct ActiveChatView: View {
               
               ChatBottomMarker(id: bottomScrollIdentifier)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
+            .padding(.horizontal, EkaSpacing.spacingM)
+            .padding(.top, EkaSpacing.spacingS)
             .animation(.spring(response: 0.35, dampingFraction: 0.85), value: messages.count)
             .onChange(of: isTextFieldFocused) { _, focused in
               guard focused else { return }
@@ -158,7 +159,7 @@ public struct ActiveChatView: View {
         }
         /// The composer floats over the conversation, so messages scroll under its glass.
         .safeAreaInset(edge: .bottom, spacing: 0) {
-          VStack(spacing: 8) {
+          VStack(spacing: EkaSpacing.spacingXs) {
             if !followsLatest, !messages.isEmpty {
               JumpToLatestButton { resumeFollowing(proxy, animated: true) }
                 .transition(.scale.combined(with: .opacity))
@@ -234,8 +235,8 @@ public struct ActiveChatView: View {
   
   /// A fresh chat: greeting and starter questions, centred like a native empty state.
   var emptyChatView: some View {
-    VStack(spacing: 28) {
-      VStack(spacing: 12) {
+    VStack(spacing: EkaSpacing.spacingL) {
+      VStack(spacing: EkaSpacing.spacingS) {
         AvatarImage(image: SetUIComponents.shared.chatIcon, frameSize: 40, cornerRadius: nil, foregroundColor: nil)
           .frame(width: 72, height: 72)
           .chatGlass(in: Circle(), interactive: false)
@@ -251,8 +252,8 @@ public struct ActiveChatView: View {
       SuggestionsComponentView(suggestionText: starterSuggestions, viewModel: viewModel)
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-    .padding(.horizontal, 20)
-    .padding(.top, 48)
+    .padding(.horizontal, EkaSpacing.spacingM)
+    .padding(.top, EkaSpacing.spacingXxl)
     .frame(maxWidth: .infinity)
   }
   
@@ -272,7 +273,7 @@ public struct ActiveChatView: View {
   
   /// Shown when the chat is pushed without a navigation bar (patient context).
   private var headerView: some View {
-    HStack(spacing: 12) {
+    HStack(spacing: EkaSpacing.spacingS) {
       Button {
         dismiss()
       } label: {
@@ -286,7 +287,7 @@ public struct ActiveChatView: View {
       .chatGlass(in: Circle())
       .accessibilityLabel("Back")
       
-      VStack(alignment: .leading, spacing: 1) {
+      VStack(alignment: .leading, spacing: EkaSpacing.spacingXxxs) {
         Text(title ?? "New Chat")
           .font(.headline)
           .lineLimit(1)
@@ -300,8 +301,8 @@ public struct ActiveChatView: View {
       
       Spacer()
     }
-    .padding(.horizontal, 16)
-    .padding(.vertical, 6)
+    .padding(.horizontal, EkaSpacing.spacingM)
+    .padding(.vertical, EkaSpacing.spacingXs)
   }
   
   var chatInputView : some View {

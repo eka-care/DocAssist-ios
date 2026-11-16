@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 // MARK: - New Chat button
 
@@ -16,8 +17,8 @@ extension View {
     contentMargins(.bottom, 84, for: .scrollContent)
       .overlay(alignment: .bottomTrailing) {
       NewChatFloatingButton(action: action)
-        .padding(.trailing, 20)
-        .padding(.bottom, 16)
+        .padding(.trailing, EkaSpacing.spacingM)
+        .padding(.bottom, EkaSpacing.spacingM)
     }
   }
 }
@@ -34,7 +35,7 @@ private struct NewChatFloatingButton: View {
       Label("New Chat", systemImage: "plus")
         .font(.custom("Lato-Bold", size: 16))
         .foregroundStyle(.white)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, EkaSpacing.spacingM)
         .frame(minHeight: 52)
         .contentShape(Capsule())
     }

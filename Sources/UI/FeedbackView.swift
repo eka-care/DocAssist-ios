@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 struct FeedbackView: View {
   var showFeedback: Bool
@@ -19,14 +20,14 @@ struct FeedbackView: View {
         Label(feedbackText, systemImage: "checkmark.circle.fill")
           .font(.subheadline.weight(.semibold))
           .foregroundStyle(.primary)
-          .padding(.horizontal, 16)
-          .padding(.vertical, 10)
+          .padding(.horizontal, EkaSpacing.spacingM)
+          .padding(.vertical, EkaSpacing.spacingS)
           .chatGlass(in: Capsule(), interactive: false)
           .transition(.move(edge: .top).combined(with: .opacity))
       }
       Spacer()
     }
-    .padding(.top, 8)
+    .padding(.top, EkaSpacing.spacingXs)
     .animation(.spring(response: 0.35, dampingFraction: 0.8), value: showFeedback)
     .allowsHitTesting(false)
   }

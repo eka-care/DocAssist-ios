@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 /// Follow-ups under the latest answer, aligned with the answer text.
 struct SuggestionView: View {
@@ -20,13 +21,14 @@ struct SuggestionView: View {
   }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
       Text("Suggested follow-ups")
         .font(.footnote.weight(.semibold))
         .foregroundStyle(.secondary)
       SuggestionsComponentView(suggestionText: suggestionText, viewModel: viewModel)
     }
-    .padding(.leading, 30)
+    /// Lines up with the answer text: avatar (20) + its spacing (12).
+    .padding(.leading, EkaSpacing.spacingXl)
   }
 }
 
@@ -37,8 +39,8 @@ struct SuggestionsComponentView: View {
   @State private var sentTick = 0
 
   var body: some View {
-    ChatGlassContainer(spacing: 8) {
-      VStack(alignment: .leading, spacing: 8) {
+    ChatGlassContainer(spacing: EkaSpacing.spacingXs) {
+      VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
         ForEach(suggestionText, id: \.self) { suggestion in
           Button {
             sentTick += 1
@@ -46,7 +48,7 @@ struct SuggestionsComponentView: View {
               await viewModel.sendMessage(newMessage: suggestion, imageUrls: nil, documentPaths: nil, sessionId: viewModel.vmssid)
             }
           } label: {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: EkaSpacing.spacingXs) {
               Text(suggestion)
                 .font(.subheadline)
                 .foregroundStyle(.primary)
@@ -55,8 +57,8 @@ struct SuggestionsComponentView: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
+            .padding(.horizontal, EkaSpacing.spacingS)
+            .padding(.vertical, EkaSpacing.spacingXs)
             .contentShape(Rectangle())
           }
           .buttonStyle(.plain)

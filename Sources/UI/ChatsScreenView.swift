@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 import SwiftData
 import EkaVoiceToRx
 
@@ -327,7 +328,7 @@ struct ChatsScreenView: View {
     let isEmpty = selectedSegment == .patients ? patientGroups.isEmpty : filteredSessions.isEmpty
     if isEmpty {
       Section {
-        VStack(spacing: 6) {
+        VStack(spacing: EkaSpacing.spacingXs) {
           Image(systemName: searchText.isEmpty ? "bubble.left.and.text.bubble.right" : "magnifyingglass")
             .font(.largeTitle)
             .foregroundStyle(Color(.secondaryLabel))
@@ -340,7 +341,7 @@ struct ChatsScreenView: View {
             .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding()
+        .padding(EkaSpacing.spacingM)
       }
     }
   }

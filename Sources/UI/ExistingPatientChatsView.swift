@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 import SwiftData
 import EkaMedicalRecordsCore
 import EkaMedicalRecordsUI
@@ -90,7 +91,7 @@ public struct ExistingPatientChatsView: View {
       
       if chats.isEmpty {
         Section {
-          VStack(spacing: 6) {
+          VStack(spacing: EkaSpacing.spacingXs) {
             Image(systemName: "bubble.left.and.text.bubble.right")
               .font(.largeTitle)
               .foregroundStyle(Color(.secondaryLabel))
@@ -103,7 +104,7 @@ public struct ExistingPatientChatsView: View {
               .multilineTextAlignment(.center)
           }
           .frame(maxWidth: .infinity)
-          .padding()
+          .padding(EkaSpacing.spacingM)
         }
       }
     }

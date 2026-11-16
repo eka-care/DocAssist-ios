@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 /// Shown under a question whose answer failed, with a way to ask again.
 struct FailedReplyRow: View {
@@ -13,14 +14,14 @@ struct FailedReplyRow: View {
   let onRetry: () -> Void
 
   var body: some View {
-    HStack(alignment: .top, spacing: 10) {
+    HStack(alignment: .top, spacing: EkaSpacing.spacingS) {
       Image(systemName: iconName)
         .font(.system(size: 15, weight: .semibold))
         .foregroundStyle(.orange)
         .frame(width: 28, height: 28)
 
-      VStack(alignment: .leading, spacing: 8) {
-        VStack(alignment: .leading, spacing: 2) {
+      VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
+        VStack(alignment: .leading, spacing: EkaSpacing.spacingXxxs) {
           Text(failure.title)
             .font(.subheadline.weight(.semibold))
           Text(failure.message)
@@ -32,8 +33,8 @@ struct FailedReplyRow: View {
         Button(action: onRetry) {
           Label("Retry", systemImage: "arrow.clockwise")
             .font(.footnote.weight(.semibold))
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .padding(.horizontal, EkaSpacing.spacingS)
+            .padding(.vertical, EkaSpacing.spacingXs)
         }
         .buttonStyle(.plain)
         .chatGlass(in: Capsule())
@@ -41,7 +42,7 @@ struct FailedReplyRow: View {
 
       Spacer(minLength: 0)
     }
-    .padding(12)
+    .padding(EkaSpacing.spacingS)
     .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     .transition(.opacity.combined(with: .move(edge: .bottom)))
     .accessibilityElement(children: .combine)

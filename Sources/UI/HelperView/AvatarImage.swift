@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 struct AvatarImage: View {
   let image: UIImage?
@@ -50,7 +51,7 @@ struct UserAvatarImage: View {
 /// Shown while the answer is being prepared, before the first words arrive.
 struct LoadingView: View {
   var body: some View {
-    HStack(alignment: .center, spacing: 10) {
+    HStack(alignment: .center, spacing: EkaSpacing.spacingS) {
       BotAvatarImage()
       Image(systemName: "ellipsis")
         .font(.title3.weight(.bold))

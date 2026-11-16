@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 /// Icon, title, a detail line and a chevron, laid out like EkaScribe's `SessionRowView`.
 struct ChatListRow: View {
@@ -20,14 +21,14 @@ struct ChatListRow: View {
   private var secondaryColor: Color { isSelected ? .white.opacity(0.85) : Color(.secondaryLabel) }
 
   var body: some View {
-    HStack(spacing: 16) {
+    HStack(spacing: EkaSpacing.spacingM) {
       Image(systemName: icon)
         .resizable()
         .scaledToFit()
         .frame(width: 25, height: 25)
         .foregroundStyle(isSelected ? Color.white : Color.primaryprimary)
 
-      VStack(alignment: .leading, spacing: 4) {
+      VStack(alignment: .leading, spacing: EkaSpacing.spacingXxs) {
         Text(title)
           .font(.custom("Lato-Regular", size: 16))
           .foregroundStyle(primaryColor)

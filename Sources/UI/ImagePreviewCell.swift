@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 
 struct ImagePreviewCell: View {
   let imageUrl: String
@@ -31,7 +32,7 @@ struct ImagePreviewCell: View {
           .foregroundColor(.white)
           .background(Color.black.opacity(0.5))
           .clipShape(Circle())
-          .padding(10)
+          .padding(EkaSpacing.spacingXs)
       }
       .contentShape(Rectangle())
     }

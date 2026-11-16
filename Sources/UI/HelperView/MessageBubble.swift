@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import EkaUI
 import EkaVoiceToRx
 import EkaPDFMaker
 
@@ -40,7 +41,7 @@ struct MessageBubble: View {
   private var answerText: String { m ?? "" }
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 6) {
+    VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
       switch message.role {
       case .user:
         UserMessageBubble(text: m, imageUrls: url)
@@ -52,13 +53,13 @@ struct MessageBubble: View {
         }
         if isLatest, !isStreaming, let suggestions = message.suggestions, !suggestions.isEmpty {
           SuggestionView(suggestionText: suggestions, viewModel: viewModel)
-            .padding(.top, 6)
+            .padding(.top, EkaSpacing.spacingXs)
         }
       case .voiceToRx:
         VoiceToRxChip()
       }
     }
-    .padding(.vertical, 2)
+    .padding(.vertical, EkaSpacing.spacingXxxs)
     .sensoryFeedback(.impact(weight: .light), trigger: hapticTick)
     .animation(.easeInOut(duration: 0.2), value: isStreaming)
   }
@@ -66,9 +67,9 @@ struct MessageBubble: View {
   // MARK: - Assistant
 
   private var assistantRow: some View {
-    HStack(alignment: .top, spacing: 10) {
+    HStack(alignment: .top, spacing: EkaSpacing.spacingS) {
       BotAvatarImage()
-        .padding(.top, 3)
+        .padding(.top, EkaSpacing.spacingXxxs)
       AssistantMessageText(text: answerText)
     }
     .contextMenu {
@@ -83,13 +84,13 @@ struct MessageBubble: View {
 
   /// Copy, rate and share, aligned with the answer text.
   private var actionsRow: some View {
-    HStack(spacing: 2) {
+    HStack(spacing: EkaSpacing.spacingXxxs) {
       actionButton(copied ? "checkmark" : "doc.on.doc", label: "Copy", action: copy)
       actionButton(rating == .good ? "hand.thumbsup.fill" : "hand.thumbsup", label: "Good answer") { rate(.good) }
       actionButton(rating == .bad ? "hand.thumbsdown.fill" : "hand.thumbsdown", label: "Bad answer") { rate(.bad) }
       actionButton("square.and.arrow.up", label: "Share as PDF", action: sharePDF)
     }
-    .padding(.leading, 24)
+    .padding(.leading, EkaSpacing.spacingL)
   }
 
   private func actionButton(_ symbol: String, label: String, action: @escaping () -> Void) -> some View {
@@ -168,8 +169,8 @@ struct VoiceToRxChip: View {
     Label("Voice-to-Rx session", systemImage: "waveform")
       .font(.footnote.weight(.semibold))
       .foregroundStyle(.secondary)
-      .padding(.horizontal, 12)
-      .padding(.vertical, 7)
+      .padding(.horizontal, EkaSpacing.spacingS)
+      .padding(.vertical, EkaSpacing.spacingXs)
       .chatGlass(in: Capsule(), interactive: false)
   }
 }

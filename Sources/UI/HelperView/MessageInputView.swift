@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import EkaUI
 import EkaMedicalRecordsUI
 import EkaMedicalRecordsCore
 import EkaVoiceToRx
@@ -48,14 +49,14 @@ struct MessageInputView: View {
   }
   
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
+    VStack(alignment: .leading, spacing: EkaSpacing.spacingXs) {
       if patientChipName != nil || hasAttachments {
         contextRow
           .transition(.move(edge: .bottom).combined(with: .opacity))
       }
       
-      ChatGlassContainer(spacing: 10) {
-        HStack(alignment: .bottom, spacing: 10) {
+      ChatGlassContainer(spacing: EkaSpacing.spacingXs) {
+        HStack(alignment: .bottom, spacing: EkaSpacing.spacingXs) {
           attachButton
           composerField
           if viewModel.streamStarted {
@@ -68,9 +69,9 @@ struct MessageInputView: View {
         }
       }
     }
-    .padding(.horizontal, 12)
-    .padding(.top, 6)
-    .padding(.bottom, 8)
+    .padding(.horizontal, EkaSpacing.spacingS)
+    .padding(.top, EkaSpacing.spacingXs)
+    .padding(.bottom, EkaSpacing.spacingXs)
     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: canSend)
     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.streamStarted)
     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: hasAttachments)
@@ -122,13 +123,13 @@ struct MessageInputView: View {
   /// Patient the chat is about, and the files that will go with the next message.
   private var contextRow: some View {
     ScrollView(.horizontal, showsIndicators: false) {
-      HStack(spacing: 8) {
+      HStack(spacing: EkaSpacing.spacingXs) {
         if let patientChipName {
           Label(patientChipName, systemImage: "person.fill")
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .padding(.horizontal, EkaSpacing.spacingS)
+            .padding(.vertical, EkaSpacing.spacingXs)
             .chatGlass(in: Capsule(), interactive: false)
         }
         
@@ -142,13 +143,13 @@ struct MessageInputView: View {
           Label("\(selectedDocumentPaths.count) document\(selectedDocumentPaths.count == 1 ? "" : "s")", systemImage: "doc.fill")
             .font(.footnote.weight(.semibold))
             .foregroundStyle(.secondary)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
+            .padding(.horizontal, EkaSpacing.spacingS)
+            .padding(.vertical, EkaSpacing.spacingXs)
             .chatGlass(in: Capsule(), interactive: false)
         }
       }
-      .padding(.horizontal, 4)
-      .padding(.vertical, 2)
+      .padding(.horizontal, EkaSpacing.spacingXxs)
+      .padding(.vertical, EkaSpacing.spacingXxxs)
     }
   }
   
@@ -169,14 +170,14 @@ struct MessageInputView: View {
   
   /// Grows up to six lines; the mic sits inside while there is nothing to send.
   private var composerField: some View {
-    HStack(alignment: .bottom, spacing: 4) {
+    HStack(alignment: .bottom, spacing: EkaSpacing.spacingXxs) {
       TextField("Ask DocAssist", text: $inputString, axis: .vertical)
         .font(.body)
         .lineLimit(1...6)
         .focused(isTextFieldFocused)
-        .padding(.vertical, 11)
-        .padding(.leading, 16)
-        .padding(.trailing, canSend ? 16 : 0)
+        .padding(.vertical, EkaSpacing.spacingS)
+        .padding(.leading, EkaSpacing.spacingM)
+        .padding(.trailing, canSend ? EkaSpacing.spacingM : 0)
       
       if !canSend, !viewModel.streamStarted {
         Button {
@@ -296,8 +297,8 @@ struct VoiceInputView: View {
   var viewModel: ChatViewModel
   
   var body: some View {
-    ChatGlassContainer(spacing: 10) {
-      HStack(alignment: .center, spacing: 10) {
+    ChatGlassContainer(spacing: EkaSpacing.spacingXs) {
+      HStack(alignment: .center, spacing: EkaSpacing.spacingXs) {
         Button {
           viewModel.dontRecord()
         } label: {
@@ -311,7 +312,7 @@ struct VoiceInputView: View {
         .chatGlass(in: Circle())
         .accessibilityLabel("Cancel dictation")
         
-        HStack(spacing: 8) {
+        HStack(spacing: EkaSpacing.spacingXs) {
           if viewModel.isRecording {
             AudioWaveformView()
               .frame(height: 28)
@@ -324,7 +325,7 @@ struct VoiceInputView: View {
             .foregroundStyle(.secondary)
             .frame(width: 56)
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, EkaSpacing.spacingM)
         .frame(maxWidth: .infinity, minHeight: 44)
         .chatGlass(in: Capsule(), interactive: false)
         
@@ -352,7 +353,7 @@ struct VoiceInputView: View {
       }
     }
     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.voiceProcessing)
-    .padding(.horizontal, 12)
-    .padding(.vertical, 8)
+    .padding(.horizontal, EkaSpacing.spacingS)
+    .padding(.vertical, EkaSpacing.spacingXs)
   }
 }
