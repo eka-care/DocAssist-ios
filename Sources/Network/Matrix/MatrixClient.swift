@@ -7,12 +7,20 @@
 //
 
 import Foundation
+import Network
+import os
 
 actor MatrixClient {
 
   static let shared = MatrixClient()
 
   private let urlSession = URLSession(configuration: .default)
+  /// Longest wait for the next socket frame. The server pings while it works,
+  /// so silence this long means the connection is dead (e.g. a half-open socket after a network change).
+  private static let socketIdleTimeout: Duration = .seconds(120)
+  /// Watches the network path so a drop ends the chat at once instead of waiting for the idle timeout.
+  private var pathMonitor: NWPathMonitor?
+  private var isOffline = false
   /// Where each chat's Matrix session id is kept (the chat cache).
   private let links: MatrixSessionLinks = ChatStore.shared
   private let tokenStore = MatrixTokenStore()
@@ -79,7 +87,7 @@ actor MatrixClient {
     }
 
     /// File step 2: upload.
-    let uploadedIds = await upload(files, to: targets)
+    let uploadedIds = try await upload(files, to: targets)
     guard !uploadedIds.isEmpty else { throw MatrixError.fileUploadFailed }
 
     /// File step 3: send the uploaded ids with the text, stream the answer.
@@ -122,10 +130,14 @@ actor MatrixClient {
     localSessionId: String,
     onFrame: (MatrixFrame) async throws -> Bool
   ) async throws {
+    startPathMonitorIfNeeded()
     var recovered = false
     while true {
       var receivedContent = false
       do {
+        if isOffline {
+          throw MatrixError.offline
+        }
         let task = try await connectedSocket(localSessionId: localSessionId)
         try await send(frame(ev: "chat", ct: ct, data: data), on: task)
         while true {
@@ -149,7 +161,7 @@ actor MatrixClient {
         }
       } catch {
         guard !receivedContent, !recovered, !Task.isCancelled,
-              await recover(from: error, localSessionId: localSessionId) else {
+              try await recover(from: error, localSessionId: localSessionId) else {
           throw error
         }
         recovered = true
@@ -159,12 +171,13 @@ actor MatrixClient {
   }
 
   /// Returns true when the failure was repaired and the frame should be sent again.
-  private func recover(from error: Error, localSessionId: String) async -> Bool {
+  /// Offline and timeout failures are never retried here; they throw to the caller.
+  private func recover(from error: Error, localSessionId: String) async throws -> Bool {
     switch error {
     case MatrixSocketClosed.code(let code):
       switch code {
       case 4401:
-        await refreshTokens()
+        try await refreshTokens()
       case 4403:
         clearTokens(removeStored: true)
       case 4404:
@@ -176,7 +189,7 @@ actor MatrixClient {
       return true
     case MatrixError.server(let code, _):
       if code == MatrixErrorCode.sessionTokenExpired {
-        await refreshTokens()
+        try await refreshTokens()
         return true
       }
       if MatrixErrorCode.sessionGone.contains(code) {
@@ -234,7 +247,7 @@ actor MatrixClient {
       let message: URLSessionWebSocketTask.Message
       do {
         message = try await withTaskCancellationHandler {
-          try await task.receive()
+          try await Self.receive(on: task, timeout: Self.socketIdleTimeout)
         } onCancel: {
           task.cancel(with: .goingAway, reason: nil)
         }
@@ -242,7 +255,7 @@ actor MatrixClient {
         if Task.isCancelled {
           throw CancellationError()
         }
-        throw MatrixSocketClosed.code(task.closeCode.rawValue)
+        throw socketError(error, on: task)
       }
       let data: Data
       switch message {
@@ -266,7 +279,68 @@ actor MatrixClient {
     do {
       try await task.send(.string(String(decoding: frame, as: UTF8.self)))
     } catch {
-      throw MatrixSocketClosed.code(task.closeCode.rawValue)
+      throw socketError(error, on: task)
+    }
+  }
+
+  /// Next socket message, or `MatrixError.timedOut` after `timeout` of silence.
+  /// `receive()` ignores task cancellation, so the timeout closes the socket to end it.
+  private static func receive(
+    on task: URLSessionWebSocketTask,
+    timeout: Duration
+  ) async throws -> URLSessionWebSocketTask.Message {
+    let timedOut = OSAllocatedUnfairLock(initialState: false)
+    return try await withThrowingTaskGroup(of: URLSessionWebSocketTask.Message.self) { group in
+      group.addTask {
+        do {
+          return try await task.receive()
+        } catch {
+          throw timedOut.withLock { $0 } ? MatrixError.timedOut : error
+        }
+      }
+      group.addTask {
+        try await Task.sleep(for: timeout)
+        timedOut.withLock { $0 = true }
+        task.cancel(with: .goingAway, reason: nil)
+        throw MatrixError.timedOut
+      }
+      defer { group.cancelAll() }
+      guard let message = try await group.next() else { throw MatrixError.connectionLost }
+      return message
+    }
+  }
+
+  /// A lost network path ends the request; any other socket failure is a closed
+  /// socket that `recover` may reopen.
+  private func socketError(_ error: Error, on task: URLSessionWebSocketTask) -> Error {
+    if case MatrixError.timedOut = error {
+      return error
+    }
+    if isOffline {
+      return MatrixError.offline
+    }
+    if let urlError = error as? URLError, case .offline = MatrixError.from(urlError: urlError) {
+      return MatrixError.offline
+    }
+    return MatrixSocketClosed.code(task.closeCode.rawValue)
+  }
+
+  private func startPathMonitorIfNeeded() {
+    guard pathMonitor == nil else { return }
+    let monitor = NWPathMonitor()
+    monitor.pathUpdateHandler = { [weak self] path in
+      let online = path.status == .satisfied
+      Task { await self?.networkChanged(online: online) }
+    }
+    monitor.start(queue: DispatchQueue(label: "care.eka.docassist.matrix.path"))
+    pathMonitor = monitor
+  }
+
+  /// Losing the network closes the open socket, so a streaming answer fails right away as `offline`.
+  private func networkChanged(online: Bool) {
+    isOffline = !online
+    if !online {
+      socket?.task.cancel(with: .goingAway, reason: nil)
     }
   }
 
@@ -291,8 +365,8 @@ actor MatrixClient {
   // MARK: - File upload
 
   /// Uploads each file to its presigned target, in order. Stops at the first
-  /// failure and returns the ids that did upload.
-  private func upload(_ files: [MatrixUploadFile], to targets: [MatrixPresignedURL]) async -> [String] {
+  /// failure and returns the ids that did upload; throws when the network is gone.
+  private func upload(_ files: [MatrixUploadFile], to targets: [MatrixPresignedURL]) async throws -> [String] {
     var uploadedIds: [String] = []
     for (file, target) in zip(files, targets) {
       guard let url = URL(string: target.url.trimmingCharacters(in: .whitespaces)), !target.url.isEmpty else { continue }
@@ -315,6 +389,10 @@ actor MatrixClient {
         uploadedIds.append(target.id)
       } catch {
         print("#Matrix upload failed: \(error.localizedDescription)")
+        let failure = MatrixError.from(error)
+        if MatrixError.isNetworkFailure(failure) {
+          throw failure
+        }
         break
       }
     }
@@ -397,14 +475,22 @@ actor MatrixClient {
     if let body {
       request.httpBody = try JSONSerialization.data(withJSONObject: body)
     }
-    var (data, response) = try await urlSession.data(for: request)
-    if (response as? HTTPURLResponse)?.statusCode == 401 {
-      await refreshTokens()
+    var (data, status) = try await perform(request)
+    switch status {
+    case 401:
+      /// Session token expired: rotate the pair.
+      try await refreshTokens()
+    case 403:
+      /// Session token rejected: drop it so a fresh exchange runs.
+      clearTokens(removeStored: true)
+    default:
+      break
+    }
+    if status == 401 || status == 403 {
       let newBearer = try await bearerToken()
       request.setValue("Bearer \(newBearer)", forHTTPHeaderField: "Authorization")
-      (data, response) = try await urlSession.data(for: request)
+      (data, status) = try await perform(request)
     }
-    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
     guard (200..<300).contains(status) else { throw restError(status: status, body: data) }
     return data
   }
@@ -432,20 +518,35 @@ actor MatrixClient {
     return result.sessToken
   }
 
-  /// POST /med-assist/auth/token-exchange. Sends the agent id and the doctor's Eka access token.
+  /// POST /med-assist/auth/token-exchange with the doctor's Eka access token.
+  ///
+  /// The Eka token is single use on Matrix's side (its `jti` is replay-checked), so when
+  /// the exchange is refused as expired (401) or invalid (403) the host refreshes it once
+  /// and the exchange runs again with the new token.
   private func exchangeTokens() async throws -> MatrixTokenResponse {
-    var request = try makeRequest(path: "/med-assist/auth/token-exchange", method: "POST", bearer: nil)
-    var body: [String: Any] = ["agent_id": config.agentId]
-    if let authToken = config.authTokenProvider(), !authToken.isEmpty {
-      body["auth_token"] = authToken
+    do {
+      return try await requestTokenExchange()
+    } catch MatrixError.authExpired, MatrixError.authRejected {
+      guard await config.authTokenRefresher() else { throw MatrixError.authExpired }
+      return try await requestTokenExchange()
     }
+  }
+
+  private func requestTokenExchange() async throws -> MatrixTokenResponse {
+    /// Without an Eka token Matrix would sign the doctor in as a new guest, splitting their history.
+    guard let authToken = config.authTokenProvider(), !authToken.isEmpty else {
+      throw MatrixError.authExpired
+    }
+    var request = try makeRequest(path: "/med-assist/auth/token-exchange", method: "POST", bearer: nil)
+    let body: [String: Any] = ["agent_id": config.agentId, "auth_token": authToken]
     request.httpBody = try JSONSerialization.data(withJSONObject: body)
     return try await decodeTokenResponse(for: request)
   }
 
-  /// Rotates the token pair. On failure the pair is dropped, so the next call
-  /// runs a fresh exchange.
-  private func refreshTokens() async {
+  /// Rotates the token pair. When the server refuses the refresh token the pair
+  /// is dropped, so the next call runs a fresh exchange. Network failures throw
+  /// and keep the pair, since it may still be valid once the device is back online.
+  private func refreshTokens() async throws {
     guard let current = tokens else { return }
     do {
       var request = try makeRequest(
@@ -457,24 +558,56 @@ actor MatrixClient {
       request.httpBody = try JSONSerialization.data(withJSONObject: ["refresh_token": current.refreshToken])
       store(try await decodeTokenResponse(for: request))
     } catch {
+      if MatrixError.isNetworkFailure(error) {
+        throw error
+      }
       clearTokens(removeStored: true)
     }
   }
 
   private func decodeTokenResponse(for request: URLRequest) async throws -> MatrixTokenResponse {
-    let (data, response) = try await urlSession.data(for: request)
-    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-    guard (200..<300).contains(status) else { throw restError(status: status, body: data) }
-    return try JSONDecoder().decode(MatrixTokenResponse.self, from: data)
+    let (data, status) = try await perform(request)
+    switch status {
+    case 200..<300:
+      return try JSONDecoder().decode(MatrixTokenResponse.self, from: data)
+    case 401:
+      logRESTError(status: status, body: data)
+      throw MatrixError.authExpired
+    case 403:
+      logRESTError(status: status, body: data)
+      throw MatrixError.authRejected
+    default:
+      throw restError(status: status, body: data)
+    }
+  }
+
+  /// Runs a REST call, turning a lost network path or timeout into `MatrixError`.
+  private func perform(_ request: URLRequest) async throws -> (Data, Int) {
+    do {
+      let (data, response) = try await urlSession.data(for: request)
+      return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
+    } catch let error as URLError {
+      throw MatrixError.from(urlError: error)
+    }
   }
 
   /// Turns a failed REST response into an error, keeping the server's `{error: {code, msg}}` when present.
+  /// Server-side failures (5xx: `internal_server_error`, `upstream_error`) become `serviceUnavailable`,
+  /// since their raw text is not meant for the doctor.
   private func restError(status: Int, body: Data) -> MatrixError {
-    guard let error = try? JSONDecoder().decode(MatrixRESTError.self, from: body).error else {
-      return .http(status: status)
+    let error = logRESTError(status: status, body: body)
+    if status >= 500 {
+      return .serviceUnavailable
     }
-    print("#Matrix HTTP \(status): \(error.code) - \(error.msg)")
+    guard let error else { return .http(status: status) }
     return .server(code: error.code, message: error.msg)
+  }
+
+  @discardableResult
+  private func logRESTError(status: Int, body: Data) -> MatrixRESTError.Detail? {
+    let error = try? JSONDecoder().decode(MatrixRESTError.self, from: body).error
+    print("#Matrix HTTP \(status): \(error?.code ?? "-") - \(error?.msg ?? "-")")
+    return error
   }
 
   private func store(_ newTokens: MatrixTokenResponse) {

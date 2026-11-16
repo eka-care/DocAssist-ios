@@ -21,6 +21,18 @@ enum MatrixError: LocalizedError {
   case invalidResponse
   case server(code: String, message: String)
   case fileUploadFailed
+  /// No usable network path, or it dropped mid-request.
+  case offline
+  /// The server stopped answering.
+  case timedOut
+  /// The socket closed and could not be reopened.
+  case connectionLost
+  /// The doctor's Eka token is expired or missing and could not be refreshed (401 `partner_token_expired`).
+  case authExpired
+  /// Matrix rejected the doctor's Eka token even after a refresh (403 `partner_auth_error`).
+  case authRejected
+  /// Matrix or a service behind it failed (5xx, `internal_server_error`, `upstream_error`).
+  case serviceUnavailable
 
   var errorDescription: String? {
     switch self {
@@ -29,6 +41,50 @@ enum MatrixError: LocalizedError {
     case .invalidResponse: "Unexpected response from server."
     case .server(_, let message): message
     case .fileUploadFailed: "Could not upload the attached files."
+    case .offline: "You're offline. Check your internet connection and try again."
+    case .timedOut: "Doc Assist is taking too long to respond. Please try again."
+    case .connectionLost: "The connection was lost. Please try again."
+    case .authExpired: "Your session has expired. Please sign in again."
+    case .authRejected: "Doc Assist couldn't verify your account. Please try again later."
+    case .serviceUnavailable: "Doc Assist is temporarily unavailable. Please try again in a moment."
+    }
+  }
+
+  /// Maps any failure from the chat stream to what the doctor is shown.
+  static func from(_ error: Error) -> MatrixError {
+    switch error {
+    case let error as MatrixError:
+      return error
+    case let error as URLError:
+      return from(urlError: error)
+    case is MatrixSocketClosed:
+      return .connectionLost
+    case is DecodingError:
+      return .invalidResponse
+    default:
+      return .connectionLost
+    }
+  }
+
+  static func from(urlError: URLError) -> MatrixError {
+    switch urlError.code {
+    case .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .internationalRoamingOff,
+         .callIsActive, .cannotFindHost, .dnsLookupFailed:
+      return .offline
+    case .timedOut:
+      return .timedOut
+    case .cannotConnectToHost, .badServerResponse:
+      return .serviceUnavailable
+    default:
+      return .connectionLost
+    }
+  }
+
+  /// True for transport failures that end the request; the caller must not retry them blindly.
+  static func isNetworkFailure(_ error: Error) -> Bool {
+    switch error {
+    case MatrixError.offline, MatrixError.timedOut: true
+    default: false
     }
   }
 }
@@ -197,6 +253,10 @@ enum MatrixSocketClosed: Error {
 
 enum MatrixErrorCode {
   static let sessionTokenExpired = "sess_token_expired"
+  /// Token exchange, 401: the Eka `auth_token` is past its `exp`.
+  static let partnerTokenExpired = "partner_token_expired"
+  /// Token exchange, 403: bad signature, wrong workspace, replayed `jti`, no `mobile`/`sub`, or no shared secret.
+  static let partnerAuthError = "partner_auth_error"
   /// Codes after which the stored session must be dropped and a new one created.
   static let sessionGone: Set<String> = ["session_not_found", "session_not_owned", "session_token_mismatch"]
 }

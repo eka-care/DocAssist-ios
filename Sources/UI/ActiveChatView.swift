@@ -106,6 +106,12 @@ public struct ActiveChatView: View {
                 }
               }
               
+              if let failure = visibleFailure {
+                FailedReplyRow(failure: failure) {
+                  viewModel.retryFailedReply()
+                }
+              }
+              
               ChatBottomMarker(id: bottomScrollIdentifier)
             }
             .padding(.horizontal, 16)
@@ -126,6 +132,10 @@ public struct ActiveChatView: View {
             /// The streamed answer grows inside the same row, so the count above doesn't change.
             .onChange(of: messages.last?.text) { _, _ in
               followIfPinned(proxy)
+            }
+            .onChange(of: visibleFailure?.userMessageId) { _, failedId in
+              guard failedId != nil else { return }
+              followIfPinned(proxy, animated: true)
             }
             .onAppear {
               DispatchQueue.main.async {
@@ -211,6 +221,15 @@ public struct ActiveChatView: View {
         await ChatStore.shared.discardIfEmpty(id: session)
       }
     }
+  }
+  
+  /// The failed reply of this chat, while nothing is streaming.
+  private var visibleFailure: FailedReply? {
+    guard !viewModel.streamStarted,
+          let failure = viewModel.failedReply,
+          failure.sessionId == session,
+          messages.contains(where: { $0.id == failure.userMessageId }) else { return nil }
+    return failure
   }
   
   /// A fresh chat: greeting and starter questions, centred like a native empty state.

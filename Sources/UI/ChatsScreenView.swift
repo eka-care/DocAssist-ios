@@ -31,6 +31,8 @@ struct ChatsScreenView: View {
   @State private var selectedPatient: String?
   @Binding var selectedScreen: SelectedScreen?
   @State var selectedPatientThread: ChatSession?
+  /// The patient whose chats are pushed on iPhone.
+  @State private var openedPatient: PatientGroup?
   /// Chats whose replies match `searchText`; looked up when the search changes.
   @State private var replyMatches: Set<String> = []
   @State var newViewChat: Bool = false
@@ -115,6 +117,21 @@ struct ChatsScreenView: View {
               userBId: userBId,
               authToken: authToken,
               authRefreshToken: authRefreshToken
+            )
+            .modelContainer(ChatStore.container)
+          }
+          .navigationDestination(item: $openedPatient) { group in
+            ExistingPatientChatsView(
+              patientName: group.name,
+              viewModel: viewModel,
+              oid: group.oid,
+              userDocId: group.latest.doctorOid,
+              userBId: group.latest.businessId,
+              calledFromPatientContext: false,
+              authToken: authToken,
+              authRefreshToken: authRefreshToken,
+              useNavigationStack: false,
+              liveActivityDelegate: liveActivityDelegate
             )
             .modelContainer(ChatStore.container)
           }
@@ -254,7 +271,7 @@ struct ChatsScreenView: View {
   
   // MARK: Patients
   
-  private struct PatientGroup: Identifiable {
+  private struct PatientGroup: Identifiable, Hashable {
     let oid: String
     let name: String
     let count: Int
@@ -284,34 +301,18 @@ struct ChatsScreenView: View {
     }
   }
   
-  @ViewBuilder
+  /// A plain tap opens the patient's chats. (A NavigationLink with a simultaneous
+  /// tap gesture inside a List only fired on a long press.)
   private func patientRow(_ group: PatientGroup) -> some View {
-    if currentDevice == .phone {
-      NavigationLink {
-        ExistingPatientChatsView(
-          patientName: group.name,
-          viewModel: viewModel,
-          oid: group.oid,
-          userDocId: group.latest.doctorOid,
-          userBId: group.latest.businessId,
-          calledFromPatientContext: false,
-          authToken: authToken,
-          authRefreshToken: authRefreshToken,
-          useNavigationStack: false,
-          liveActivityDelegate: liveActivityDelegate
-        )
-        .modelContainer(ChatStore.container)
-      } label: {
-        ChatListRow(icon: "person.crop.circle", title: group.name, details: group.details, showsChevron: false)
-      }
-      .simultaneousGesture(TapGesture().onEnded { trackPatientOpened() })
-    } else {
-      ChatListRow(icon: "person.crop.circle", title: group.name, details: group.details)
-        .onTapGesture {
+    ChatListRow(icon: "person.crop.circle", title: group.name, details: group.details)
+      .onTapGesture {
+        if currentDevice == .phone {
+          openedPatient = group
+        } else {
           selectedScreen = .selectedPatient(viewModel, group.oid, group.latest.businessId, group.latest.doctorOid, group.name)
-          trackPatientOpened()
         }
-    }
+        trackPatientOpened()
+      }
   }
   
   private func trackPatientOpened() {
