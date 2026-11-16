@@ -11,7 +11,7 @@ import TipKit
 struct VoiceToRxTip: Tip {
     static let voiceToRxVisited = Event(id: "setVoiceToRxVisited")
     
-    private var tipMessage = "DocAssist AI can either listen to your live consultation or your dictation to create a medical document"
+    private var tipMessage = "Ask AI can either listen to your live consultation or your dictation to create a medical document"
     private var tipTitle = "Create medical document"
     
     var title: Text {
