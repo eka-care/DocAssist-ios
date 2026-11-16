@@ -14,7 +14,7 @@ public final class NetworkConfig: @unchecked Sendable {
   /// Base64 `<uuid>#<wid>` agent id, sent as `X-agent-id` and in the token exchange body.
   public var agentId: String = ""
   /// Surface the chat is drawn in; sent as `x-channel`.
-  public var channel: String = "widget"
+  public var channel: String = "ios"
   /// Returns the doctor's current Eka access token, sent as `auth_token` in the token exchange body.
   /// Read on every exchange so a refreshed token is always picked up.
   public var authTokenProvider: @Sendable () -> String? = { nil }
