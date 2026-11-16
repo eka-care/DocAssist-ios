@@ -45,6 +45,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   var isOidPresent: String? = ""
   var showTranscriptionFailureAlert = false
   var openType: String?
+  /// Sent once when the chat opens, e.g. a question typed on the host app's home screen.
+  var initialMessage: String?
+  /// The last reply that failed (offline, timeout, auth, server). Shown under the
+  /// question with a Retry button; never written into the chat as an answer.
+  private(set) var failedReply: FailedReply?
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -80,7 +85,8 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     patientName: String = "",
     suggestionsDelegate: GetMoreSuggestions? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
-    openType: String? = nil
+    openType: String? = nil,
+    initialMessage: String? = nil
   ) {
     self.delegate = delegate
     self.deepThoughtNavigationDelegate = deepThoughtNavigationDelegate
@@ -91,6 +97,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     self.suggestionsDelegate = suggestionsDelegate
     self.getPatientDetailsDelegate = getPatientDetailsDelegate
     self.openType = openType
+    self.initialMessage = initialMessage
   }
   
   /// Saves the doctor's message, then streams the answer from Matrix into the chat.
@@ -113,8 +120,20 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
     )
   }
   
+  /// Sends the failed question again and streams its answer into the same reply.
+  func retryFailedReply() {
+    guard let failed = failedReply else { return }
+    streamReply(
+      to: failed.userMessageId,
+      sessionId: failed.sessionId,
+      text: failed.text,
+      documentPaths: failed.documentPaths
+    )
+  }
+  
   private func streamReply(to userMessageId: String, sessionId: String, text: String, documentPaths: [String]?) {
     DispatchQueue.main.async { [weak self] in
+      self?.failedReply = nil
       self?.streamStarted = true
     }
     
@@ -139,9 +158,18 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       } catch is CancellationError {
       } catch {
         print("#Matrix stream failed: \(error)")
-        if answer.isEmpty, !Task.isCancelled {
-          let message = (error as? MatrixError)?.errorDescription ?? "Something went wrong. Please try again."
-          await ChatStore.shared.upsertReply(to: userMessageId, sessionId: sessionId, text: message, suggestions: nil)
+        if !Task.isCancelled {
+          let failure = FailedReply(
+            userMessageId: userMessageId,
+            sessionId: sessionId,
+            text: text,
+            documentPaths: documentPaths,
+            error: MatrixError.from(error),
+            isPartial: !answer.isEmpty
+          )
+          await MainActor.run { [weak self] in
+            self?.failedReply = failure
+          }
         }
       }
       await MainActor.run { [weak self] in
@@ -270,6 +298,29 @@ extension ChatViewModel: AVAudioRecorderDelegate  {
 extension ChatViewModel {
   func updateQueryParamsIfNeeded(_ oid: String) {
       NetworkConfig.shared.sessionContext["pt_oid"] = oid
+  }
+}
+
+/// A question whose answer did not arrive (or stopped part way).
+struct FailedReply {
+  let userMessageId: String
+  let sessionId: String
+  let text: String
+  let documentPaths: [String]?
+  let error: MatrixError
+  let isPartial: Bool
+
+  var title: String {
+    switch error {
+    case .offline: "No internet connection"
+    case .authExpired, .authRejected: "Couldn't verify your account"
+    case .serviceUnavailable: "Doc Assist is unavailable"
+    default: isPartial ? "The answer was interrupted" : "Couldn't get an answer"
+    }
+  }
+
+  var message: String {
+    error.errorDescription ?? "Something went wrong. Please try again."
   }
 }
 

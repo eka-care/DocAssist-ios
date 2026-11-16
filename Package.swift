@@ -26,7 +26,9 @@ let package = Package(
     // VoiceToRx
     .package(url: "git@github.com:eka-care/EkaVoiceToRx.git", from: "1.3.8"),
     // EkaPDFMaker
-    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", from: "1.0.3")
+    .package(url: "git@github.com:eka-care/EkaPDFMaker.git", from: "1.0.3"),
+    // Design system: EkaSpacing and color tokens
+    .package(url: "git@github.com:eka-care/EkaUI.git", from: "1.0.5")
   ],
   targets: [
     
@@ -46,7 +48,9 @@ let package = Package(
         // VoiceToRx
         .product(name: "EkaVoiceToRx", package: "EkaVoiceToRx"),
         // PdfRender
-        .product(name: "EkaPDFMaker", package: "EkaPDFMaker")
+        .product(name: "EkaPDFMaker", package: "EkaPDFMaker"),
+        // Design system
+        .product(name: "EkaUI", package: "EkaUI")
       ],
       resources: [
         .process("Resources")

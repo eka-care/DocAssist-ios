@@ -112,11 +112,12 @@ struct JumpToLatestButton: View {
     Button(action: action) {
       Image(systemName: "arrow.down")
         .font(.system(size: 15, weight: .semibold))
-        .foregroundStyle(Color.primaryprimary)
-        .frame(width: 36, height: 36)
-        .background(Circle().fill(Color.white))
-        .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
+        .foregroundStyle(.primary)
+        .frame(width: 40, height: 40)
+        .contentShape(Circle())
     }
+    .buttonStyle(.plain)
+    .chatGlass(in: Circle())
     .accessibilityLabel("Jump to latest message")
   }
 }

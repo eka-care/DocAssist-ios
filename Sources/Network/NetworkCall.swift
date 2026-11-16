@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import Network
 
 /// Host-supplied configuration for the Matrix doc-assist backend.
 public final class NetworkConfig: @unchecked Sendable {
@@ -19,6 +18,9 @@ public final class NetworkConfig: @unchecked Sendable {
   /// Returns the doctor's current Eka access token, sent as `auth_token` in the token exchange body.
   /// Read on every exchange so a refreshed token is always picked up.
   public var authTokenProvider: @Sendable () -> String? = { nil }
+  /// Refreshes the doctor's Eka access token and returns true when `authTokenProvider` now has a new one.
+  /// Called when Matrix rejects the token in the exchange: expired (401) or invalid/replayed (403).
+  public var authTokenRefresher: @Sendable () async -> Bool = { false }
   /// Extra keys sent in `session_context` when a Matrix session is created (doctor, patient, business, region).
   public var sessionContext: [String: String] = [:]
 
@@ -28,27 +30,5 @@ public final class NetworkConfig: @unchecked Sendable {
   /// Identifies the signed-in doctor/workspace, so tokens and sessions are never shared across identities.
   var identity: String {
     [agentId, sessionContext["d_oid"] ?? "", sessionContext["b_id"] ?? ""].joined(separator: "|")
-  }
-}
-
-@MainActor
-class NetworkMonitor: ObservableObject {
-  @Published var isConnected: Bool = true
-
-  private var monitor: NWPathMonitor
-  private let queue = DispatchQueue.global(qos: .background)
-
-  init() {
-    monitor = NWPathMonitor()
-    monitor.pathUpdateHandler = { path in
-      DispatchQueue.main.async {
-        self.isConnected = path.status == .satisfied
-      }
-    }
-    monitor.start(queue: queue)
-  }
-
-  deinit {
-    monitor.cancel()
   }
 }
