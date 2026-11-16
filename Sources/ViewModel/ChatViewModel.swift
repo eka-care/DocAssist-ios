@@ -314,7 +314,7 @@ struct FailedReply {
     switch error {
     case .offline: "No internet connection"
     case .authExpired, .authRejected: "Couldn't verify your account"
-    case .serviceUnavailable: "Doc Assist is unavailable"
+    case .serviceUnavailable: "Ask AI is unavailable"
     default: isPartial ? "The answer was interrupted" : "Couldn't get an answer"
     }
   }

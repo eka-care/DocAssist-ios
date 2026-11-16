@@ -15,7 +15,7 @@ enum VoiceToRxMethodType: CaseIterable {
 
 struct VoiceToRxPopUpView: View {
   
-  private let title = "Use DocAssist AI to create medical documents."
+  private let title = "Use Ask AI to create medical documents."
   private let infoImage = "info.circle.fill"
   private let infoText = "By continuing, you acknowledge that patient consent was taken for AI-assisted scribing. All notes must still be reviewed and approved by you before saving"
   let viewModel: ChatViewModel

@@ -171,7 +171,7 @@ struct MessageInputView: View {
   /// Grows up to six lines; the mic sits inside while there is nothing to send.
   private var composerField: some View {
     HStack(alignment: .bottom, spacing: EkaSpacing.spacingXxs) {
-      TextField("Ask DocAssist", text: $inputString, axis: .vertical)
+      TextField("Ask AI", text: $inputString, axis: .vertical)
         .font(.body)
         .lineLimit(1...6)
         .focused(isTextFieldFocused)

@@ -59,7 +59,7 @@ struct LoadingView: View {
         .symbolEffect(.variableColor.iterative.dimInactiveLayers, options: .repeating)
         .frame(width: 52, height: 34)
         .chatGlass(in: Capsule(), interactive: false)
-        .accessibilityLabel("DocAssist is thinking")
+        .accessibilityLabel("Ask AI is thinking")
       Spacer()
     }
     .transition(.opacity.combined(with: .scale(scale: 0.9, anchor: .leading)))

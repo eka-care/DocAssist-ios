@@ -36,17 +36,17 @@ enum MatrixError: LocalizedError {
 
   var errorDescription: String? {
     switch self {
-    case .notConfigured: "Doc Assist is not configured."
+    case .notConfigured: "Ask AI is not configured."
     case .http(let status): "Request failed with status \(status)."
     case .invalidResponse: "Unexpected response from server."
     case .server(_, let message): message
     case .fileUploadFailed: "Could not upload the attached files."
     case .offline: "You're offline. Check your internet connection and try again."
-    case .timedOut: "Doc Assist is taking too long to respond. Please try again."
+    case .timedOut: "Ask AI is taking too long to respond. Please try again."
     case .connectionLost: "The connection was lost. Please try again."
     case .authExpired: "Your session has expired. Please sign in again."
-    case .authRejected: "Doc Assist couldn't verify your account. Please try again later."
-    case .serviceUnavailable: "Doc Assist is temporarily unavailable. Please try again in a moment."
+    case .authRejected: "Ask AI couldn't verify your account. Please try again later."
+    case .serviceUnavailable: "Ask AI is temporarily unavailable. Please try again in a moment."
     }
   }
 
