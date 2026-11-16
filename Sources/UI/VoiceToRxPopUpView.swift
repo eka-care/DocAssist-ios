@@ -21,7 +21,7 @@ struct VoiceToRxPopUpView: View {
   let viewModel: ChatViewModel
   let session: String
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
-  let messages: [ChatMessageModel]
+  let messages: [ChatMessage]
   @Binding var startVoicetoRx: Bool
   var body: some View {
     VStack(alignment: .leading) {
@@ -69,7 +69,7 @@ struct VoiceToRxMethodView: View {
   var viewModel: ChatViewModel
   var session: String
   @ObservedObject var voiceToRxViewModel: VoiceToRxViewModel
-  let messages: [ChatMessageModel]
+  let messages: [ChatMessage]
   @Binding var startVoicetoRx: Bool
   
   var title: String {
@@ -142,15 +142,7 @@ struct VoiceToRxMethodView: View {
             }
             await VoiceToRxTip.voiceToRxVisited.donate()
             guard let v2RxSessionId = voiceToRxViewModel.sessionID else { return }
-            let _ = await DatabaseConfig.shared.createMessage(
-              sessionId: session,
-              messageId: (
-                messages.last?.msgId ?? 0
-              ) + 1 ,
-              role: .Bot,
-              imageUrls: nil,
-              v2RxAudioSessionId: v2RxSessionId
-            )
+            await ChatStore.shared.appendVoiceToRx(sessionId: session, audioSessionId: v2RxSessionId)
           }
           startVoicetoRx = false
         } label: {

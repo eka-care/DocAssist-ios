@@ -16,7 +16,6 @@ import TipKit
 public class ActiveChatViewController: UIViewController {
   
   private let backgroundColor: Color?
-  private let ctx: ModelContext
   private let patientSubtitle: String?
   private let oid: String
   private let userDocId: String
@@ -35,7 +34,6 @@ public class ActiveChatViewController: UIViewController {
     
   public init(
     backgroundColor: Color? = nil,
-    ctx: ModelContext,
     patientSubtitle: String?,
     oid: String,
     userDocId: String,
@@ -49,10 +47,10 @@ public class ActiveChatViewController: UIViewController {
     suggestionsDelegate: GetMoreSuggestions? = nil,
     userMergedOids: [String]? = nil,
     getPatientDetailsDelegate: GetPatientDetails? = nil,
-    openType: String? = nil
+    openType: String? = nil,
+    initialMessage: String? = nil
   ) {
     self.vm = ChatViewModel(
-      context: ctx,
       delegate: delegate,
       deepThoughtNavigationDelegate: deepThoughtNavigationDelegate,
       liveActivityDelegate: liveActivityDelegate,
@@ -61,10 +59,10 @@ public class ActiveChatViewController: UIViewController {
       patientName: patientSubtitle ?? "",
       suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate,
-      openType: openType
+      openType: openType,
+      initialMessage: initialMessage
     )
     self.backgroundColor = backgroundColor
-    self.ctx = ctx
     self.patientSubtitle = patientSubtitle
     self.oid = oid
     self.userDocId = userDocId
@@ -88,7 +86,6 @@ public class ActiveChatViewController: UIViewController {
     super.viewDidLoad()
     
     setupSubViews()
-    DatabaseConfig.setup(modelContainer: ctx.container)
     DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
   }
   
@@ -113,7 +110,7 @@ public class ActiveChatViewController: UIViewController {
                 .datastoreLocation(.applicationDefault)
             ])
         }
-      docAssistView = AnyView(existingChatsView.modelContext( DatabaseConfig.shared.modelContext))
+      docAssistView = AnyView(existingChatsView.modelContainer(ChatStore.container))
     } else {
       let newSession = await vm.createSession(subTitle: patientSubtitle, oid: oid, userDocId: userDocId, userBId: userBId)
         let activeChatView = ActiveChatView(
@@ -134,7 +131,7 @@ public class ActiveChatViewController: UIViewController {
             .datastoreLocation(.applicationDefault)
             ])
         }
-      docAssistView = await AnyView(activeChatView.modelContext( DatabaseConfig.shared.modelContext))
+      docAssistView = await AnyView(activeChatView.modelContainer(ChatStore.container))
       DocAssistEventManager.shared.trackEvent(event: .docAssistLandingPage, properties: nil)
     }
   }

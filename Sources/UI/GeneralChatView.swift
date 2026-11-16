@@ -16,7 +16,6 @@ public struct GeneralChatView: View {
   var emptyMessageColor: Color?
   var editButtonColor: Color?
   var subTitle: String?
-  var ctx: ModelContext
   var delegate: ConvertVoiceToText?
   var userDocId: String
   var userBId: String
@@ -35,7 +34,6 @@ public struct GeneralChatView: View {
     emptyMessageColor: Color? = .white,
     editButtonColor: Color? = .blue,
     subTitle: String? = "General Chat",
-    ctx: ModelContext,
     userDocId: String,
     userBId: String,
     delegate: ConvertVoiceToText?,
@@ -53,7 +51,6 @@ public struct GeneralChatView: View {
     self.emptyMessageColor = emptyMessageColor
     self.editButtonColor = editButtonColor
     self.subTitle = subTitle
-    self.ctx = ctx
     self.userDocId = userDocId
     self.userBId = userBId
     self.delegate = delegate
@@ -74,7 +71,6 @@ public struct GeneralChatView: View {
       subTitle: subTitle,
       userDocId: userDocId,
       userBid: userBId,
-      ctx: ctx,
       delegate: delegate,
       patientDelegate: patientDelegate,
       searchForPatient: searchForPatient,
@@ -86,6 +82,6 @@ public struct GeneralChatView: View {
       suggestionsDelegate: suggestionsDelegate,
       getPatientDetailsDelegate: getPatientDetailsDelegate
     )
-    .modelContext(DatabaseConfig.shared.modelContainer.mainContext)
+    .modelContainer(ChatStore.container)
   }
 }
