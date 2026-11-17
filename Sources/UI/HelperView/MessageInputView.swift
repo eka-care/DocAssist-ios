@@ -78,7 +78,7 @@ struct MessageInputView: View {
     .sensoryFeedback(.impact(weight: .light), trigger: sendCount)
     .fullScreenCover(isPresented: $showRecordsView) {
       NavigationStack {
-        RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: 5), didSelectPickerDataObjects: { data in
+        RecordContainerView(recordPresentationState: RecordPresentationState.picker(maxCount: MatrixUploadFile.maxFilesPerMessage), didSelectPickerDataObjects: { data in
           let images = data.compactMap { record in
             record.image
           }

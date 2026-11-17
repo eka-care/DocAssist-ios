@@ -15,6 +15,7 @@ enum DocAssistAnalyticsEvent: String {
   case docAssistHistoryClicks = "doc_assist_history_clicks"
   case docAssistHistoryTopNav = "doc_assist_history_top_nav"
   case chatResponseActions = "chat_response_actions"
+  case failure = "doc_assist_failure"
 }
 
 public class DocAssistEventManager {

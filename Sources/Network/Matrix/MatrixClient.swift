@@ -18,6 +18,7 @@ actor MatrixClient {
   /// Longest wait for the next socket frame. The server pings while it works,
   /// so silence this long means the connection is dead (e.g. a half-open socket after a network change).
   private static let socketIdleTimeout: Duration = .seconds(120)
+  private static let uploadTargetsTimeout: Duration = .seconds(20)
   /// Watches the network path so a drop ends the chat at once instead of waiting for the idle timeout.
   private var pathMonitor: NWPathMonitor?
   private var isOffline = false
@@ -72,23 +73,76 @@ actor MatrixClient {
     }
 
     /// File step 1: announce the files, receive presigned upload targets.
+    var diagnostics = MatrixUploadDiagnostics(files: files)
+    let clock = ContinuousClock()
     var targets: [MatrixPresignedURL] = []
-    try await exchangeFrames(
-      ct: "file",
-      data: [
-        "extensions": files.map(\.mimeType),
-        "file_sizes": files.map(\.data.count)
-      ],
-      localSessionId: localSessionId
-    ) { frame in
-      guard frame.ev == "chat", frame.ct == "file", let urls = frame.data?.urls, !urls.isEmpty else { return false }
-      targets = urls
-      return true
-    }
+    var answeredWithoutFiles = false
+    let uploadedIds: [String]
+    do {
+      let askedAt = clock.now
+      do {
+        try await exchangeFrames(
+          ct: "file",
+          data: [
+            "extensions": files.map(\.mimeType),
+            "file_sizes": files.map(\.data.count)
+          ],
+          localSessionId: localSessionId,
+          deadline: askedAt + Self.uploadTargetsTimeout
+        ) { frame in
+          if frame.ev == "stream" {
+            if Self.isAnswerContent(frame) {
+              answeredWithoutFiles = true
+            }
+            return forward(frame, emit: emit)
+          }
+          guard !answeredWithoutFiles, frame.ev == "chat", frame.ct == "file",
+                let urls = frame.data?.urls, !urls.isEmpty else { return false }
+          targets = urls
+          return true
+        }
+      } catch {
+        diagnostics.urlsWait = clock.now - askedAt
+        if case .timedOut = MatrixError.from(error) {
+          diagnostics.outcome = .urlsTimedOut
+        } else {
+          diagnostics.outcome = .urlsRequestFailed
+        }
+        throw error
+      }
+      diagnostics.urlsWait = clock.now - askedAt
+      diagnostics.record(targets: targets)
+      if answeredWithoutFiles {
+        diagnostics.outcome = .answeredWithoutUrls
+        throw MatrixError.filesNotAttached
+      }
+      if targets.isEmpty {
+        diagnostics.outcome = .noUrls
+        throw MatrixError.fileUploadFailed(failed: files.count, total: files.count)
+      }
 
-    /// File step 2: upload.
-    let uploadedIds = try await upload(files, to: targets)
-    guard !uploadedIds.isEmpty else { throw MatrixError.fileUploadFailed }
+      /// File step 2: upload.
+      let uploadStartedAt = clock.now
+      let result = try await upload(files, to: targets)
+      diagnostics.uploadTime = clock.now - uploadStartedAt
+      diagnostics.uploadedCount = result.ids.count
+      diagnostics.uploadFailure = result.failure
+      guard result.ids.count == files.count else {
+        diagnostics.outcome = result.ids.isEmpty ? .uploadFailed : .uploadPartial
+        throw MatrixError.fileUploadFailed(failed: files.count - result.ids.count, total: files.count)
+      }
+      diagnostics.outcome = .uploaded
+      uploadedIds = result.ids
+      emit(.upload(diagnostics))
+    } catch {
+      if error is CancellationError || Task.isCancelled {
+        diagnostics.outcome = .cancelled
+      } else if diagnostics.outcome == nil {
+        diagnostics.outcome = MatrixError.isNetworkFailure(MatrixError.from(error)) ? .offline : .failed
+      }
+      emit(.upload(diagnostics))
+      throw error
+    }
 
     /// File step 3: send the uploaded ids with the text, stream the answer.
     var data: [String: Any] = ["urls": uploadedIds]
@@ -120,6 +174,18 @@ actor MatrixClient {
     return false
   }
 
+  private static func isAnswerContent(_ frame: MatrixFrame) -> Bool {
+    guard frame.ev == "stream", let data = frame.data else { return false }
+    switch frame.ct {
+    case "text":
+      return (data.progressMsg ?? "").isEmpty && !(data.text ?? "").isEmpty
+    case "tips":
+      return !(data.tips ?? []).isEmpty
+    default:
+      return false
+    }
+  }
+
   /// Sends one chat frame over the session's socket and hands each server frame
   /// to `onFrame` until `eos` arrives or `onFrame` returns true. Before any
   /// content arrives, it recovers once from a closed socket, an expired token or
@@ -128,6 +194,7 @@ actor MatrixClient {
     ct: String,
     data: [String: Any],
     localSessionId: String,
+    deadline: ContinuousClock.Instant? = nil,
     onFrame: (MatrixFrame) async throws -> Bool
   ) async throws {
     startPathMonitorIfNeeded()
@@ -141,7 +208,7 @@ actor MatrixClient {
         let task = try await connectedSocket(localSessionId: localSessionId)
         try await send(frame(ev: "chat", ct: ct, data: data), on: task)
         while true {
-          let frame = try await receiveFrame(on: task)
+          let frame = try await receiveFrame(on: task, deadline: deadline)
           switch frame.ev {
           case "eos":
             return
@@ -242,12 +309,24 @@ actor MatrixClient {
 
   /// Next server frame. Answers `ping` itself and skips messages that are not frames.
   /// Cancelling the calling task closes the socket.
-  private func receiveFrame(on task: URLSessionWebSocketTask) async throws -> MatrixFrame {
+  private func receiveFrame(
+    on task: URLSessionWebSocketTask,
+    deadline: ContinuousClock.Instant? = nil
+  ) async throws -> MatrixFrame {
     while true {
+      var timeout = Self.socketIdleTimeout
+      if let deadline {
+        let remaining = deadline - .now
+        guard remaining > .zero else {
+          task.cancel(with: .goingAway, reason: nil)
+          throw MatrixError.timedOut
+        }
+        timeout = min(timeout, remaining)
+      }
       let message: URLSessionWebSocketTask.Message
       do {
         message = try await withTaskCancellationHandler {
-          try await Self.receive(on: task, timeout: Self.socketIdleTimeout)
+          try await Self.receive(on: task, timeout: timeout)
         } onCancel: {
           task.cancel(with: .goingAway, reason: nil)
         }
@@ -366,10 +445,16 @@ actor MatrixClient {
 
   /// Uploads each file to its presigned target, in order. Stops at the first
   /// failure and returns the ids that did upload; throws when the network is gone.
-  private func upload(_ files: [MatrixUploadFile], to targets: [MatrixPresignedURL]) async throws -> [String] {
+  private func upload(
+    _ files: [MatrixUploadFile],
+    to targets: [MatrixPresignedURL]
+  ) async throws -> (ids: [String], failure: String?) {
     var uploadedIds: [String] = []
     for (file, target) in zip(files, targets) {
-      guard let url = URL(string: target.url.trimmingCharacters(in: .whitespaces)), !target.url.isEmpty else { continue }
+      let urlString = target.url.trimmingCharacters(in: .whitespaces)
+      guard !urlString.isEmpty, let url = URL(string: urlString) else {
+        return (uploadedIds, "invalid_url")
+      }
       var request = URLRequest(url: url)
       let body: Data
       if let fields = target.fields {
@@ -385,7 +470,10 @@ actor MatrixClient {
       }
       do {
         let (_, response) = try await urlSession.upload(for: request, from: body)
-        guard let status = (response as? HTTPURLResponse)?.statusCode, (200..<300).contains(status) else { break }
+        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        guard (200..<300).contains(status) else {
+          return (uploadedIds, "http_\(status)")
+        }
         uploadedIds.append(target.id)
       } catch {
         print("#Matrix upload failed: \(error.localizedDescription)")
@@ -393,10 +481,13 @@ actor MatrixClient {
         if MatrixError.isNetworkFailure(failure) {
           throw failure
         }
-        break
+        return (uploadedIds, (error as? URLError).map { "url_error_\($0.code.rawValue)" } ?? "upload_error")
       }
     }
-    return uploadedIds
+    if targets.count < files.count {
+      return (uploadedIds, "fewer_urls_than_files")
+    }
+    return (uploadedIds, nil)
   }
 
   /// Presigned POST form: policy fields first, file last.

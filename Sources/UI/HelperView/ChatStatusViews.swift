@@ -53,6 +53,7 @@ struct FailedReplyRow: View {
     case .offline: "wifi.slash"
     case .authExpired, .authRejected: "lock.trianglebadge.exclamationmark"
     case .timedOut: "clock.badge.exclamationmark"
+    case .fileUploadFailed, .filesNotAttached: "paperclip.badge.ellipsis"
     default: "exclamationmark.triangle"
     }
   }
