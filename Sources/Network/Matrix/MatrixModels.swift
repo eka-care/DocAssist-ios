@@ -13,6 +13,46 @@ enum MatrixStreamEvent: Sendable {
   case progress(String)
   /// Follow-up suggestions.
   case tips([String])
+  case upload(MatrixUploadDiagnostics)
+}
+
+struct MatrixUploadDiagnostics: Sendable {
+  enum Outcome: String, Sendable {
+    case uploaded
+    case urlsTimedOut = "urls_timed_out"
+    case urlsRequestFailed = "urls_request_failed"
+    case answeredWithoutUrls = "answered_without_urls"
+    case noUrls = "no_urls"
+    case uploadFailed = "upload_failed"
+    case uploadPartial = "upload_partial"
+    case offline
+    case cancelled
+    case failed
+  }
+
+  let fileCount: Int
+  var outcome: Outcome?
+  var urlsWait: Duration?
+  var urlCount = 0
+  var emptyUrlCount = 0
+  var uploadMethod: String?
+  var uploadHost: String?
+  var uploadTime: Duration?
+  var uploadedCount = 0
+  var uploadFailure: String?
+
+  init(files: [MatrixUploadFile]) {
+    fileCount = files.count
+  }
+
+  mutating func record(targets: [MatrixPresignedURL]) {
+    let urls = targets.map { $0.url.trimmingCharacters(in: .whitespaces) }
+    urlCount = targets.count
+    emptyUrlCount = urls.filter(\.isEmpty).count
+    guard let index = urls.firstIndex(where: { !$0.isEmpty }) else { return }
+    uploadMethod = targets[index].fields == nil ? "PUT" : "POST"
+    uploadHost = URL(string: urls[index])?.host
+  }
 }
 
 enum MatrixError: LocalizedError {
@@ -20,7 +60,8 @@ enum MatrixError: LocalizedError {
   case http(status: Int)
   case invalidResponse
   case server(code: String, message: String)
-  case fileUploadFailed
+  case fileUploadFailed(failed: Int, total: Int)
+  case filesNotAttached
   /// No usable network path, or it dropped mid-request.
   case offline
   /// The server stopped answering.
@@ -40,7 +81,13 @@ enum MatrixError: LocalizedError {
     case .http(let status): "Request failed with status \(status)."
     case .invalidResponse: "Unexpected response from server."
     case .server(_, let message): message
-    case .fileUploadFailed: "Could not upload the attached files."
+    case .fileUploadFailed(let failed, let total):
+      total == 1
+        ? "Could not upload the attached file. Please try again."
+        : failed == total
+          ? "Could not upload the attached files. Please try again."
+          : "Could not upload \(failed) of \(total) files. Please try again."
+    case .filesNotAttached: "Ask AI replied without your files. Retry to send them."
     case .offline: "You're offline. Check your internet connection and try again."
     case .timedOut: "Ask AI is taking too long to respond. Please try again."
     case .connectionLost: "The connection was lost. Please try again."
@@ -91,29 +138,78 @@ enum MatrixError: LocalizedError {
 
 /// A local file ready for the presigned upload.
 struct MatrixUploadFile: Sendable {
-  static let maxFileSize = 3 * 1024 * 1024
   static let maxFilesPerMessage = 3
 
   let data: Data
   let mimeType: String
   let fileName: String
 
-  /// Loads the files Matrix accepts (pdf, jpeg, png under 3 MB) from absolute paths or paths relative to Documents.
-  static func load(paths: [String]) -> [MatrixUploadFile] {
-    let documents = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+  struct Skipped: Sendable {
+    enum Reason: String, Sendable {
+      case emptyPath = "empty_path"
+      case missingFile = "missing_file"
+      case unreadable = "unreadable"
+      case unsupportedType = "unsupported_type"
+      case overLimit = "over_limit"
+    }
+
+    let reason: Reason
+    let fileExtension: String
+    let sizeKB: Int?
+    let pathKind: String
+  }
+
+  struct LoadResult: Sendable {
+    let files: [MatrixUploadFile]
+    let skipped: [Skipped]
+  }
+
+  /// Loads the files Matrix accepts (pdf, jpeg, png) from absolute paths or paths relative to Documents.
+  static func load(paths: [String]) -> LoadResult {
+    let fileManager = FileManager.default
+    let documents = fileManager.urls(for: .documentDirectory, in: .userDomainMask)[0]
     var files: [MatrixUploadFile] = []
+    var skipped: [Skipped] = []
     for path in paths {
-      guard files.count < maxFilesPerMessage else { break }
-      let url = path.hasPrefix("/") ? URL(fileURLWithPath: path) : documents.appendingPathComponent(path)
-      guard let mimeType = mimeType(for: url.pathExtension),
-            let data = try? Data(contentsOf: url),
-            data.count < maxFileSize else {
-        print("#Matrix skipped attachment \(url.lastPathComponent)")
+      let trimmed = path.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !trimmed.isEmpty else {
+        skipped.append(Skipped(reason: .emptyPath, fileExtension: "none", sizeKB: nil, pathKind: "empty"))
+        continue
+      }
+      let isAbsolute = trimmed.hasPrefix("/")
+      let url = isAbsolute ? URL(fileURLWithPath: trimmed) : documents.appendingPathComponent(trimmed)
+      let fileExtension = url.pathExtension.isEmpty ? "none" : url.pathExtension.lowercased()
+      let sizeKB = ((try? fileManager.attributesOfItem(atPath: url.path))?[.size] as? Int).map { $0 / 1024 }
+
+      func skip(_ reason: Skipped.Reason) {
+        print("#Matrix skipped attachment \(url.lastPathComponent): \(reason.rawValue)")
+        skipped.append(Skipped(
+          reason: reason,
+          fileExtension: fileExtension,
+          sizeKB: sizeKB,
+          pathKind: isAbsolute ? "absolute" : "relative"
+        ))
+      }
+
+      guard files.count < maxFilesPerMessage else {
+        skip(.overLimit)
+        continue
+      }
+      guard fileManager.fileExists(atPath: url.path) else {
+        skip(.missingFile)
+        continue
+      }
+      guard let mimeType = mimeType(for: url.pathExtension) else {
+        skip(.unsupportedType)
+        continue
+      }
+      guard let data = try? Data(contentsOf: url) else {
+        skip(.unreadable)
         continue
       }
       files.append(MatrixUploadFile(data: data, mimeType: mimeType, fileName: url.lastPathComponent))
     }
-    return files
+    return LoadResult(files: files, skipped: skipped)
   }
 
   private static func mimeType(for pathExtension: String) -> String? {

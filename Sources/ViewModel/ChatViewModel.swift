@@ -50,6 +50,7 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
   /// The last reply that failed (offline, timeout, auth, server). Shown under the
   /// question with a Retry button; never written into the chat as an answer.
   private(set) var failedReply: FailedReply?
+  private let failureLogger = AskAIFailureLogger()
   
   var showPermissionAlertBinding: Binding<Bool> {
     Binding { [weak self] in
@@ -127,38 +128,61 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
       to: failed.userMessageId,
       sessionId: failed.sessionId,
       text: failed.text,
-      documentPaths: failed.documentPaths
+      documentPaths: failed.documentPaths,
+      isRetry: true
     )
   }
-  
-  private func streamReply(to userMessageId: String, sessionId: String, text: String, documentPaths: [String]?) {
+
+  private func streamReply(
+    to userMessageId: String,
+    sessionId: String,
+    text: String,
+    documentPaths: [String]?,
+    isRetry: Bool = false
+  ) {
     DispatchQueue.main.async { [weak self] in
       self?.failedReply = nil
       self?.streamStarted = true
     }
     
     streamTask?.cancel()
+    let failureLogger = failureLogger
     streamTask = Task { [weak self] in
-      let files = MatrixUploadFile.load(paths: documentPaths ?? [])
+      let loaded = MatrixUploadFile.load(paths: documentPaths ?? [])
+      let files = loaded.files
       let stream = MatrixClient.shared.chat(localSessionId: sessionId, text: text, files: files)
+      var attempt = AskAIChatAttempt(
+        chatId: sessionId,
+        messageId: userMessageId,
+        isRetry: isRetry,
+        text: text,
+        documentPaths: documentPaths,
+        loaded: loaded
+      )
       var answer = ""
       var suggestions: [String]?
       do {
         for try await event in stream {
+          attempt.record(event)
           switch event {
           case .chunk(let text):
             answer += text
           case .tips(let tips):
             suggestions = tips
-          case .progress:
+          case .progress, .upload:
             continue
           }
           await ChatStore.shared.upsertReply(to: userMessageId, sessionId: sessionId, text: answer, suggestions: suggestions)
         }
+        failureLogger.finish(attempt, result: Task.isCancelled ? .stopped : .answered)
       } catch is CancellationError {
+        failureLogger.finish(attempt, result: .stopped)
       } catch {
         print("#Matrix stream failed: \(error)")
-        if !Task.isCancelled {
+        if Task.isCancelled {
+          failureLogger.finish(attempt, result: .stopped)
+        } else {
+          failureLogger.finish(attempt, result: .failed(MatrixError.from(error)))
           let failure = FailedReply(
             userMessageId: userMessageId,
             sessionId: sessionId,
@@ -315,6 +339,7 @@ struct FailedReply {
     case .offline: "No internet connection"
     case .authExpired, .authRejected: "Couldn't verify your account"
     case .serviceUnavailable: "Ask AI is unavailable"
+    case .fileUploadFailed, .filesNotAttached: "Your files weren't attached"
     default: isPartial ? "The answer was interrupted" : "Couldn't get an answer"
     }
   }
