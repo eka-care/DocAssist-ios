@@ -169,6 +169,11 @@ public final class ChatViewModel: NSObject, URLSessionDataDelegate {
             answer += text
           case .tips(let tips):
             suggestions = tips
+          case .elicitation(let prompt, let options):
+            if !prompt.isEmpty {
+              answer += answer.isEmpty ? prompt : "\n\n" + prompt
+            }
+            suggestions = options
           case .progress, .upload:
             continue
           }

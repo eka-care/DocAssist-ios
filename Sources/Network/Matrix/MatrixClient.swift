@@ -168,10 +168,22 @@ actor MatrixClient {
       if let tips = data.tips, !tips.isEmpty {
         emit(.tips(tips))
       }
+    case "tool":
+      if let elicitation = Self.elicitation(in: data) {
+        emit(.elicitation(text: elicitation.text, options: elicitation.options))
+      }
     default:
       break
     }
     return false
+  }
+
+  private static func elicitation(in data: MatrixFrame.FrameData) -> (text: String, options: [String])? {
+    guard data.toolType == "elicitation", let input = data.details?.input else { return nil }
+    let text = input.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    let options = (input.options ?? []).map(\.label).filter { !$0.isEmpty }
+    guard !text.isEmpty || !options.isEmpty else { return nil }
+    return (text, options)
   }
 
   private static func isAnswerContent(_ frame: MatrixFrame) -> Bool {
@@ -181,6 +193,8 @@ actor MatrixClient {
       return (data.progressMsg ?? "").isEmpty && !(data.text ?? "").isEmpty
     case "tips":
       return !(data.tips ?? []).isEmpty
+    case "tool":
+      return elicitation(in: data) != nil
     default:
       return false
     }

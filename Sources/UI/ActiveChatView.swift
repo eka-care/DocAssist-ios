@@ -176,6 +176,16 @@ public struct ActiveChatView: View {
     }
     .navigationTitle(title ?? "New Chat")
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .principal) {
+        Text(title ?? "New Chat")
+          .font(.headline)
+          .lineLimit(1)
+          .onLongPressGesture {
+            copySessionId()
+          }
+      }
+    }
     .alert(isPresented: viewModel.showTranscriptionFailureAlertBinding) {
       Alert(
         title: Text(viewModel.alertTitle),
@@ -375,6 +385,18 @@ public struct ActiveChatView: View {
     )
   }
   
+  private func copySessionId() {
+    Task {
+      guard let sessionId = await ChatStore.shared.matrixSessionId(forChat: session) else { return }
+      UIPasteboard.general.string = sessionId
+      UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+      showFeedback = true
+      feedbackText = "Session ID copied"
+      try? await Task.sleep(for: .seconds(2))
+      showFeedback = false
+    }
+  }
+
   private func setupView(with oid: String) {
     Task {
       viewModel.updateQueryParamsIfNeeded(oid)

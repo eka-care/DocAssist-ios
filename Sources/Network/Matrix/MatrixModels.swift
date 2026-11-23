@@ -13,6 +13,8 @@ enum MatrixStreamEvent: Sendable {
   case progress(String)
   /// Follow-up suggestions.
   case tips([String])
+  /// The agent asks the doctor to pick one option; the prompt is shown as the answer, options as chips.
+  case elicitation(text: String, options: [String])
   case upload(MatrixUploadDiagnostics)
 }
 
@@ -324,11 +326,21 @@ struct MatrixFrame: Decodable {
     let urls: [MatrixPresignedURL]?
     let code: String?
     let msg: String?
+    /// `ct: tool` frames: `elicitation` asks the doctor to choose.
+    let toolType: String?
+    let details: ToolDetails?
 
     enum CodingKeys: String, CodingKey {
-      case text, tips, urls, code, msg
+      case text, tips, urls, code, msg, details
       case progressMsg = "progress_msg"
+      case toolType = "tool_type"
     }
+  }
+
+  /// `data.details` of a tool frame: `{ component, input: { text, options } }`.
+  struct ToolDetails: Decodable {
+    let component: String?
+    let input: MatrixHistoryMessage.Elicitation.Input?
   }
 }
 

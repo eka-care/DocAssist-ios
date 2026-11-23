@@ -69,6 +69,10 @@ struct AskAIChatAttempt {
       progressCount += 1
     case .tips(let tips):
       tipsCount = tips.count
+    case .elicitation(let text, let options):
+      chunkCount += 1
+      answerLength += text.count
+      tipsCount = options.count
     case .upload(let diagnostics):
       upload = diagnostics
     }
